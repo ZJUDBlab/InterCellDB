@@ -29,6 +29,8 @@ EvaluateByFunc <- Inside.EvaluateByABS
 # @param anno.location.ref SEE @param anno.location.ref in AnalyzeClustersInteracts().
 # @param anno.type.ref SEE @param anno.type.ref in AnalyzeClustersInteracts().
 # @param subgroup.options Settings that can select a subset of interaction pairs for analysis.
+# @param user.type.database [TODO]
+# @param sub.sel.user.type.colname [TODO]
 # @param restricted.some.genes SEE @param restricted.some.genes in AnalyzeClustersInteracts().
 # @param restricted.gene.pairs SEE @param restricted.gene.pairs in AnalyzeClustersInteracts().
 # @param ind.colname.end.dual SEE @param ind.colname.end.dual in AnalyzeClustersInteracts().
@@ -43,6 +45,8 @@ Inside.AnalyzeClustersInteracts <- function(
   anno.location.ref,
   anno.type.ref,
   subgroup.options,
+  user.type.database = NULL,
+  sub.sel.user.type.colname = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
   ind.colname.end.dual = 4
@@ -203,7 +207,7 @@ Inside.AnalyzeClustersInteracts <- function(
       # 3.1 slim
       pairs.v3.spre.A <- pairs.v2.aft.loc[which(pairs.v2.aft.loc[, "inter.GeneID.A"] %in% this.A.types[, "GeneID"]), ]
       # Type - B
-      tmp.inds.B.types <- which(anno.type.ref$GeneID %in% levels(factor(pairs.v1.after.logfc[, "inter.GeneID.B"])))
+      tmp.inds.B.types <- which(anno.type.ref$GeneID %in% levels(factor(pairs.v3.spre.A[, "inter.GeneID.B"])))
       tmp.B.types <- anno.type.ref[tmp.inds.B.types, c("GeneID", "Gene.name", "Keyword.Name")]
       if (is.null(subgroup.options[["Y.Type"]])) {
         this.B.types <- tmp.B.types
@@ -212,8 +216,33 @@ Inside.AnalyzeClustersInteracts <- function(
       }
       # 3.2 slim
       pairs.v3.aft.type <- pairs.v3.spre.A[which(pairs.v3.spre.A[, "inter.GeneID.B"] %in% this.B.types[, "GeneID"]), ]
+      ## 4 - user.type
+      if (!is.null(user.type.database) && !is.null(sub.sel.user.type.colname)) {
+        # user.type - A
+        tmp.inds.A.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v3.aft.type[, "inter.GeneID.A"])))
+        tmp.A.user.types <- user.type.database[tmp.inds.A.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
+        if (is.null(subgroup.options[["X.user.type"]])) {
+          this.A.user.types <- tmp.A.user.types
+        } else {
+          this.A.user.types <- tmp.A.user.types[which(tmp.A.user.types[, sub.sel.user.type.colname] %in% subgroup.options$X.user.type), ]
+        }
+        # 4.1 slim
+        pairs.v4.upre.A <- pairs.v3.aft.type[which(pairs.v3.aft.type[, "inter.GeneID.A"] %in% this.A.user.types[, "GeneID"]), ]
+        # user.type - B
+        tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v4.upre.A[, "inter.GeneID.B"])))
+        tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
+        if (is.null(subgroup.options[["Y.user.type"]])) {
+          this.B.user.types <- tmp.B.user.types
+        } else {
+          this.B.user.types <- tmp.B.user.types[which(tmp.B.user.types[, sub.sel.user.type.colname] %in% subgroup.options$Y.user.type), ]
+        }
+        # 4.2 slim
+        pairs.v4.aft.user.type <- pairs.v4.upre.A[which(pairs.v4.upre.A[, "inter.GeneID.B"] %in% this.B.user.types[, "GeneID"]), ]
+      } else {
+        pairs.v4.aft.user.type <- pairs.v3.aft.type
+      }
       ## after doing subgroup
-      pairs.subg.result <- pairs.v3.aft.type
+      pairs.subg.result <- pairs.v4.aft.user.type
       # re-slim with Location, Type
       func.location.score.inside <- function(data.loc, option) {
         ret.val <- data.loc
@@ -275,6 +304,8 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @inheritParams Inside.DummyPairsRef
 #' @inheritParams Inside.DummyAnnoLocationRefDB  
 #' @inheritParams Inside.DummyAnnoTypeRefDB
+#' @param user.type.database Data.frame. It specifies one special data.frame that contains user-defined informations.
+#' For generating such database, see [TODO] for help. 
 #' @param restricted.some.genes Character. Analysis will be restricted in interaction pairs that contain
 #' at least one genes given in this parameter.
 #' @param restricted.gene.pairs Character or data.frame. Analysis will be restricted in given gene pairs(i.e. interaction pairs). 
@@ -287,6 +318,10 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param sub.sel.Y.Location.score.limit Like \code{sub.sel.X.Location.score.limit}.
 #' @param sub.sel.X.Type Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.Y.Type Like \code{sub.sel.X.Type}.
+#' @param sub.sel.user.type.colname Character. It gives the column name that will be used for user-defined purposes.
+#' @param sub.sel.X.user.type Its mode depends on what datatype user has defined. The function will accept anything given in this parameter
+#' without any additional check.
+#' @param sub.sel.Y.user.type Like \code{sub.sel.X.user.type}.
 #' @param ind.colname.end.dual Integer. Use default value provided only when the pairs.ref database is modified by users.
 #'
 #' @details
@@ -324,6 +359,8 @@ Inside.AnalyzeClustersInteracts <- function(
 #          To fetch available values, the method is like the above one but uses the database for types, \bold{e.g.} 
 #'
 #'         In mouse, use database \code{anno.type.mouse.ref.db}, and use the code \code{levels(factor(anno.type.mouse.ref.db$Keyword.Name))}.
+#'   \item \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} + \code{sub.sel.user.type.colname}: Those give a more flexible way for subset selection.
+#'         It uses the database given in another parameter \code{user.type.database}. [TODO] further description.
 #'   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
 #'          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 #' }
@@ -370,6 +407,7 @@ AnalyzeClustersInteracts <- function(
   pairs.ref,
   anno.location.ref,
   anno.type.ref,
+  user.type.database = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
   sub.sel.exprs.changes = character(),
@@ -379,6 +417,9 @@ AnalyzeClustersInteracts <- function(
   sub.sel.Y.Location.score.limit = c("the most confident"),
   sub.sel.X.Type = character(),
   sub.sel.Y.Type = character(),
+  sub.sel.user.type.colname = NULL,
+  sub.sel.X.user.type = NULL,
+  sub.sel.Y.user.type = NULL,
   ind.colname.end.dual = 4
 ) {
   # generate default settings
@@ -424,9 +465,42 @@ AnalyzeClustersInteracts <- function(
   if (!is.null(sub.sel.Y.Type) && length(sub.sel.Y.Type) != 0) {
     user.settings[["Y.Type"]] <- as.character(Tc.Cap.simple.vec(sub.sel.Y.Type))
   }
+  ## user type
+  # check
+  if (!is.null(user.type.database) && 
+      (class(user.type.database) == "data.frame" && nrow(user.type.database) > 0) &&
+      (length(sub.sel.user.type.colname) == 1 && (sub.sel.user.type.colname %in% colnames(user.type.database) == TRUE))) {
+    # authorized check
+    if (sum(c("GeneID", "Gene.name") %in% colnames(user.type.database)) != 2) {
+      stop("User type error: not a authorized database generated by routine process defined in this package.")
+    }
+    # for X
+    if (!is.null(sub.sel.X.user.type) && length(sub.sel.X.user.type) != 0) {
+      user.settings[["X.user.type"]] <- sub.sel.X.user.type
+    }
+    # for Y
+    if (!is.null(sub.sel.Y.user.type) && length(sub.sel.Y.user.type) != 0) {
+      user.settings[["Y.user.type"]] <- sub.sel.Y.user.type
+    }
+  } else {
+    tmp.check.db.exist <- !is.null(user.type.database) && (class(user.type.database) == "data.frame" && nrow(user.type.database) > 0)
+    tmp.check.colname.valid <- (tmp.check.db.exist == TRUE) && (length(sub.sel.user.type.colname) == 1 && (sub.sel.user.type.colname %in% colnames(user.type.database) == TRUE))
+    tmp.check.selection.X <- !is.null(sub.sel.X.user.type) && (length(sub.sel.X.user.type) != 0)
+    tmp.check.selection.Y <- !is.null(sub.sel.Y.user.type) && (length(sub.sel.Y.user.type) != 0)
+    tmp.check.sel <- tmp.check.selection.X || tmp.check.selection.Y
+    if (tmp.check.sel && !tmp.check.colname.valid) {
+      if (tmp.check.db.exist) {
+        stop("User type error: given undefined column name.")
+      } else {
+        stop("User type error: invalid user-defined database.")
+      }
+    }
+  }
   ### then run the analysis
   res <- Inside.AnalyzeClustersInteracts(fgenes.remapped.all, pairs.ref, 
             anno.location.ref, anno.type.ref, user.settings, 
+            user.type.database = user.type.database,
+            sub.sel.user.type.colname = sub.sel.user.type.colname,
             restricted.some.genes = restricted.some.genes,
             restricted.gene.pairs = restricted.gene.pairs,
             ind.colname.end.dual = ind.colname.end.dual)
