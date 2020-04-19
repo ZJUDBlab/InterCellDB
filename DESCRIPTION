@@ -1,0 +1,15 @@
+Package: CellTalkDB
+Type: Package
+Title: Tools for Analyzing Interactions among Cells
+Version: 1.0.2
+Date: 2020-03-28
+Authors@R: c(person("Jin Ziyang", "Developer", role = c("aut", "cre"), email = "454785187@qq.com"),
+  person("Shi Ligen", "Developer", role = c("aut", "rev"), email = "slg0904@163.com"),
+  person("Zhang Xiaotao", "Developer", role = c("aut", "dtc"), email = "notknown@tmp.com"))
+Depends: R (>= 3.6.0)
+Imports: circlize, ggplot2, grid, gridBase, progress, Seurat (>= 3.0.0), ComplexHeatmap, dplyr, graphics, stats, utils
+Description: This tool provides databases covering human and mouse, and provides bunches of functions intended to serve for data analysis of scRNA-seq. Its databases collect a variety of data source, including STRING, NCBI-gene, GO, HGNC, Mesh, etc. Its function on analysis ranges from fullview of cell-cell-interaction to specific interactions between specific clusters.
+License: GPL (>= 2)
+LazyData: true
+RoxygenNote: 7.1.0
+Encoding: UTF-8

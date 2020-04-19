@@ -1,0 +1,175 @@
+
+
+#' Tool for showing gragh
+#' 
+#' @description 
+#' This function is a simple interface to show the graph in results that are 
+#' from functions \code{GetResult.*}.
+#'
+#' @param formatted.result List. It must have one item named "plot".
+#' @param ... other plot functions that directly passed using \code{+} in definition of \pkg{ggplot2}.
+#' It will make slight changes on the final plotting result.
+#'
+#'
+#'
+#' @export
+#'
+Tool.ShowGraph <- function(
+	formatted.result,
+	...
+) {
+	plot.res <- formatted.result$plot
+	for (each.item in list(...)) {
+		plot.res <- plot.res + each.item
+	}
+	#end# return
+	plot.res
+}
+
+
+
+
+
+#' Tool for write tables in csv
+#' 
+#' @description 
+#' This function is a simple interface to write the tables in results that are 
+#' from functions \code{GetResult.*}
+#'
+#' @param formatted.result List. It must have one item named "table".
+#' @param dir.path Character. The written directory path in operating system.
+#' @param ... Other params that will be directly passed to write.csv, use \code{?write.csv} for 
+#' further help.
+#'
+#'
+#' @importFrom utils write.csv
+#'
+#' @export
+#'
+Tool.WriteTables <- function(
+	formatted.result,
+	dir.path = ".",
+	...
+) {
+	wtables <- formatted.result$table
+	if (length(wtables) == 0) {
+		return("No table needs to be written!")
+	}
+	# format dir.path
+	dir.path.end <- substring(dir.path, length(dir.path))
+	if (!(dir.path.end == "/" || dir.path.end == "\\")) {  # '/' for mac, etc. '\' for windows, etc.
+		dir.path <- paste0(dir.path, "/")  # work effective for most operating system
+	}
+	for (i in 1:length(wtables)) {
+		this.table <- wtables[[i]]
+		this.tname <- names(wtables)[i]
+		this.tnamelist <- strsplit(this.tname, split = ".", fixed = TRUE)[[1]]
+		this.tname.final <- paste0(this.tnamelist, collapse = "_")
+		write.csv(this.table, file = paste0(dir.path, this.tname.final, ".csv"), ...)
+	}
+}
+
+
+
+
+
+# [inside usage]
+# get from ?toupper, .simpleCap
+Tc.Cap.simple <- function(x) {
+	s <- strsplit(x, " ")[[1]]
+	paste(toupper(substring(s, 1, 1)), substring(s, 2),
+	sep = "", collapse = " ")
+}
+
+
+
+
+
+# [inside usage]
+# parallel version of Tc.Cap.simple
+Tc.Cap.simple.vec <- function(to.cap.vec) {
+	unlist(lapply(to.cap.vec, FUN = Tc.Cap.simple))
+}
+
+
+
+
+
+#' Speed-up doing unique for data.frame
+#'
+#' @description
+#' This function uses the properties of \code{data.frame} and \code{rownames}, and 
+#' makes partial unique process fast and effective.
+#'
+#' @param xxpairs Data.frame. Any data.frame object.
+#' @param cols.select Integer. Specify some columns in integer vector, e.g. c(1:2).
+#' Its length \bold{must be >= 2}, or the function will not work properly. 
+#'
+#' @details
+#' When encountering multi-columns tables, e.g. 6 columns or more, \code{unique()} will 
+#' be really slow if it is applied on the whole table. However, in most circumstances, 
+#' there is no need to apply \code{unique()} on all columns, i.e. only do unique on some 
+#' columns, which is exactly the thing this function does.
+#'
+#'
+#'
+#' @export
+#'
+DoPartUnique <- function(
+	xxpairs,
+	cols.select=c(1:2)
+) {
+	if (sum(cols.select %in% c(1:ncol(xxpairs))) != length(cols.select)) {
+		stop("Columns selected are undefined! Please check again!")
+	}
+	rownames(xxpairs) <- NULL
+	tmp.uni <- xxpairs[, cols.select]
+	tmp.uni <- unique(tmp.uni)
+	xxpairs <- xxpairs[as.integer(rownames(tmp.uni)),]
+	#end# return
+	xxpairs
+}
+
+
+
+
+
+#' Permutate reverse order of odds and evens
+#'
+#' @description
+#' This function generates reverse premutation of odd values and even values 
+#' in continues values, e.g. \code{1:10}.
+#'
+#' @param ncols Integer. An arbitrary integer.
+#'
+#' @examples
+#' # for 1:10 
+#' ReverseOddEvenCols(10)
+#' # the reuslt is c(2,1,4,3,6,5,8,7,10,9)
+#'
+#'
+#'
+#' @export
+#'
+ReverseOddEvenCols <- function(
+	ncols
+) {
+	len.all <- ncols %/% 2
+	val.even <- 2 * 1:len.all
+	val.odds <- (2 * 1:len.all) -1
+	new.serial <- NULL
+	for (i in 1:len.all) {
+		new.serial <- c(new.serial, val.even[i], val.odds[i])
+	}
+	if (ncols %% 2 != 0) {  # odds cols
+		# leave last one unchanged
+		new.serial <- c(new.serial, ncols)
+	}
+	#end# return
+	new.serial
+}
+
+
+
+
+
