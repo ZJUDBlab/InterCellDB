@@ -86,7 +86,8 @@ DataPrep.AddExprsVals <- function(
 #'
 DataPrep.RemapClustersMarkers <- function(
   markers.all.from.Seurat,
-  genes.ref.db
+  genes.ref.db,
+  warning.given = "markers"
 ) {
   # set each database
   entrez.db <- genes.ref.db$gene.ncbi.db
@@ -105,7 +106,7 @@ DataPrep.RemapClustersMarkers <- function(
     inds.map.match <- match(markers.raw.unmatch$gene, map.synonyms.db$Synonym.each)
     print(paste0("In unmatched ", nrow(markers.raw.unmatch), " genes, ", length(which(!is.na(inds.map.match))), " are remapped from synonyms!"))
     if (length(which(is.na(inds.map.match))) > 0) {  # even after remap, still not matchable, so just leave out, and report in warning()
-      warning("These markers are not matched, \n: ", 
+      warning("These ", warning.given, " are not matched, \n: ", 
         paste0(markers.raw.unmatch$gene[which(is.na(inds.map.match))], collapse = ",  "), "."
       )
     }
@@ -113,7 +114,7 @@ DataPrep.RemapClustersMarkers <- function(
     # check if these remapped gene name are in dup.synonyms.ref
     logic.ifinddup <- which(markers.raw.unmatch$gene[which(!is.na(inds.map.match))] %in% dup.synonyms.ref)
     if (length(logic.ifinddup) > 0)
-      warning("These markers' synonyms are duplicate with others, and here recommend to do mannual check-up.\n: ",
+      warning("Synonyms of these ", warning.given, " are duplicate with others, and here recommend to do mannual check-up.\n: ",
         paste0(markers.raw.unmatch$gene[which(!is.na(inds.map.match))][logic.ifinddup], collapse = ",  "), "."
       )
   }
