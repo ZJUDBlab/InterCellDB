@@ -158,7 +158,7 @@ GenerateMapDetailOnepairClusters <- function(
     anno.infos = clusters.onepair.select$anno.infos,
     actions.detailed = list()  # pairs that have known actions in actions.ref.db
   )
-  print(paste0("Generating from ", paste0(clusters.onepair.select$clusters.name, collapse = "and"), "."))
+  print(paste0("Generating from ", paste0(clusters.onepair.select$clusters.name, collapse = " and "), "."))
   this.act.detailed.id <- 0
   prog.bar.gmoc <- progress::progress_bar$new(total = nrow(bt.pairs))
   prog.bar.gmoc$tick(0)
