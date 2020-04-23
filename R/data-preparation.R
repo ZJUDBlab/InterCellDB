@@ -92,7 +92,7 @@ DataPrep.RemapClustersMarkers <- function(
   # set each database
   entrez.db <- genes.ref.db$gene.ncbi.db
   map.synonyms.db <- genes.ref.db$gene.synonyms.db
-  dup.synonyms.ref <- genes.ref.db$gene.dup.synonyms.db$Symbol_from_nomenclature_authority  # character
+  dup.synonyms.ref <- genes.ref.db$gene.dup.synonyms.db$Synonym.each  # character
   # check if some genes are already authorized symbols
   inds.raw.match <- which(markers.all.from.Seurat$gene %in% entrez.db$Symbol_from_nomenclature_authority)
   if (length(inds.raw.match) > 0) {
@@ -110,12 +110,15 @@ DataPrep.RemapClustersMarkers <- function(
         paste0(markers.raw.unmatch$gene[which(is.na(inds.map.match))], collapse = ",  "), "."
       )
     }
-    markers.raw.unmatch$gene[which(!is.na(inds.map.match))] <- map.synonyms.db$Symbol_from_nomenclature_authority[inds.map.match][which(!is.na(inds.map.match))]  # set those matched genes
+    tmp.gene.name.use.old <- markers.raw.unmatch$gene[which(!is.na(inds.map.match))]
+    tmp.gene.name.use.new <- map.synonyms.db$Symbol_from_nomenclature_authority[inds.map.match][which(!is.na(inds.map.match))]
+    markers.raw.unmatch$gene[which(!is.na(inds.map.match))] <- tmp.gene.name.use.new  # set those matched genes
     # check if these remapped gene name are in dup.synonyms.ref
-    logic.ifinddup <- which(markers.raw.unmatch$gene[which(!is.na(inds.map.match))] %in% dup.synonyms.ref)
+    logic.ifinddup <- which(tmp.gene.name.use.old %in% dup.synonyms.ref)
     if (length(logic.ifinddup) > 0)
-      warning("Synonyms of these ", warning.given, " are duplicate with others, and here recommend to do mannual check-up.\n: ",
-        paste0(markers.raw.unmatch$gene[which(!is.na(inds.map.match))][logic.ifinddup], collapse = ",  "), "."
+      warning("Synonyms of these ", warning.given, " are duplicate with others, and here recommend to do mannual check-up. ", 
+        "Pairs with old~new gene names are given. \n: ",
+        paste0(paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~"), collapse = ",  "), "."
       )
   }
   rbind(markers.raw.match, markers.raw.unmatch)
