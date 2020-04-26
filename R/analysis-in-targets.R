@@ -343,8 +343,7 @@ Inside.CollectHierachyOnepairClusters <- function(
 # @param onepair.dgsa A list. Return value of Inside.CollectHierachyOnepairClusters().
 # @param show.exprs.change SEE GetResult.SummaryOnepairClusters for details.
 # @param show.action.effects SEE GetResult.SummaryOnepairClusters for details.
-# @param plot.axis.x.name Character. X-axis name when plot is shown.
-# @param plot.axis.y.name Character. Y-axis name when plot is shown.
+# other @param The same as in GetResult.SummaryOnepairClusters. 
 #
 #
 # @import ggplot2
@@ -353,56 +352,90 @@ Inside.PlotShowGrouping <- function(
   onepair.dgsa,
   show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
   show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"),
-  plot.axis.x.name = NULL,
-  plot.axis.y.name = NULL
+  scale.fill.discrete,
+  legend.key.size,
+  legend.title,
+  legend.text,
+  legend.box.margin,
+  caption.label.size,
+  caption.label.y,
+  caption.label.vjust,
+  ...
 ) {
-  ## process
-  gsub.result <- data.frame(op.rv.exprs.cond = character(),
-            interact.cnt = integer(),
-            genes.action.effects = character(),
-            stringsAsFactors = FALSE)
-  # Cup Dup
-  if ("Cup.Dup" %in% show.exprs.change) {
-    tmp.res.Cup.Dup <- onepair.dgsa$Cup.Dup
+  # result allocation
+  gsub.result <- vector("list", length = length(show.exprs.change))
+  names(gsub.result) <- as.character(show.exprs.change)
+  # process
+  for (ix in show.exprs.change) {
+    tmp.CD.dgsa <- onepair.dgsa[[ix]]
+    tmp.CD.cnt <- 0  # total interact count
     for (i.type in show.action.effects) {
-      gsub.result <- rbind(gsub.result, 
-        data.frame(op.rv.exprs.cond = "Cup.Dup", interact.cnt = nrow(tmp.res.Cup.Dup[[i.type]]), genes.action.effects = i.type))
+      tmp.CD.cnt <- tmp.CD.cnt + nrow(tmp.CD.dgsa[[i.type]])
     }
+    gsub.result[[ix]] <- data.frame()
+    for (i.type in show.action.effects) {  # split into their collections
+      gsub.result[[ix]] <- rbind(gsub.result[[ix]],
+        data.frame(dummy.x = ix,
+          interact.cnt = nrow(tmp.CD.dgsa[[i.type]]),
+          percent.cnt = nrow(tmp.CD.dgsa[[i.type]]) / tmp.CD.cnt,
+          genes.action.effects = i.type))
+    }
+    gsub.result[[ix]]$genes.action.effects <- factor(gsub.result[[ix]]$genes.action.effects)
   }
-  # Cup Ddn
-  if ("Cup.Ddn" %in% show.exprs.change) {
-    tmp.res.Cup.Ddn <- onepair.dgsa$Cup.Ddn
-    for (i.type in show.action.effects) {
-      gsub.result <- rbind(gsub.result,
-        data.frame(op.rv.exprs.cond = "Cup.Ddn", interact.cnt = nrow(tmp.res.Cup.Ddn[[i.type]]), genes.action.effects = i.type))
-    }
+  inside.PiePlot.shared <- function(data) {
+    gplot.sgp <- ggplot(data, aes(x = dummy.x, y = interact.cnt, fill = genes.action.effects))
+    gplot.sgp <- gplot.sgp + geom_col(position = "stack") +
+      scale.fill.discrete + 
+      coord_polar(theta = "y") + 
+      theme(panel.background = element_blank(), plot.margin = margin(6, 0, 6, 0)) + 
+      scale_x_discrete(breaks = NULL) + 
+      scale_y_continuous(breaks = NULL)
+    # return
+    gplot.sgp
   }
-  # Cdn Dup
-  if ("Cdn.Dup" %in% show.exprs.change) {
-    tmp.res.Cdn.Dup <- onepair.dgsa$Cdn.Dup
-    for (i.type in show.action.effects) {
-      gsub.result <- rbind(gsub.result,
-        data.frame(op.rv.exprs.cond = "Cdn.Dup", interact.cnt = nrow(tmp.res.Cdn.Dup[[i.type]]), genes.action.effects = i.type))
-    }
-  } 
-  # Cdn Ddn
-  if ("Cdn.Ddn" %in% show.exprs.change) {
-    tmp.res.Cdn.Ddn <- onepair.dgsa$Cdn.Ddn
-    for (i.type in show.action.effects) {
-      gsub.result <- rbind(gsub.result, 
-        data.frame(op.rv.exprs.cond = "Cdn.Ddn", interact.cnt = nrow(tmp.res.Cdn.Ddn[[i.type]]), genes.action.effects = i.type))
-    }
+  gplot.res.list <- list()
+  for (ix in show.exprs.change) {
+    tmp.gplot <- inside.PiePlot.shared(gsub.result[[ix]])
+    gplot.res.list <- c(gplot.res.list, list(tmp.gplot))
   }
-  ## plot
-  gplot.sgp <- ggplot(gsub.result, aes(x = op.rv.exprs.cond, y = interact.cnt))
-  gplot.sgp <- gplot.sgp + geom_col(aes(fill = genes.action.effects)) + guides(fill = guide_legend(title = "Action.Effects"))
-  default.plot.axis.x.name <- paste0("---symbols---\nA,B: genes, C,D: clusters.\nC: ", onepair.dgsa$clusters.name[["cluster.C"]], ", D: ", onepair.dgsa$clusters.name[["cluster.D"]])
-  default.plot.axis.y.name <- "count of interaction pairs"
-  gplot.sgp <- gplot.sgp + labs(x = (if (is.null(plot.axis.x.name)) default.plot.axis.x.name else plot.axis.x.name), 
-                                y = (if (is.null(plot.axis.y.name)) default.plot.axis.y.name else plot.axis.y.name))
+  # add unified legend
+  res.legend <- get_legend(gplot.res.list[[1]] + 
+    guides(fill = guide_legend(title = "Action.Effects")) + 
+    theme(legend.position = "right", 
+      legend.key.size = legend.key.size,
+      legend.title = legend.title,
+      legend.text = legend.text,
+      legend.box.margin = legend.box.margin)
+    )
+  # add additional plot modification
+  for (ix in show.exprs.change) {
+    ind.sel <- which(show.exprs.change == ix)
+    gplot.res.list[[ind.sel]] <- gplot.res.list[[ind.sel]] + 
+        xlab(NULL) + ylab(ix) + 
+        theme(legend.position = "none")
+  }
+  gplot.res.list[[1]] <- gplot.res.list[[1]] + 
+          xlab("interact pairs count") +  # add only 1 xlab
+          theme(plot.margin = margin(6, 0, 6, 10))
+  # grid the plots in one row
+  res.plot.no.legend <- plot_grid(plotlist = gplot.res.list, align = "h", nrow = 1)
+  # result plot
+  relative.width <- 0.3
+  if (length(show.exprs.change) > 2) {
+    relative.width <- 0.2
+  }
+  res.plot <- plot_grid(res.plot.no.legend, res.legend, nrow = 1, rel_widths = c(1, relative.width))
+  # add joint caption
+  caption.label <- paste0("---symbols---\nA,B: genes, C,D: clusters.\nC: ", 
+    onepair.dgsa$clusters.name[["cluster.C"]], ", D: ", onepair.dgsa$clusters.name[["cluster.D"]])
+  caption.plot <- ggdraw() + 
+    draw_label(caption.label, size = caption.label.size, y = caption.label.y, vjust = caption.label.vjust) + 
+    theme(plot.margin = margin(0, 0, 0, 0))
+  final.plot <- plot_grid(res.plot, caption.plot, ncol = 1, rel_heights = c(1, 0.2))      
   #end# return
-  gplot.sgp
+  final.plot
 }
+
 
 
 
@@ -446,16 +479,50 @@ GetResult.SummaryOnepairClusters <- function(
   onepair.gmoc,
   show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
   show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"),
-  plot.axis.x.name = NULL,
-  plot.axis.y.name = NULL
+  scale.fill.discrete = scale_fill_brewer(palette = "Set3"),
+  legend.key.size = unit(6, "mm"),
+  legend.title = element_text(size = 12),
+  legend.text = element_text(size = 8),
+  legend.box.margin = margin(0, 0, 0, 6),
+  caption.label.size = 12,
+  caption.label.y = 1,
+  caption.label.vjust = 1
 ) {
+  # process
   onepair.dgsa <- Inside.CollectHierachyOnepairClusters(onepair.gmoc)
+  # pre-result check
+  notin.exprs.c <- show.exprs.change[-which(show.exprs.change %in% c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"))]
+  if (length(notin.exprs.c) > 0) {
+    warning("Given @param show.exprs.change has undefined values: ", 
+      paste0(notin.exprs.c, collapse = ", "), "\n and will be ignored!")
+  }
+  show.exprs.change <- setdiff(show.exprs.change, notin.exprs.c)
+  if (length(show.exprs.change) == 0) {
+    stop("Select available data less than 1!")
+  }
+  # pre-check 2
+  notin.act.effect <- show.action.effects[-which(show.action.effects %in% c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"))]
+  if (length(notin.act.effect) > 0) {
+    warning("Given @param show.action.effects has undefined values: ",
+      paste0(notin.act.effect, collapse = ", "), "\n and will be ignored!")
+  }
+  show.action.effects <- setdiff(show.action.effects, notin.act.effect)
+  if (length(show.action.effects) == 0) {
+    stop("Select action effects less than 1. Unable to fetch the result!")
+  }
   ## result plot
   plot.res <- Inside.PlotShowGrouping(onepair.dgsa, 
     show.exprs.change = show.exprs.change, 
     show.action.effects = show.action.effects, 
-    plot.axis.x.name = plot.axis.x.name, 
-    plot.axis.y.name = plot.axis.y.name)
+    scale.fill.discrete = scale.fill.discrete,
+    legend.key.size = legend.key.size,
+    legend.title = legend.title,
+    legend.text = legend.text,
+    legend.box.margin = legend.box.margin,
+    caption.label.size = caption.label.size,
+    caption.label.y = caption.label.y,
+    caption.label.vjust = caption.label.vjust
+    )
   ## result table
   res.table.list <- list(
     Cup.Dup = data.frame(),
