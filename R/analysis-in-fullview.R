@@ -410,7 +410,7 @@ AnalyzeClustersInteracts <- function(
   user.type.database = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
-  sub.sel.exprs.changes = character(),
+  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
   sub.sel.Y.Location = character(),
@@ -496,6 +496,20 @@ AnalyzeClustersInteracts <- function(
       }
     }
   }
+  # before running, print the selection used
+  cat(paste0("\n---Strategy Used---", 
+    "\nexprs.change: ", paste0(user.settings$exprs.logfc, collapse = ", "), 
+    "\nLocation in X: ", paste0(user.settings$sub.sel.X.Location, collapse = ", "),   
+    "\nLocation score in X: ", paste0(user.settings$sub.sel.X.Location.score.limit),  
+    "\nLocation in Y: ", paste0(user.settings$sub.sel.Y.Location, collapse = ", "), 
+    "\nLocation score in Y: ", paste0(user.settings$sub.sel.Y.Location.score.limit), 
+    "\nType in X: ", paste0(user.settings$sub.sel.X.Type, collapse = ", "), 
+    "\nType in Y: ", paste0(user.settings$sub.sel.Y.Type, collapse = ", "), 
+    "\nUse user database: ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
+    "\nUse some genes: ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
+    "\nUse some gene pairs: ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
+    "\n"
+  ))
   ### then run the analysis
   res <- Inside.AnalyzeClustersInteracts(fgenes.remapped.all, pairs.ref, 
             anno.location.ref, anno.type.ref, user.settings, 
