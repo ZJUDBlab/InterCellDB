@@ -51,11 +51,11 @@ Inside.AnalyzeClustersInteracts <- function(
   restricted.gene.pairs = NULL,
   ind.colname.end.dual = 4
 ) {
-  # check if the column named "cluster" exists, so as "gene" and "exprs"
-  if (!("cluster" %in% colnames(markers.remapped.all) &&
-    "gene" %in% colnames(markers.remapped.all) &&
-    "exprs" %in% colnames(markers.remapped.all) )) {
-    stop("column named either 'cluster' or 'gene' or 'exprs' doesn't exist.")
+  # check if the column named "cluster" exists, so as "gene" and "avg_logFC"
+  tmp.precheck.cols <- c("cluster", "gene", "avg_logFC")
+  tmp.ind.valid.cols <- which(tmp.precheck.cols %in% colnames(markers.remapped.all))
+  if (length(tmp.ind.valid.cols) != length(tmp.precheck.cols)) {
+    stop("columns: ", paste0(tmp.precheck.cols[-tmp.ind.valid.cols], collapse = ", "), " are NOT AVAILABLE.")
   }
   # find all cluster, and factor() it
   fac.clusters <- levels(as.factor(markers.remapped.all[, "cluster"]))
@@ -144,10 +144,10 @@ Inside.AnalyzeClustersInteracts <- function(
         pairs.sp.ikab <- pairs.sp.ikab[inds.ikab.pmatch, ]
       }
       # assign Exprs,LogFC to each pair
-      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "exprs")], by = c("inter.GeneName.A" = "gene"))
-      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.A"
-      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "exprs")], by = c("inter.GeneName.B" = "gene"))
-      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.B"
+      #pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "exprs")], by = c("inter.GeneName.A" = "gene"))
+      #colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.A"
+      #pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "exprs")], by = c("inter.GeneName.B" = "gene"))
+      #colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.B"
       pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "avg_logFC")], by = c("inter.GeneName.A" = "gene"))
       colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.LogFC.A"
       pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "avg_logFC")], by = c("inter.GeneName.B" = "gene"))
