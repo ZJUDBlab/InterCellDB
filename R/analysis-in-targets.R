@@ -418,7 +418,7 @@ Inside.PlotShowGrouping <- function(
           xlab("interact pairs count") +  # add only 1 xlab
           theme(plot.margin = margin(6, 0, 6, 10))
   # grid the plots in one row
-  res.plot.no.legend <- plot_grid(plotlist = gplot.res.list, align = "h", nrow = 1)
+  res.plot.no.legend <- plot_grid(plotlist = gplot.res.list, align = "vh", nrow = 1)
   # result plot
   relative.width <- 0.3
   if (length(show.exprs.change) > 2) {
