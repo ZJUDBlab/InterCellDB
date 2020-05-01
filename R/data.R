@@ -114,6 +114,18 @@
 #'
 "actions.human.ref.db"
 
+
+#' GO reference database for human
+#'
+#' @description
+#' A dataset collects human genes and their GO annotations. It is extracted from
+#' GO annotations of mixed species, and has 323030 rows in total.
+#'
+#' @source <ftp://ftp.ncbi.nih.gov/gene/>, and file path is /DATA/gene2go.gz.
+#'
+"go.human.ref.db"
+
+
 ### --- Mouse ---
 
 
@@ -227,4 +239,14 @@
 #'
 "actions.mouse.ref.db"
 
+
+#' GO reference database for mouse
+#'
+#' @description
+#' A dataset collects mouse genes and their GO annotations. It is extracted from
+#' GO annotations of mixed species, and has 367376 rows in total.
+#'
+#' @source <ftp://ftp.ncbi.nih.gov/gene/>, and file path is /DATA/gene2go.gz.
+#'
+"go.mouse.ref.db"
 
