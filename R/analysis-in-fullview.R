@@ -51,11 +51,11 @@ Inside.AnalyzeClustersInteracts <- function(
   restricted.gene.pairs = NULL,
   ind.colname.end.dual = 4
 ) {
-  # check if the column named "cluster" exists, so as "gene" and "exprs"
-  if (!("cluster" %in% colnames(markers.remapped.all) &&
-    "gene" %in% colnames(markers.remapped.all) &&
-    "exprs" %in% colnames(markers.remapped.all) )) {
-    stop("column named either 'cluster' or 'gene' or 'exprs' doesn't exist.")
+  # check if the column named "cluster" exists, so as "gene" and "avg_logFC"
+  tmp.precheck.cols <- c("cluster", "gene", "avg_logFC")
+  tmp.ind.valid.cols <- which(tmp.precheck.cols %in% colnames(markers.remapped.all))
+  if (length(tmp.ind.valid.cols) != length(tmp.precheck.cols)) {
+    stop("columns: ", paste0(tmp.precheck.cols[-tmp.ind.valid.cols], collapse = ", "), " are NOT AVAILABLE.")
   }
   # find all cluster, and factor() it
   fac.clusters <- levels(as.factor(markers.remapped.all[, "cluster"]))
@@ -144,10 +144,10 @@ Inside.AnalyzeClustersInteracts <- function(
         pairs.sp.ikab <- pairs.sp.ikab[inds.ikab.pmatch, ]
       }
       # assign Exprs,LogFC to each pair
-      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "exprs")], by = c("inter.GeneName.A" = "gene"))
-      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.A"
-      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "exprs")], by = c("inter.GeneName.B" = "gene"))
-      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.B"
+      #pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "exprs")], by = c("inter.GeneName.A" = "gene"))
+      #colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.A"
+      #pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "exprs")], by = c("inter.GeneName.B" = "gene"))
+      #colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.B"
       pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "avg_logFC")], by = c("inter.GeneName.A" = "gene"))
       colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.LogFC.A"
       pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "avg_logFC")], by = c("inter.GeneName.B" = "gene"))
@@ -410,7 +410,7 @@ AnalyzeClustersInteracts <- function(
   user.type.database = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
-  sub.sel.exprs.changes = character(),
+  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
   sub.sel.Y.Location = character(),
@@ -496,6 +496,20 @@ AnalyzeClustersInteracts <- function(
       }
     }
   }
+  # before running, print the selection used
+  cat(paste0("\n---Strategy Used---", 
+    "\nexprs.change: ", paste0(user.settings$exprs.logfc, collapse = ", "), 
+    "\nLocation in X: ", paste0(user.settings$sub.sel.X.Location, collapse = ", "),   
+    "\nLocation score in X: ", paste0(user.settings$sub.sel.X.Location.score.limit),  
+    "\nLocation in Y: ", paste0(user.settings$sub.sel.Y.Location, collapse = ", "), 
+    "\nLocation score in Y: ", paste0(user.settings$sub.sel.Y.Location.score.limit), 
+    "\nType in X: ", paste0(user.settings$sub.sel.X.Type, collapse = ", "), 
+    "\nType in Y: ", paste0(user.settings$sub.sel.Y.Type, collapse = ", "), 
+    "\nUse user database: ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
+    "\nUse some genes: ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
+    "\nUse some gene pairs: ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
+    "\n"
+  ))
   ### then run the analysis
   res <- Inside.AnalyzeClustersInteracts(fgenes.remapped.all, pairs.ref, 
             anno.location.ref, anno.type.ref, user.settings, 
