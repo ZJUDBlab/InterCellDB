@@ -9,15 +9,19 @@ AnalyzeClustersInteracts(
   pairs.ref,
   anno.location.ref,
   anno.type.ref,
+  user.type.database = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
-  sub.sel.exprs.changes = character(),
+  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
   sub.sel.Y.Location = character(),
   sub.sel.Y.Location.score.limit = c("the most confident"),
   sub.sel.X.Type = character(),
   sub.sel.Y.Type = character(),
+  sub.sel.user.type.colname = NULL,
+  sub.sel.X.user.type = NULL,
+  sub.sel.Y.user.type = NULL,
   ind.colname.end.dual = 4
 )
 }
@@ -43,6 +47,9 @@ AnalyzeClustersInteracts(
   \item For mouse: \code{anno.type.mouse.ref.db}
 }}
 
+\item{user.type.database}{Data.frame. It specifies one special data.frame that contains user-defined informations.
+For generating such database, see [TODO] for help.}
+
 \item{restricted.some.genes}{Character. Analysis will be restricted in interaction pairs that contain
 at least one genes given in this parameter.}
 
@@ -63,6 +70,13 @@ the one in \code{integer()} will be treated as score limit range. See details fo
 \item{sub.sel.X.Type}{Character. Its value depends on the database used, see details for help.}
 
 \item{sub.sel.Y.Type}{Like \code{sub.sel.X.Type}.}
+
+\item{sub.sel.user.type.colname}{Character. It gives the column name that will be used for user-defined purposes.}
+
+\item{sub.sel.X.user.type}{Its mode depends on what datatype user has defined. The function will accept anything given in this parameter
+without any additional check.}
+
+\item{sub.sel.Y.user.type}{Like \code{sub.sel.X.user.type}.}
 
 \item{ind.colname.end.dual}{Integer. Use default value provided only when the pairs.ref database is modified by users.}
 }
@@ -121,6 +135,8 @@ This function gives as much as possible freedom for users to choose to analyze a
   \item \code{sub.sel.X.Type} & \code{sub.sel.Y.Type}: More specific type definition of genes, i.e. Cytokine, G-protein Coupled Receptor, etc.
 
         In mouse, use database \code{anno.type.mouse.ref.db}, and use the code \code{levels(factor(anno.type.mouse.ref.db$Keyword.Name))}.
+  \item \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} + \code{sub.sel.user.type.colname}: Those give a more flexible way for subset selection.
+        It uses the database given in another parameter \code{user.type.database}. [TODO] further description.
   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 }

@@ -9,8 +9,14 @@ GetResult.SummaryOnepairClusters(
   show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
   show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B",
     "A---B"),
-  plot.axis.x.name = NULL,
-  plot.axis.y.name = NULL
+  scale.fill.discrete = scale_fill_brewer(palette = "Set3"),
+  legend.key.size = unit(6, "mm"),
+  legend.title = element_text(size = 12),
+  legend.text = element_text(size = 8),
+  legend.box.margin = margin(0, 0, 0, 6),
+  caption.label.size = 12,
+  caption.label.y = 1,
+  caption.label.vjust = 1
 )
 }
 \arguments{

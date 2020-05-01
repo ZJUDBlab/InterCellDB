@@ -4,7 +4,11 @@
 \alias{DataPrep.RemapClustersMarkers}
 \title{Remap gene symbols to their authorized genenames}
 \usage{
-DataPrep.RemapClustersMarkers(markers.all.from.Seurat, genes.ref.db)
+DataPrep.RemapClustersMarkers(
+  markers.all.from.Seurat,
+  genes.ref.db,
+  warning.given = "markers"
+)
 }
 \arguments{
 \item{markers.all.from.Seurat}{Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.}
