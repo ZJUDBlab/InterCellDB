@@ -153,7 +153,7 @@ Inside.AnalyzeClustersInteracts <- function(
       pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "avg_logFC")], by = c("inter.GeneName.B" = "gene"))
       colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.LogFC.B"
       # rearrange the columns. Make dual-matched columns being in the front, and single-matched columns being in the back.
-      pairs.sp.ikab <- pairs.sp.ikab[, c(1:ind.colname.end.dual, (ncol(pairs.sp.ikab)-3):(ncol(pairs.sp.ikab)), (ind.colname.end.dual+1):(ncol(pairs.sp.ikab)-4))]
+      pairs.sp.ikab <- pairs.sp.ikab[, c(1:ind.colname.end.dual, (ncol(pairs.sp.ikab)-1):(ncol(pairs.sp.ikab)), (ind.colname.end.dual+1):(ncol(pairs.sp.ikab)-2))]
       ## do subgroup based on @param subgroup.options
       #1 - exprs change (based on logFC)
       pairs.subg.logfc <- list(xup.yup = data.frame(), xup.ydn = data.frame(), xdn.yup = data.frame(), xdn.ydn = data.frame())
