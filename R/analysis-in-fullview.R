@@ -243,7 +243,7 @@ Inside.AnalyzeClustersInteracts <- function(
       }
       ## after doing subgroup
       pairs.subg.result <- pairs.v4.aft.user.type
-      # re-slim with Location, Type
+      ## re-slim with Location
       func.location.score.inside <- function(data.loc, option) {
         ret.val <- data.loc
         if (is.character(option)) {  # use pre-defined strategies
@@ -263,7 +263,9 @@ Inside.AnalyzeClustersInteracts <- function(
           if (is.numeric(option)) {
             option <- as.integer(option)  # coerce to integer score
             ret.val <- data.loc[which(data.loc[, "score"] %in% option), ]
-          }  # else do nothing for non-numeric inputs
+          } else {
+            warning("Score limit get neither NUMERIC nor PRE-DEFINED options, and will not do anything.")
+          }
         }
         ret.val
       }
@@ -272,6 +274,9 @@ Inside.AnalyzeClustersInteracts <- function(
       this.A.locations <- func.location.score.inside(this.A.locations, subgroup.options$X.Location.score.limit)
       this.B.locations <- this.B.locations[which(this.B.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.B"]), ]
       this.B.locations <- func.location.score.inside(this.B.locations, subgroup.options$Y.Location.score.limit)
+      # re-slim rescue here
+      pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.A"] %in% this.A.locations[, "GeneID"]), ]
+      pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.B"] %in% this.B.locations[, "GeneID"]), ]
       # - Type
       this.A.types <- this.A.types[which(this.A.types[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.A"]), ]
       this.B.types <- this.B.types[which(this.B.types[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.B"]), ]
@@ -355,6 +360,8 @@ Inside.AnalyzeClustersInteracts <- function(
 #'         In \code{integer()}, this gives the range of score. The full range of score is 1~5, and other integers out of this range will not be recognized, 
 #'         \bold{e.g.} \code{sub.sel.X.Location.score.limit = c(4,5)} is fine, and \code{sub.sel.X.Location.score.limit = c(4,5,6)} has the same meaning as the former 
 #'         one when 6 is out of range and will not be used.
+#'         \bold{TO NOTE}: BOTH strategies will have some effect on final runout data, e.g if use \code{.score.limit = c(5)}, and get gene A with Plasma Membrane in score 4, 
+#'         then gene A will not be seen as it can located in Plasma Membrane.  
 #'   \item \code{sub.sel.X.Type} & \code{sub.sel.Y.Type}: More specific type definition of genes, i.e. Cytokine, G-protein Coupled Receptor, etc.
 #          To fetch available values, the method is like the above one but uses the database for types, \bold{e.g.} 
 #'
@@ -499,12 +506,12 @@ AnalyzeClustersInteracts <- function(
   # before running, print the selection used
   cat(paste0("\n---Strategy Used---", 
     "\nexprs.change: ", paste0(user.settings$exprs.logfc, collapse = ", "), 
-    "\nLocation in X: ", paste0(user.settings$X.Location, collapse = ", "),   
-    "\nLocation score in X: ", paste0(user.settings$X.Location.score.limit),  
-    "\nLocation in Y: ", paste0(user.settings$Y.Location, collapse = ", "), 
-    "\nLocation score in Y: ", paste0(user.settings$Y.Location.score.limit), 
-    "\nType in X: ", paste0(user.settings$X.Type, collapse = ", "), 
-    "\nType in Y: ", paste0(user.settings$Y.Type, collapse = ", "), 
+    "\nLocation in X: ", ifelse(is.null(user.settings$X.Location), "-", paste0(user.settings$X.Location, collapse = ", ")),  
+    "\nLocation score in X: ", ifelse(is.null(user.settings$X.Location.score.limit), "-", paste0(user.settings$X.Location.score.limit, collapse = ", ")), 
+    "\nLocation in Y: ", ifelse(is.null(user.settings$Y.Location), "-", paste0(user.settings$Y.Location, collapse = ", ")), 
+    "\nLocation score in Y: ", ifelse(is.null(user.settings$Y.Location.score.limit), "-", paste0(user.settings$Y.Location.score.limit, collapse = ", ")), 
+    "\nType in X: ", ifelse(is.null(user.settings$X.Type), "-", paste0(user.settings$X.Type, collapse = ", ")), 
+    "\nType in Y: ", ifelse(is.null(user.settings$Y.Type), "-", paste0(user.settings$Y.Type, collapse = ", ")), 
     "\nUse user database: ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
     "\nUse some genes: ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
     "\nUse some gene pairs: ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
