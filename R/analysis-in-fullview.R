@@ -714,6 +714,8 @@ GetResult.SummaryClustersInteracts <- function(
   plot.res <- ggplot(pairs.plot.db, aes(x, y))
   plot.res <- plot.res + labs(x = plot.axis.x.name, y = plot.axis.y.name)
   plot.res <- plot.res + geom_point(aes(size = cnt.limit, colour = power.limit)) + 
+                         scale_x_discrete(limits = fac.x.clusters, breaks = fac.x.clusters) + 
+                         scale_y_discrete(limits = fac.y.clusters, breaks = fac.y.clusters) + 
                          scale_size(name = "Count") + 
                          scale_colour_gradientn(name = "Power", colours = nodes.colour.seq, values = nodes.colour.value.seq)
   # add labels for those out of range ( > cnt.max.limit or < cnt.min.limit)
