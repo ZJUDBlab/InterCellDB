@@ -119,18 +119,13 @@ Inside.AnalyzeClustersInteracts <- function(
         restricted.some.genes <- restricted.gene.pairs  # workflow merging, use with care
       }
       if (!is.null(restricted.some.genes)) {  # using retricted genes
-        restrict.check.a <- sapply(pairs.sp.ikab[, "inter.GeneName.A"], restrict.genes = restricted.some.genes, function(x, restrict.genes) {
-          logic.check <- FALSE
-          if (x %in% restricted.some.genes) logic.check <- TRUE
-          logic.check
-        })
-        restrict.check.b <- sapply(pairs.sp.ikab[, "inter.GeneName.B"], restrict.genes = restricted.some.genes, function(x, restrict.genes) {
-          logic.check <- FALSE
-          if (x %in% restricted.some.genes) logic.check <- TRUE
-          logic.check
-        })
-        restrict.check.all <- restrict.check.a | restrict.check.b
-        pairs.sp.ikab <- pairs.sp.ikab[which(restrict.check.all == TRUE), ]
+        df.ref.somegenes <- data.frame(part.genes = restricted.some.genes, indicator.A = 1, indicator.B = 1, stringsAsFactors = FALSE)
+        pairs.sp.ikab <- left_join(pairs.sp.ikab, df.ref.somegenes[, c("part.genes", "indicator.A")], by = c("inter.GeneName.A" = "part.genes"))
+        pairs.sp.ikab <- pairs.sp.ikab[which(!is.na(pairs.sp.ikab[, "indicator.A"])), ]
+        pairs.sp.ikab <- left_join(pairs.sp.ikab, df.ref.somegenes[, c("part.genes", "indicator.B")], by = c("inter.GeneName.B" = "part.genes"))
+        pairs.sp.ikab <- pairs.sp.ikab[which(!is.na(pairs.sp.ikab[, "indicator.B"])), ]
+        inds.rm.some.genes <- which(colnames(pairs.sp.ikab) %in% c("indicator.A", "indicator.B"))
+        pairs.sp.ikab <- pairs.sp.ikab[, -inds.rm.some.genes]
       }
       if (!is.null(restricted.gene.pairs)) {  # using restricted gene pairs, finish rest process
         tmp.rgp.a <- restricted.gene.pairs[seq(1, length(restricted.gene.pairs) - 1, 2)]
@@ -181,7 +176,7 @@ Inside.AnalyzeClustersInteracts <- function(
       if (is.null(subgroup.options[["X.Location"]])) {
         this.A.locations <- tmp.A.locations
       } else {
-        this.A.locations <- tmp.A.locations[which(tmp.A.locations[, "GO.Term.target"] %in% subgroup.options$X.Location), ]
+        this.A.locations <- tmp.A.locations[which(tmp.A.locations[, "GO.Term.target"] %in% subgroup.options[["X.Location"]]), ]
       }
       # 2.1 slim
       pairs.v2.pre.A <- pairs.v1.after.logfc[which(pairs.v1.after.logfc[, "inter.GeneID.A"] %in% this.A.locations[, "GeneID"]), ]
@@ -191,7 +186,7 @@ Inside.AnalyzeClustersInteracts <- function(
       if (is.null(subgroup.options[["Y.Location"]])) {
         this.B.locations <- tmp.B.locations
       } else {
-        this.B.locations <- tmp.B.locations[which(tmp.B.locations[, "GO.Term.target"] %in% subgroup.options$Y.Location), ]
+        this.B.locations <- tmp.B.locations[which(tmp.B.locations[, "GO.Term.target"] %in% subgroup.options[["Y.Location"]]), ]
       }
       # 2.2 slim
       pairs.v2.aft.loc <- pairs.v2.pre.A[which(pairs.v2.pre.A[, "inter.GeneID.B"] %in% this.B.locations[, "GeneID"]), ]
@@ -506,12 +501,12 @@ AnalyzeClustersInteracts <- function(
   # before running, print the selection used
   cat(paste0("\n---Strategy Used---", 
     "\nexprs.change: ", paste0(user.settings$exprs.logfc, collapse = ", "), 
-    "\nLocation in X: ", ifelse(is.null(user.settings$X.Location), "-", paste0(user.settings$X.Location, collapse = ", ")),  
-    "\nLocation score in X: ", ifelse(is.null(user.settings$X.Location.score.limit), "-", paste0(user.settings$X.Location.score.limit, collapse = ", ")), 
-    "\nLocation in Y: ", ifelse(is.null(user.settings$Y.Location), "-", paste0(user.settings$Y.Location, collapse = ", ")), 
-    "\nLocation score in Y: ", ifelse(is.null(user.settings$Y.Location.score.limit), "-", paste0(user.settings$Y.Location.score.limit, collapse = ", ")), 
-    "\nType in X: ", ifelse(is.null(user.settings$X.Type), "-", paste0(user.settings$X.Type, collapse = ", ")), 
-    "\nType in Y: ", ifelse(is.null(user.settings$Y.Type), "-", paste0(user.settings$Y.Type, collapse = ", ")), 
+    "\nLocation in X: ", ifelse(is.null(user.settings[["X.Location"]]), "-", paste0(user.settings[["X.Location"]], collapse = ", ")),  
+    "\nLocation score in X: ", ifelse(is.null(user.settings[["X.Location.score.limit"]]), "-", paste0(user.settings[["X.Location.score.limit"]], collapse = ", ")), 
+    "\nLocation in Y: ", ifelse(is.null(user.settings[["Y.Location"]]), "-", paste0(user.settings[["Y.Location"]], collapse = ", ")), 
+    "\nLocation score in Y: ", ifelse(is.null(user.settings[["Y.Location.score.limit"]]), "-", paste0(user.settings[["Y.Location.score.limit"]], collapse = ", ")), 
+    "\nType in X: ", ifelse(is.null(user.settings[["X.Type"]]), "-", paste0(user.settings[["X.Type"]], collapse = ", ")), 
+    "\nType in Y: ", ifelse(is.null(user.settings[["Y.Type"]]), "-", paste0(user.settings[["Y.Type"]], collapse = ", ")), 
     "\nUse user database: ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
     "\nUse some genes: ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
     "\nUse some gene pairs: ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
