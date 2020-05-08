@@ -400,6 +400,7 @@ Inside.TransCoords.Enlarge.Rotate <- function(
 #'
 GetResult.PlotOnepairClusters.CellPlot <- function(
   VEinfos,
+  area.extend.times = 1,  # [TODO]
   hide.locations.A = NULL,
   hide.types.A = NULL,
   hide.locations.B = NULL,
@@ -534,16 +535,16 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   this.base.graph <- ggplot()
   # shared compts
   # comp A in -x axis
-  this.plot.A.cell <- data.frame(x = c(-175, -175, -55, -55), y = c(-45, 45, 45, -45))
-  this.plot.A.pmem <- data.frame(x = c(-55, -55, -45, -45), y = c(-45, 45, 45, -45))
-  this.plot.A.exm <- data.frame(x = c(-45, -45, -15, -15), y = c(-45, 45, 45, -45))
-  this.plot.A.other <- data.frame(x = c(-195, -195, -175, -175), y = c(-45, 45, 45, -45))
+  this.plot.A.cell <- data.frame(x = c(-175, -175, -55, -55) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
+  this.plot.A.pmem <- data.frame(x = c(-55, -55, -45, -45) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
+  this.plot.A.exm <- data.frame(x = c(-45, -45, -15, -15) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
+  this.plot.A.other <- data.frame(x = c(-195, -195, -175, -175) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
 
   # comp B in +x axis
-  this.plot.B.cell <- data.frame(x = c(55, 55, 175, 175), y = c(-45, 45, 45, -45))
-  this.plot.B.pmem <- data.frame(x = c(45, 45, 55, 55), y = c(-45, 45, 45, -45))
-  this.plot.B.exm <- data.frame(x = c(15, 15, 45, 45), y = c(-45, 45, 45, -45))
-  this.plot.B.other <- data.frame(x = c(175, 175, 195, 195), y = c(-45, 45, 45, -45))
+  this.plot.B.cell <- data.frame(x = c(55, 55, 175, 175) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
+  this.plot.B.pmem <- data.frame(x = c(45, 45, 55, 55) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
+  this.plot.B.exm <- data.frame(x = c(15, 15, 45, 45) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
+  this.plot.B.other <- data.frame(x = c(175, 175, 195, 195) * area.extend.times, y = c(-45, 45, 45, -45) * area.extend.times)
 
   ## plot the base
   this.graph.raw.base <- this.base.graph +
@@ -555,12 +556,23 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
       geom_polygon(data = this.plot.B.cell, aes(x, y)) +
       geom_polygon(data = this.plot.B.pmem, aes(x, y), colour = "orange") +
       geom_polygon(data = this.plot.B.exm, aes(x, y))
+  # label the cluster
+  this.label.clusters <- data.frame(
+    x.lc = c(-105, 105) * area.extend.times,
+    y.lc = c(52, 52) * area.extend.times,
+    r.label.c = c(act.A.clustername, act.B.clustername),
+    r.label.nudge.y.c = c(0, 0) * area.extend.times)
+  this.graph.raw.base <- this.graph.raw.base + 
+      geom_text(data = this.label.clusters, 
+        mapping = aes(x = x.lc, y = y.lc, label = r.label.c),
+        colour = "black", size = 4, 
+        vjust = -0.9, nudge_y = this.label.clusters$r.label.nudge.y.c)
   # label every big region
   this.label.base.items <- data.frame(
-    x.l = c(-115, 115, -50, 50, -30, 30, -185, 185),
-    y.l = rep(c(45) ,times = 8),
+    x.l = c(-115, 115, -50, 50, -30, 30, -185, 185) * area.extend.times,
+    y.l = rep(c(45), times = 8) * area.extend.times,
     r.label = rep(c("Cytoplasm", "Plasma Membrane", "Extracellular", "Other"), each = 2),
-    r.label.nudge.y = rep(c(0, 2, 0, 0), each = 2))
+    r.label.nudge.y = rep(c(0, 2, 0, 0), each = 2) * area.extend.times)
   this.graph.raw.base <- this.graph.raw.base + 
       geom_text(data = this.label.base.items, 
         mapping = aes(x = x.l, y = y.l, label = r.label),
@@ -574,42 +586,42 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   # NULL
   ## plot Plasma Membrane [TODO] other way
   # A
-  this.pmem.A.ctp.xy <- c(-50, 0)
-  this.pmem.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.pmem, ], this.pmem.A.ctp.xy, 5, coords.xy.colnames = c("gx", "gy"))
+  this.pmem.A.ctp.xy <- c(-50, 0) * area.extend.times
+  this.pmem.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.pmem, ], this.pmem.A.ctp.xy, 5 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
   this.pmem.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.pmem.A.vx.ext[, c("gx", "gy")], 
     enlarge.xy.times = c(1, 9), rotate.degree = 0, rotate.xy.ref = this.pmem.A.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.pmem.A.vx.ext)
   # B
-  this.pmem.B.ctp.xy <- c(50, 0)
-  this.pmem.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.pmem, ], this.pmem.B.ctp.xy, 5, coords.xy.colnames = c("gx", "gy"))
+  this.pmem.B.ctp.xy <- c(50, 0) * area.extend.times
+  this.pmem.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.pmem, ], this.pmem.B.ctp.xy, 5 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
   this.pmem.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.pmem.B.vx.ext[, c("gx", "gy")], 
     enlarge.xy.times = c(1, 9), rotate.degree = 0, rotate.xy.ref = this.pmem.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.pmem.B.vx.ext)
 
   ## plot Extracellular Region
   # A
-  this.exm.A.ctp.xy <- c(-30, 0)
-  this.exm.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.exm, ], this.exm.A.ctp.xy, 10, coords.xy.colnames = c("gx", "gy"))
+  this.exm.A.ctp.xy <- c(-30, 0) * area.extend.times
+  this.exm.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.exm, ], this.exm.A.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
   this.exm.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.exm.A.vx.ext[, c("gx", "gy")], 
     enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.exm.A.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.exm.A.vx.ext)
   # B
-  this.exm.B.ctp.xy <- c(30, 0)
-  this.exm.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.exm, ], this.exm.B.ctp.xy, 10, coords.xy.colnames = c("gx", "gy"))
+  this.exm.B.ctp.xy <- c(30, 0) * area.extend.times
+  this.exm.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.exm, ], this.exm.B.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
   this.exm.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.exm.B.vx.ext[, c("gx", "gy")], 
     enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.exm.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.exm.B.vx.ext)
 
   ## plot Other
   # A
-  this.other.A.ctp.xy <- c(-185, 0)
-  this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], this.other.A.ctp.xy, 10, coords.xy.colnames = c("gx", "gy"))
+  this.other.A.ctp.xy <- c(-185, 0) * area.extend.times
+  this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], this.other.A.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
   this.other.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.A.vx.ext[, c("gx", "gy")], 
     enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.other.A.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.A.vx.ext)
   # B
-  this.other.B.ctp.xy <- c(185, 0)
-  this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], this.other.B.ctp.xy, 10, coords.xy.colnames = c("gx", "gy"))
+  this.other.B.ctp.xy <- c(185, 0) * area.extend.times
+  this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], this.other.B.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
   this.other.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.B.vx.ext[, c("gx", "gy")], 
     enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.other.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.B.vx.ext)
@@ -628,8 +640,8 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   }
 
   # A common
-  this.common.A.ctp.xy <- data.frame(tpx = rep(c(-70, -100, -130,  -160), each = 3),
-                     tpy = rep(c(30, 0, -30), times = 4))
+  this.common.A.ctp.xy <- data.frame(tpx = rep(c(-70, -100, -130,  -160), each = 3) * area.extend.times,
+                     tpy = rep(c(30, 0, -30), times = 4) * area.extend.times)
   # tmp-ly shortcuts  [TODO]
   tmp.plc <- pred.loc.common.A
   length(tmp.plc) <- 12
@@ -644,8 +656,8 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   this.vx.ext.infos <- rbind(this.vx.ext.infos, bind_rows(this.common.A.vx.inlist))
 
   # B common
-  this.common.B.ctp.xy <- data.frame(tpx = rep(c(70, 100, 130, 160), each = 3),
-                     tpy = rep(c(30, 0, -30), times = 4))
+  this.common.B.ctp.xy <- data.frame(tpx = rep(c(70, 100, 130, 160), each = 3) * area.extend.times,
+                     tpy = rep(c(30, 0, -30), times = 4) * area.extend.times)
   # tmp-ly shortcuts  [TODO]
   tmp.plc <- pred.loc.common.B
   length(tmp.plc) <- 12
@@ -666,12 +678,12 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
                  this.common.B.ctp.xy[which(!is.na(this.common.B.ctp.xy$Map.Items)), ])
   if (nrow(tmp.common.ctp.xy) > 0) {
     tmp.common.polygons <- list()
-    const.extlen <- 15
+    const.extlen <- 15 * area.extend.times
     for (i in 1:nrow(tmp.common.ctp.xy)) {
       this.cx <- tmp.common.ctp.xy[i, "tpx"]
       this.cy <- tmp.common.ctp.xy[i, "tpy"]
-      this.ploygon.xy <- data.frame(x = rep(c(this.cx - 14.5, this.cx + 14.5), each = 2), 
-        y = c(this.cy - 14.5, this.cy + 14.5, this.cy + 14.5, this.cy - 14.5))
+      this.ploygon.xy <- data.frame(x = rep(c(this.cx - 14.5 * area.extend.times, this.cx + 14.5 * area.extend.times), each = 2), 
+        y = c(this.cy - 14.5 * area.extend.times, this.cy + 14.5 * area.extend.times, this.cy + 14.5 * area.extend.times, this.cy - 14.5 * area.extend.times))
       tmp.common.polygons <- append(tmp.common.polygons, 
         geom_polygon(data = this.ploygon.xy, aes(x, y),
           colour = "red", linetype = "dashed"
@@ -679,7 +691,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
     }
     this.graph.add.ps <- this.graph.add.ps + tmp.common.polygons
 
-    tmp.common.ctp.xy[, "label.pos.tpy"] <- tmp.common.ctp.xy[, "tpy"] + 13.5
+    tmp.common.ctp.xy[, "label.pos.tpy"] <- tmp.common.ctp.xy[, "tpy"] + 13.5 * area.extend.times
     # use short names
 
     tmp.common.ctp.xy[which(tmp.common.ctp.xy[, "Map.Items"] == "Endoplasmic Reticulum"), "Map.Items"] <- "ER"
