@@ -472,6 +472,7 @@ Inside.PlotShowGrouping <- function(
 #'
 #'
 #' @import ggplot2
+#' @importFrom cowplot draw_label get_legend ggdraw plot_grid
 #'
 #' @export
 #'
