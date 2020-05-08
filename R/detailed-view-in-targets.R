@@ -548,11 +548,11 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
 
   ## plot the base
   this.graph.raw.base <- this.base.graph +
-      geom_polygon(data = this.plot.A.other, aes(x, y)) +
+      geom_polygon(data = this.plot.A.other, aes(x, y), colour = "grey") +
       geom_polygon(data = this.plot.A.cell, aes(x, y)) +
       geom_polygon(data = this.plot.A.pmem, aes(x, y), colour = "orange") +
       geom_polygon(data = this.plot.A.exm, aes(x, y)) +
-      geom_polygon(data = this.plot.B.other, aes(x, y)) +
+      geom_polygon(data = this.plot.B.other, aes(x, y), colour = "grey") +
       geom_polygon(data = this.plot.B.cell, aes(x, y)) +
       geom_polygon(data = this.plot.B.pmem, aes(x, y), colour = "orange") +
       geom_polygon(data = this.plot.B.exm, aes(x, y))
