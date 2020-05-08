@@ -358,7 +358,9 @@ Inside.PlotShowGrouping <- function(
   legend.text,
   legend.box.margin,
   caption.label.size,
+  caption.label.x,
   caption.label.y,
+  caption.label.hjust,
   caption.label.vjust,
   ...
 ) {
@@ -429,7 +431,9 @@ Inside.PlotShowGrouping <- function(
   caption.label <- paste0("---symbols---\nA,B: genes, C,D: clusters.\nC: ", 
     onepair.dgsa$clusters.name[["cluster.C"]], ", D: ", onepair.dgsa$clusters.name[["cluster.D"]])
   caption.plot <- ggdraw() + 
-    draw_label(caption.label, size = caption.label.size, y = caption.label.y, vjust = caption.label.vjust) + 
+    draw_label(caption.label, size = caption.label.size, 
+      x = caption.label.x, hjust = caption.label.hjust,
+      y = caption.label.y, vjust = caption.label.vjust) + 
     theme(plot.margin = margin(0, 0, 0, 0))
   final.plot <- plot_grid(res.plot, caption.plot, ncol = 1, rel_heights = c(1, 0.2))      
   #end# return
@@ -486,7 +490,9 @@ GetResult.SummaryOnepairClusters <- function(
   legend.text = element_text(size = 8),
   legend.box.margin = margin(0, 0, 0, 6),
   caption.label.size = 12,
+  caption.label.x = 0.5,
   caption.label.y = 1,
+  caption.label.hjust = 0.5,
   caption.label.vjust = 1
 ) {
   # process
@@ -521,7 +527,9 @@ GetResult.SummaryOnepairClusters <- function(
     legend.text = legend.text,
     legend.box.margin = legend.box.margin,
     caption.label.size = caption.label.size,
+    caption.label.x = caption.label.x,
     caption.label.y = caption.label.y,
+    caption.label.hjust = caption.label.hjust,
     caption.label.vjust = caption.label.vjust
     )
   ## result table
