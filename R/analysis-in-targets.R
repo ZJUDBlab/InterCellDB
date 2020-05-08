@@ -498,7 +498,7 @@ GetResult.SummaryOnepairClusters <- function(
   # process
   onepair.dgsa <- Inside.CollectHierachyOnepairClusters(onepair.gmoc)
   # pre-result check
-  notin.exprs.c <- show.exprs.change[-which(show.exprs.change %in% c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"))]
+  notin.exprs.c <- setdiff(show.exprs.change, c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"))
   if (length(notin.exprs.c) > 0) {
     warning("Given @param show.exprs.change has undefined values: ", 
       paste0(notin.exprs.c, collapse = ", "), "\n and will be ignored!")
@@ -508,7 +508,7 @@ GetResult.SummaryOnepairClusters <- function(
     stop("Select available data less than 1!")
   }
   # pre-check 2
-  notin.act.effect <- show.action.effects[-which(show.action.effects %in% c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"))]
+  notin.act.effect <- setdiff(show.action.effects, c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"))
   if (length(notin.act.effect) > 0) {
     warning("Given @param show.action.effects has undefined values: ",
       paste0(notin.act.effect, collapse = ", "), "\n and will be ignored!")
