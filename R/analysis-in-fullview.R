@@ -172,6 +172,7 @@ Inside.AnalyzeClustersInteracts <- function(
       ## 2 - Location
       # Location - A
       tmp.inds.A.locations <- which(anno.location.ref$GeneID %in% levels(factor(pairs.v1.after.logfc[, "inter.GeneID.A"])))  # fetch location
+      # to note, this line above, give the implicit restriction upon genes. For those genes which are not included in anno.location.ref will not be taken into account
       tmp.A.locations <- anno.location.ref[tmp.inds.A.locations, c("GeneID", "Gene.name", "GO.Term.target", "Source", "Evidence", "score")]
       if (is.null(subgroup.options[["X.Location"]])) {
         this.A.locations <- tmp.A.locations
@@ -193,6 +194,7 @@ Inside.AnalyzeClustersInteracts <- function(
       ## 3 - Type
       # Type - A
       tmp.inds.A.types <- which(anno.type.ref$GeneID %in% levels(factor(pairs.v2.aft.loc[, "inter.GeneID.A"])))
+      # to note, this line above, give the implicit restriction upon genes. For those genes which are not included in anno.type.ref will not be taken into account
       tmp.A.types <- anno.type.ref[tmp.inds.A.types, c("GeneID", "Gene.name", "Keyword.Name")]
       if (is.null(subgroup.options[["X.Type"]])) {
         this.A.types <- tmp.A.types
@@ -213,26 +215,27 @@ Inside.AnalyzeClustersInteracts <- function(
       pairs.v3.aft.type <- pairs.v3.spre.A[which(pairs.v3.spre.A[, "inter.GeneID.B"] %in% this.B.types[, "GeneID"]), ]
       ## 4 - user.type
       if (!is.null(user.type.database) && !is.null(sub.sel.user.type.colname)) {
+        ## as user.type.database usually doesn't cover all genes, so here use different strategy
         # user.type - A
-        tmp.inds.A.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v3.aft.type[, "inter.GeneID.A"])))
-        tmp.A.user.types <- user.type.database[tmp.inds.A.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
         if (is.null(subgroup.options[["X.user.type"]])) {
-          this.A.user.types <- tmp.A.user.types
+          pairs.v4.upre.A <- pairs.v3.aft.type
         } else {
+          # slim the dataset
+          tmp.inds.A.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v3.aft.type[, "inter.GeneID.A"])))
+          tmp.A.user.types <- user.type.database[tmp.inds.A.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
           this.A.user.types <- tmp.A.user.types[which(tmp.A.user.types[, sub.sel.user.type.colname] %in% subgroup.options$X.user.type), ]
+          pairs.v4.upre.A <- pairs.v3.aft.type[which(pairs.v3.aft.type[, "inter.GeneID.A"] %in% this.A.user.types[, "GeneID"]), ]
         }
-        # 4.1 slim
-        pairs.v4.upre.A <- pairs.v3.aft.type[which(pairs.v3.aft.type[, "inter.GeneID.A"] %in% this.A.user.types[, "GeneID"]), ]
         # user.type - B
-        tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v4.upre.A[, "inter.GeneID.B"])))
-        tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
         if (is.null(subgroup.options[["Y.user.type"]])) {
-          this.B.user.types <- tmp.B.user.types
+          pairs.v4.aft.user.type <- pairs.v4.upre.A
         } else {
+          # slim the dataset
+          tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v4.upre.A[, "inter.GeneID.B"])))
+          tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
           this.B.user.types <- tmp.B.user.types[which(tmp.B.user.types[, sub.sel.user.type.colname] %in% subgroup.options$Y.user.type), ]
+          pairs.v4.aft.user.type <- pairs.v4.upre.A[which(pairs.v4.upre.A[, "inter.GeneID.B"] %in% this.B.user.types[, "GeneID"]), ]  
         }
-        # 4.2 slim
-        pairs.v4.aft.user.type <- pairs.v4.upre.A[which(pairs.v4.upre.A[, "inter.GeneID.B"] %in% this.B.user.types[, "GeneID"]), ]
       } else {
         pairs.v4.aft.user.type <- pairs.v3.aft.type
       }
@@ -677,10 +680,10 @@ GetResult.SummaryClustersInteracts <- function(
   # cnt limit
   cnt.limit.part.data <- cnt.part.data
   if (!is.null(cnt.max.limit)) {
-    cnt.limit.part.data <- sapply(cnt.part.data, eval.max = cnt.max.limit, Limit.Max.inside)
+    cnt.limit.part.data <- sapply(cnt.limit.part.data, eval.max = cnt.max.limit, Limit.Max.inside)
   }
   if (!is.null(cnt.min.limit)) {
-    cnt.limit.part.data <- sapply(cnt.part.data, eval.min = cnt.min.limit, Limit.Min.inside)
+    cnt.limit.part.data <- sapply(cnt.limit.part.data, eval.min = cnt.min.limit, Limit.Min.inside)
   }
   # power
   power.xy.data <- interact.pairs.acted$strength.allpairs
@@ -688,10 +691,10 @@ GetResult.SummaryClustersInteracts <- function(
   # power limit
   power.limit.part.data <- power.part.data
   if (!is.null(power.max.limit)) {
-    power.limit.part.data <- sapply(power.part.data, eval.max = power.max.limit, Limit.Max.inside)
+    power.limit.part.data <- sapply(power.limit.part.data, eval.max = power.max.limit, Limit.Max.inside)
   }
   if (!is.null(power.min.limit)) {
-    power.limit.part.data <- sapply(power.part.data, eval.min = power.min.limit, Limit.Min.inside)    
+    power.limit.part.data <- sapply(power.limit.part.data, eval.min = power.min.limit, Limit.Min.inside)    
   }
   # plot data preparation
   pairs.plot.db <- data.frame(

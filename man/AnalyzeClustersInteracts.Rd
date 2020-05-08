@@ -132,6 +132,8 @@ This function gives as much as possible freedom for users to choose to analyze a
         In \code{integer()}, this gives the range of score. The full range of score is 1~5, and other integers out of this range will not be recognized, 
         \bold{e.g.} \code{sub.sel.X.Location.score.limit = c(4,5)} is fine, and \code{sub.sel.X.Location.score.limit = c(4,5,6)} has the same meaning as the former 
         one when 6 is out of range and will not be used.
+        \bold{TO NOTE}: BOTH strategies will have some effect on final runout data, e.g if use \code{.score.limit = c(5)}, and get gene A with Plasma Membrane in score 4, 
+        then gene A will not be seen as it can located in Plasma Membrane.  
   \item \code{sub.sel.X.Type} & \code{sub.sel.Y.Type}: More specific type definition of genes, i.e. Cytokine, G-protein Coupled Receptor, etc.
 
         In mouse, use database \code{anno.type.mouse.ref.db}, and use the code \code{levels(factor(anno.type.mouse.ref.db$Keyword.Name))}.
