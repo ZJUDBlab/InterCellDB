@@ -86,9 +86,9 @@ GenerateVEinfos <- function(
   #vertices.A.pack.df <- left_join(vertices.A.pack.df, anno.infos$type.A[, c("Gene.name", "Keyword.Name")], by = c("GeneName" = "Gene.name"))
   # !special rescue rule
   vertices.A.pack.df[which(is.na(vertices.A.pack.df[, "GO.Term.target"])), "GO.Term.target"] <- "Other"  # [rescue]
-  # A# logfc exprs
+  # A# logfc
   fgenes.part.A <- fgenes.remapped.all[which(fgenes.remapped.all$cluster == act.A.clustername), ]
-  vertices.A.pack.df <- left_join(vertices.A.pack.df, fgenes.part.A[, c("gene", "exprs", "avg_logFC")], by = c("GeneName" = "gene"))
+  vertices.A.pack.df <- left_join(vertices.A.pack.df, fgenes.part.A[, c("gene", "avg_logFC")], by = c("GeneName" = "gene"))
   # B# type -single
   vertices.B.apx.types <- anno.infos$type.B[, c("Gene.name", "Keyword.Name")]
   # B# loc
@@ -96,9 +96,9 @@ GenerateVEinfos <- function(
   #vertices.B.pack.df <- left_join(vertices.B.pack.df, anno.infos$type.B[, c("Gene.name", "Keyword.Name")], by = c("GeneName" = "Gene.name"))
   # !special rescue rule
   vertices.B.pack.df[which(is.na(vertices.B.pack.df[, "GO.Term.target"])), "GO.Term.target"] <- "Other"  # [rescue] 
-  # B# logfc exprs
+  # B# logfc
   fgenes.part.B <- fgenes.remapped.all[which(fgenes.remapped.all$cluster == act.B.clustername), ]
-  vertices.B.pack.df <- left_join(vertices.B.pack.df, fgenes.part.B[, c("gene", "exprs", "avg_logFC")], by = c("GeneName" = "gene"))
+  vertices.B.pack.df <- left_join(vertices.B.pack.df, fgenes.part.B[, c("gene", "avg_logFC")], by = c("GeneName" = "gene"))
   # !! here, special rules will be applied upon if act.A.clustername == act.B.clustername
   afterV.A.clustername <- act.A.clustername
   afterV.B.clustername <- act.B.clustername
@@ -110,9 +110,9 @@ GenerateVEinfos <- function(
   vertices.all.infos$UID <- 1:nrow(vertices.all.infos)
   rownames(vertices.all.infos) <- NULL
   # change colnames in vertices.all
-  tmp.cols.change <- match(c("GO.Term.target", "exprs", "avg_logFC"), colnames(vertices.all.infos))
-  colnames(vertices.all.infos)[tmp.cols.change] <- c("Location", "Exprs", "LogFC")
-  vertices.all.infos <- vertices.all.infos[, c("UID", "ClusterName", "GeneName", "Location", "Exprs", "LogFC")]  # rearrange the columns
+  tmp.cols.change <- match(c("GO.Term.target", "avg_logFC"), colnames(vertices.all.infos))
+  colnames(vertices.all.infos)[tmp.cols.change] <- c("Location", "LogFC")
+  vertices.all.infos <- vertices.all.infos[, c("UID", "ClusterName", "GeneName", "Location", "LogFC")]  # rearrange the columns
   # change colnames in apx.*
   colnames(vertices.A.apx.types) <- colnames(vertices.B.apx.types) <- c("GeneName", "Type")
   ## --- edges ---
@@ -914,9 +914,9 @@ PlotClusters.Circos <- function(
     tmp.interact <- this.all.interacts[[one.interact]]
     tmp.vertex.infos <- tmp.interact$vertices.infos
     tmp.vinfos.A <- tmp.vertex.infos[which(tmp.vertex.infos[, "ClusterName"] == tmp.rcluster.A), ]
-    this.genes.clusters.based[[tmp.rcluster.A]] <- rbind(this.genes.clusters.based[[tmp.rcluster.A]], tmp.vinfos.A[, c("GeneName", "Location", "Exprs", "LogFC")])
+    this.genes.clusters.based[[tmp.rcluster.A]] <- rbind(this.genes.clusters.based[[tmp.rcluster.A]], tmp.vinfos.A[, c("GeneName", "Location", "LogFC")])
     tmp.vinfos.B <- tmp.vertex.infos[which(tmp.vertex.infos[, "ClusterName"] == tmp.rcluster.B), ]
-    this.genes.clusters.based[[tmp.rcluster.B]] <- rbind(this.genes.clusters.based[[tmp.rcluster.B]], tmp.vinfos.B[, c("GeneName", "Location", "Exprs", "LogFC")])
+    this.genes.clusters.based[[tmp.rcluster.B]] <- rbind(this.genes.clusters.based[[tmp.rcluster.B]], tmp.vinfos.B[, c("GeneName", "Location", "LogFC")])
   }
   # doing (1) unique, (2) sorting, (3) give x-axis values
   for (i.r.cluster in this.related.clusters) {
@@ -980,7 +980,7 @@ PlotClusters.Circos <- function(
         facing = "clockwise", niceFacing = TRUE,
         cex = cluster.label.cex)
   })
-  # add exprs or logfc
+  # add or logfc
   kcolor.mval <- "#dcdcdc"
   if (min(this.genes.clusters.packed[, "LogFC"] > 0)) {
     circos.track(factors = circ.factors, x = this.genes.clusters.packed[, "x.val"], y = this.genes.clusters.packed[, "LogFC"],
@@ -1130,7 +1130,7 @@ PlotClusters.Circos <- function(
       tmp.edges[, c("from.ClusterName", "from.GeneName")] <- tmp.vertices[inds.tmp.from.match, c("ClusterName", "GeneName")]
       tmp.edges[, c("to.ClusterName", "to.GeneName")] <- tmp.vertices[inds.tmp.to.match, c("ClusterName", "GeneName")]
       tmp.edges <- tmp.edges[, c("from", "from.ClusterName", "from.GeneName", "to", "to.ClusterName", "to.GeneName", "mode", "action.effect")]
-      tmp.vertices <- tmp.vertices[, c("UID", "ClusterName", "GeneName", "Location", "Exprs", "LogFC")]
+      tmp.vertices <- tmp.vertices[, c("UID", "ClusterName", "GeneName", "Location", "LogFC")]
       tmp.list <- list(tmp.vertices, tmp.edges)
       names(tmp.list) <- c(paste0(tmp.interact.name, "-vertices"), paste0(tmp.interact.name, "-edges"))
       this.result.table.list <- c(this.result.table.list, tmp.list)
