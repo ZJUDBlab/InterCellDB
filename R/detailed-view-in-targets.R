@@ -731,7 +731,8 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   edges.infos[, c("to.gx", "to.gy")] <- this.vx.ext.infos[inds.e.to.match, c("gx", "gy")]
   #
   pred.mode <- kpred.mode
-  pred.action.effect <- kpred.action.effect
+  # use reverse order to plot positive & negative above the unspecified or undirected
+  pred.action.effect <- rev(kpred.action.effect)
   show.mode.val <- levels(factor(edges.infos$mode))
   show.action.effect.val <- levels(factor(edges.infos$action.effect))
 
