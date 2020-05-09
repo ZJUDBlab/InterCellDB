@@ -15,7 +15,9 @@ GetResult.SummaryOnepairClusters(
   legend.text = element_text(size = 8),
   legend.box.margin = margin(0, 0, 0, 6),
   caption.label.size = 12,
+  caption.label.x = 0.5,
   caption.label.y = 1,
+  caption.label.hjust = 0.5,
   caption.label.vjust = 1
 )
 }

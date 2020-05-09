@@ -18,6 +18,9 @@ DataPrep.RemapClustersMarkers(
 2. gene.synonyms.db        GeneID-GeneName-Synonym pairs extracted from (1)
 3. gene.dup.synonyms.db  Some genes may have same synonyms, and this can cause mistakes 
 when match target synonym back to its authorized genename.}
+
+\item{warning.given}{Character. It substitutes a small part of the warning sentences. In 
+most cases, you just leave it out.}
 }
 \description{
 Use species-specific reference database to remap genes to their authorized genenames
