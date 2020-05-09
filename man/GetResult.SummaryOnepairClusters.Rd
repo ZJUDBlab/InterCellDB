@@ -28,9 +28,27 @@ GetResult.SummaryOnepairClusters(
 
 \item{show.action.effects}{Character. Select some action effects to be put in the result.}
 
-\item{plot.axis.x.name}{Character. X-axis name when plot is shown.}
+\item{scale.fill.discrete}{A ggplot object. It gives the colour strategy for plotting.}
 
-\item{plot.axis.y.name}{Character. Y-axis name when plot is shown.}
+\item{legend.key.size}{The size of keys in legend. It should be in unit format, see \code{?unit} for further help.}
+
+\item{legend.title}{It sets the attributes of legend title, and should be \code{element_text()}.}
+
+\item{legend.text}{It sets the attributes of legend annotation texts, and should be \code{element_text()}.}
+
+\item{legend.box.margin}{It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.}
+
+\item{caption.label.size}{It sets the size of caption label.}
+
+\item{caption.label.x}{It sets the position of caption label in x-axis.}
+
+\item{caption.label.y}{It sets the position of caption label in y-axis.}
+
+\item{caption.label.hjust}{It sets the alignment type of caption label in horizontal level, see \code{vignette("ggplot2-specs")}
+for further help.}
+
+\item{caption.label.vjust}{It sets the alignment type of caption label in vertical level, see \code{vignette("ggplot2-specs")}
+for further help.}
 }
 \value{
 A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

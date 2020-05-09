@@ -31,6 +31,9 @@ GetResult.PlotOnepairClusters.CellPlot(
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
 \code{GenerateVEinfos()}.}
 
+\item{area.extend.times}{Numeric. If a warning given like "Cannot be located inside!" or something else, 
+one should change this paramemter to be larger to get all vertices allocated.}
+
 \item{hide.locations.A}{Character. It applies extra limitation on the locations of A in gene pairs formatted as A-B.}
 
 \item{hide.types.A}{Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.}
