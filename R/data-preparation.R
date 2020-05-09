@@ -79,6 +79,8 @@ DataPrep.AddExprsVals <- function(
 #'
 #' @param markers.all.from.Seurat Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.
 #' @inheritParams Inside.DummyGenesRefDB
+#' @param warning.given Character. It substitutes a small part of the warning sentences. In 
+#' most cases, you just leave it out.
 #'
 #'
 #'

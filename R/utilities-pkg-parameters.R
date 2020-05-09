@@ -147,3 +147,23 @@ Inside.DummyActionsRefDB <- function(
 }
 
 
+
+#'
+#' Description of parameter go.ref.db
+#'
+#' @description
+#' Use to provide the same parameter description for go.ref.db
+#'
+#' @param go.ref.db Data.frame. Reference GO database provided in this package, the list is given as follows:
+#' \itemize{
+#'   \item For human: \code{go.human.ref.db}
+#'   \item For mouse: \code{go.mouse.ref.db}
+#' }
+#'
+#'
+Inside.DummyGORefDB <- function(
+	go.ref.db
+) {
+	NULL
+}
+
