@@ -731,8 +731,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   edges.infos[, c("to.gx", "to.gy")] <- this.vx.ext.infos[inds.e.to.match, c("gx", "gy")]
   #
   pred.mode <- kpred.mode
-  # use reverse order to plot positive & negative above the unspecified or undirected
-  pred.action.effect <- rev(kpred.action.effect)
+  pred.action.effect <- kpred.action.effect
   show.mode.val <- levels(factor(edges.infos$mode))
   show.action.effect.val <- levels(factor(edges.infos$action.effect))
 
@@ -740,15 +739,17 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   names(link.colour) <- pred.action.effect  # for aesthetics
 
   draw.add.comps.list <- list()
-  for (j in 1:length(pred.action.effect)) {
+  # use reverse order to plot positive & negative above the unspecified or undirected
+  for (j in rev(1:length(pred.action.effect))) {
+    this.edges.infos <- edges.infos[which(edges.infos[, "action.effect"] == pred.action.effect[j]), ]
     for (i in 1:length(pred.mode)) {
       if (!(pred.action.effect[j] %in% show.action.effect.val)) {
         break
       }
-      inds.this.mode <- which(edges.infos[, "mode"] == pred.mode[i])
+      inds.this.mode <- which(this.edges.infos[, "mode"] == pred.mode[i])
       draw.add.comps.list <- append(draw.add.comps.list, 
         geom_segment(mapping = aes(x = from.gx, y = from.gy, xend = to.gx, yend = to.gy, colour = action.effect),
-          data = edges.infos[inds.this.mode, ],
+          data = this.edges.infos[inds.this.mode, ],
           alpha = link.alpha, size = link.size,
           arrow = arrow(angle = link.arrow.angle, length = unit(link.arrow.length, "pt"), type = link.arrow.type)
           )
