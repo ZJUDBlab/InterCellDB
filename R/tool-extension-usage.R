@@ -1,10 +1,31 @@
 
-# 1 GeneID Gene.name user.type
-# 2 mapping Gene.name to be authorized and recorded in our database
 
-# user.def.db, 2col-data.frame. 1-gene name, 2-user type. 2nd+ colname will be inherited.
-# user database colname should add user.* to avoid anything unexpected runtime error.
 
+#' Add user-defined dataset
+#' 
+#' @description
+#' This function gives a standlized procedure that package users can easily add its 
+#' definitions about genes and their functions or types or locations etc.
+#'
+#' @param user.def.db Data.frame. It should be a data.frame with at least 2 columns, whose 1st column is gene names, and the 2nd is 
+#' definitions in users' personal will, and colums from the 3rd will be inherited intactly.
+#' @inheritParams Inside.DummyGenesRefDB
+#' @param warning.given Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.
+#'
+#' @return Data.frame.
+#' | -1 -2 -3 ...|
+#'
+#' | GeneID Gene.name user.type ...|
+#'
+#' | <data> <data> <data> ...|
+#'
+#'
+#'
+#'
+#' @importFrom dplyr left_join
+#'
+#' @export
+#'
 Tool.AddUserRestrictDB <- function(
 	user.def.db,
 	genes.ref.db,
@@ -25,8 +46,26 @@ Tool.AddUserRestrictDB <- function(
 
 
 
-# @param go.todolist Character. Several GO_terms or GO_IDs or mixed, which will 
-# be used to get subsets of feature genes.
+
+
+
+#' Find genes annotated in specific GO terms
+#' 
+#' @description
+#' This function uses GO terms or GO IDs to get a specific list of genes.
+#'
+#'
+#' @param go.todolist Character. Several GO_terms or GO_IDs or mixed, which will 
+#' be used to get subsets of feature genes. 
+#' @inheritParams Inside.DummyGenesRefDB
+#' @inheritParams Inside.DummyGORefDB
+#' 
+#' @return Character. A gene list of given GO IDs or terms.
+#'
+#'
+#'
+#' @export
+#'
 Tool.FindGenesFromGO <- function(
 	go.todolist,
 	genes.ref.db,
@@ -51,11 +90,9 @@ Tool.FindGenesFromGO <- function(
 	go.ID.given.nonexist <- character()
 	go.ID.given.exist <- character()
 	if (length(go.ID.given.list) > 0) {
-		for (i in 1:length(go.ID.given.list)) {
-			ind.tmp <- match(go.ID.given.list[i], go.ref.db$GO_ID)
-			if (is.na(ind.tmp)) { go.ID.given.nonexist <- append(go.ID.given.nonexist, go.ID.given.list[i]) }
-			else { go.ID.given.exist <- append(go.ID.given.exist, go.ID.given.list[i]) }
-		}
+		inds.mID.s <- match(go.ID.given.list, go.ref.db$GO_ID)
+		go.ID.given.nonexist <- go.ID.given.list[which(is.na(inds.mID.s))]
+		go.ID.given.exist <- go.ID.given.list[which(!is.na(inds.mID.s))]
 		if (length(go.ID.given.nonexist) > 0) {
 			warning("The following GO_IDs are not found: \n ", paste0(go.ID.given.nonexist, collapse = ", "), ".")
 		}
@@ -64,13 +101,9 @@ Tool.FindGenesFromGO <- function(
 	go.term.given.nonexist <- character()
 	go.term.given.exist <- character()
 	if (length(go.term.given.list) > 0) { 
-		for (i in 1:length(go.term.given.list)) {
-			ind.tmp <- match(go.term.given.list[i], go.ref.db$GO_term)
-			if (is.na(ind.tmp)) { go.term.given.nonexist <- append(go.term.given.nonexist, go.term.given.list[i]) }
-			else {  # here doing the term-ID tranformation
-				go.term.given.exist <- append(go.term.given.exist, go.ref.db[ind.tmp, "GO_ID"])
-			}
-		}
+		inds.mTerm.s <- match(go.term.given.list, go.ref.db$GO_term)
+		go.term.given.nonexist <- go.term.given.list[which(is.na(inds.mTerm.s))]
+		go.term.given.exist <- go.term.given.list[which(!is.na(inds.mTerm.s))]
 		if (length(go.term.given.nonexist) > 0) {
 			warning("The following GO_terms are not found: \n ", paste0(go.term.given.nonexist, collapse = ", "), ".")
 		}
