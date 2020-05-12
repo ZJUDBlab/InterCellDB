@@ -48,7 +48,7 @@ AnalyzeClustersInteracts(
 }}
 
 \item{user.type.database}{Data.frame. It specifies one special data.frame that contains user-defined informations.
-For generating such database, see [TODO] for help.}
+For generating such database, see \code{Tool.AddUserRestrictDB} for help.}
 
 \item{restricted.some.genes}{Character. Analysis will be restricted in interaction pairs that contain
 at least one genes given in this parameter.}
@@ -138,7 +138,8 @@ This function gives as much as possible freedom for users to choose to analyze a
 
         In mouse, use database \code{anno.type.mouse.ref.db}, and use the code \code{levels(factor(anno.type.mouse.ref.db$Keyword.Name))}.
   \item \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} + \code{sub.sel.user.type.colname}: Those give a more flexible way for subset selection.
-        It uses the database given in another parameter \code{user.type.database}. [TODO] further description.
+        It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
+        \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that colum.
   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 }

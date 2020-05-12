@@ -21,7 +21,7 @@
 #' @importClassesFrom Seurat Seurat
 #' @importFrom stats median
 #'
-#' @export
+#' #not exported anymore
 #'
 DataPrep.AddExprsVals <- function(
   markers.all.from.Seurat,
@@ -56,7 +56,7 @@ DataPrep.AddExprsVals <- function(
       if (method.calc.gene.exprs == "median") {
         calc.exprs.subdata <- apply(counts.subdata, MARGIN = 1, median)
       } else {
-        stop(paste0("Error: undefined method name: ", method, "!"))
+        stop(paste0("Error: undefined method name: ", method.calc.gene.exprs, "!"))
       }
     } 
     inds.onecluster.matchback <- match(rownames(counts.subdata), markers.onecluster$gene)  # match back by 'gene'

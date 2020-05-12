@@ -232,6 +232,8 @@ GenerateVEinfos <- function(
 
 # [inside usage]
 # This function is a random points scatter algorithm.
+# The return value of this function is the @param data.veinfo plus 2 new columns
+# that given by @param coords.xy.colnames
 #
 ScatterSimple.Plot <- function(
   data.veinfo,
