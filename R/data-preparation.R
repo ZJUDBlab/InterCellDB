@@ -21,7 +21,7 @@
 # @importClassesFrom Seurat Seurat
 # @importFrom stats median
 #
-# #not exported anymore
+### not export anymore
 #
 DataPrep.AddExprsVals <- function(
   markers.all.from.Seurat,
