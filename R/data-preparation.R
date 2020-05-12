@@ -1,28 +1,28 @@
 
 
-#' Add expression values to feature genes
-#'
-#' @description
-#' It uses the calculated gene-counts data from Seurat to calculate the expression levels of genes.
-#'
-#' @param markers.all.from.Seurat Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.
-#' @param object.from.Seurat Seurat object. Please follow the vignette in \url{https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html},
-#' and must run the process at least after getting result of clustering algorithm (like tSNE/UMAP).
-#' Then, in \code{SeuratObject@meta.data}, you can see one column named 'seurat_clusters', 
-#' or you change the name of that column, and just give it in function parameter
-#' @param column.clusters Character. The default value is "seurat_clustesrs", as defined by Seurat package in
-#' its default settings. If you are not sure, please use \code{colnames(object.from.Seurat@meta.data)} to figure it out.
-#' @param method.calc.gene.exprs Character. Either "mean" or "median".
-#' It chooses which mathematical method to be used to calculate gene expression. 
-#' Its default value is "mean", which means using average expression level.
-#'
-#'
-#'
-#' @importClassesFrom Seurat Seurat
-#' @importFrom stats median
-#'
-#' #not exported anymore
-#'
+# Add expression values to feature genes
+#
+# @description
+# It uses the calculated gene-counts data from Seurat to calculate the expression levels of genes.
+#
+# @param markers.all.from.Seurat Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.
+# @param object.from.Seurat Seurat object. Please follow the vignette in \url{https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html},
+# and must run the process at least after getting result of clustering algorithm (like tSNE/UMAP).
+# Then, in \code{SeuratObject@meta.data}, you can see one column named 'seurat_clusters', 
+# or you change the name of that column, and just give it in function parameter
+# @param column.clusters Character. The default value is "seurat_clustesrs", as defined by Seurat package in
+# its default settings. If you are not sure, please use \code{colnames(object.from.Seurat@meta.data)} to figure it out.
+# @param method.calc.gene.exprs Character. Either "mean" or "median".
+# It chooses which mathematical method to be used to calculate gene expression. 
+# Its default value is "mean", which means using average expression level.
+#
+#
+#
+# @importClassesFrom Seurat Seurat
+# @importFrom stats median
+#
+# #not exported anymore
+#
 DataPrep.AddExprsVals <- function(
   markers.all.from.Seurat,
   object.from.Seurat,
