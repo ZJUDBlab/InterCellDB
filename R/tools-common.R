@@ -117,7 +117,7 @@ Tc.Cap.simple.vec <- function(to.cap.vec) {
 #'
 DoPartUnique <- function(
 	xxpairs,
-	cols.select=c(1:2)
+	cols.select = c(1:2)
 ) {
 	if (sum(cols.select %in% c(1:ncol(xxpairs))) != length(cols.select)) {
 		stop("Columns selected are undefined! Please check again!")

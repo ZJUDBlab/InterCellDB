@@ -13,7 +13,7 @@
 #' @param warning.given Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.
 #'
 #' @return Data.frame.
-#' | -1 -2 -3 ...|
+#' | <col-1> <col-2> <col-3> ...|
 #'
 #' | GeneID Gene.name user.type ...|
 #'
@@ -41,7 +41,7 @@ Tool.AddUserRestrictDB <- function(
 	tmp.ncol <- length(colnames(user.def.db))
 	user.def.db <- user.def.db[, c(tmp.ncol, 1:(tmp.ncol-1))]
 	# return
-	user.def.db  # GeneID Gene.name user.type1 *2 *3 ...
+	user.def.db  # GeneID Gene.name user.type *1 *2 *3 ...
 }
 
 

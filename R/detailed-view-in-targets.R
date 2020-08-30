@@ -88,7 +88,7 @@ GenerateVEinfos <- function(
   vertices.A.pack.df[which(is.na(vertices.A.pack.df[, "GO.Term.target"])), "GO.Term.target"] <- "Other"  # [rescue]
   # A# logfc
   fgenes.part.A <- fgenes.remapped.all[which(fgenes.remapped.all$cluster == act.A.clustername), ]
-  vertices.A.pack.df <- left_join(vertices.A.pack.df, fgenes.part.A[, c("gene", "avg_logFC")], by = c("GeneName" = "gene"))
+  vertices.A.pack.df <- left_join(vertices.A.pack.df, fgenes.part.A, by = c("GeneName" = "gene"))
   # B# type -single
   vertices.B.apx.types <- anno.infos$type.B[, c("Gene.name", "Keyword.Name")]
   # B# loc
@@ -98,7 +98,7 @@ GenerateVEinfos <- function(
   vertices.B.pack.df[which(is.na(vertices.B.pack.df[, "GO.Term.target"])), "GO.Term.target"] <- "Other"  # [rescue] 
   # B# logfc
   fgenes.part.B <- fgenes.remapped.all[which(fgenes.remapped.all$cluster == act.B.clustername), ]
-  vertices.B.pack.df <- left_join(vertices.B.pack.df, fgenes.part.B[, c("gene", "avg_logFC")], by = c("GeneName" = "gene"))
+  vertices.B.pack.df <- left_join(vertices.B.pack.df, fgenes.part.B, by = c("GeneName" = "gene"))
   # !! here, special rules will be applied upon if act.A.clustername == act.B.clustername
   afterV.A.clustername <- act.A.clustername
   afterV.B.clustername <- act.B.clustername
@@ -112,7 +112,8 @@ GenerateVEinfos <- function(
   # change colnames in vertices.all
   tmp.cols.change <- match(c("GO.Term.target", "avg_logFC"), colnames(vertices.all.infos))
   colnames(vertices.all.infos)[tmp.cols.change] <- c("Location", "LogFC")
-  vertices.all.infos <- vertices.all.infos[, c("UID", "ClusterName", "GeneName", "Location", "LogFC")]  # rearrange the columns
+  tmp.cols.first5 <- c("UID", "ClusterName", "GeneName", "Location", "LogFC")
+  vertices.all.infos <- vertices.all.infos[, c(tmp.cols.first5, setdiff(colnames(vertices.all.infos), tmp.cols.first5))]  # rearrange the columns
   # change colnames in apx.*
   colnames(vertices.A.apx.types) <- colnames(vertices.B.apx.types) <- c("GeneName", "Type")
   ## --- edges ---
@@ -271,7 +272,7 @@ ScatterSimple.Plot <- function(
   if (this.puts.cnt * this.deg.splits <= nrow(data.veinfo)) {
     stop("Cannot be located inside!")
   }
-  
+
   # scatter preparation
   radius.near.center <- ceiling(density.half.near * this.puts.cnt)
   rad.start.away.center <- radius.near.center + 1
@@ -638,7 +639,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
       tmp.ind.m <- match(x, ctp.ref$Map.Items)
       this.ctp <- as.numeric(ctp.ref[tmp.ind.m, c("tpx", "tpy")])
       this.points <- vertices.infos[this.inds, ]
-      this.res <- ScatterSimple.Plot(this.points, this.ctp, 12, coords.xy.colnames = c("gx", "gy"))
+      this.res <- ScatterSimple.Plot(this.points, this.ctp, 12 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
     }
     this.res
   }

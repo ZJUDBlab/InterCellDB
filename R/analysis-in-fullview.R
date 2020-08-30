@@ -376,7 +376,8 @@ Inside.AnalyzeClustersInteracts <- function(
 #'         In mouse, use database \code{anno.type.mouse.ref.db}, and use the code \code{levels(factor(anno.type.mouse.ref.db$Keyword.Name))}.
 #'   \item \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} + \code{sub.sel.user.type.colname}: Those give a more flexible way for subset selection.
 #'         It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
-#'         \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that colum.
+#'         \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that column, and if any of them were set \code{NULL}, the  
+#'         corresponding part will not add restriction on this user type.
 #'   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
 #'          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 #' }
