@@ -9,10 +9,7 @@ Inside.EvaluateByABS <- function(
 ) {
   eval.res <- 0.0
   if (nrow(pairs.ref) > 0) {
-    for (i in 1:nrow(pairs.ref)) {
-      eval.res <- eval.res + abs(pairs.ref[i, colname.eval[1]]) * abs(pairs.ref[i, colname.eval[2]])
-    }
-    eval.res <- eval.res / nrow(pairs.ref)
+    eval.res <- sum(abs(pairs.ref[, colname.eval[1]] * pairs.ref[, colname.eval[2]])) / nrow(pairs.ref)
   }
   eval.res
 }
@@ -57,17 +54,19 @@ Inside.AnalyzeClustersInteracts <- function(
   if (length(tmp.ind.valid.cols) != length(tmp.precheck.cols)) {
     stop("columns: ", paste0(tmp.precheck.cols[-tmp.ind.valid.cols], collapse = ", "), " are NOT AVAILABLE.")
   }
-  # find all cluster, and factor() it
+  # find all cluster, and target clusters
   fac.clusters <- levels(as.factor(markers.remapped.all[, "cluster"]))
+  to.use.X.clusters <- subgroup.options$X.clusters
+  to.use.Y.clusters <- subgroup.options$Y.clusters
   # check cluster name validity
-  inds.ifvalid <- grep(kClustersSplit, fac.clusters, fixed = TRUE)
+  inds.ifvalid <- grep(kClustersSplit, c(to.use.X.clusters, to.use.Y.clusters), fixed = TRUE)
   if (length(inds.ifvalid) > 0) {
     stop("Name of clusters contains the specified `kClustersSplit`: \"", kClustersSplit, 
       "\", please change this global value by hand (like kClustersSplit <- '?') to avoid this error.")
   }
   # find all interactions between every two clusters
   interact.pairs.all <- list(
-    list.clusters = fac.clusters,
+    list.clusters = unique(c(to.use.X.clusters, to.use.Y.clusters)),
     data.allpairs = list(),
     anno.allpairs = list(location.A = list(), location.B = list(),
                          type.A = list(), type.B = list()),
@@ -75,10 +74,12 @@ Inside.AnalyzeClustersInteracts <- function(
     cnt.allpairs = integer(),
     strength.allpairs = single()
   )
-  prog.bar.p.p <- progress::progress_bar$new(total = length(fac.clusters))
+  prog.bar.p.p <- progress::progress_bar$new(total = length(to.use.X.clusters) * length(to.use.Y.clusters))
   prog.bar.p.p$tick(0)
-  for (i in 1:length(fac.clusters)) {
-    for (k in 1:length(fac.clusters)) {
+  this.inds.X.clusters <- match(to.use.X.clusters, fac.clusters)
+  this.inds.Y.clusters <- match(to.use.Y.clusters, fac.clusters)
+  for (i in this.inds.X.clusters) {
+    for (k in this.inds.Y.clusters) {
       interact.name <- paste0(fac.clusters[i], kClustersSplit, fac.clusters[k])  # naming interaction
       markers.rall.i <- markers.remapped.all[which(markers.remapped.all[, "cluster"] == fac.clusters[i]), ]  # extract i & k markers.remapped.* list
       markers.rall.k <- markers.remapped.all[which(markers.remapped.all[, "cluster"] == fac.clusters[k]), ]
@@ -254,18 +255,15 @@ Inside.AnalyzeClustersInteracts <- function(
       ## re-slim with Location
       func.location.score.inside <- function(data.loc, option) {
         ret.val <- data.loc
+        if (nrow(ret.val) == 0) {
+          return(ret.val)
+        }
         if (is.character(option)) {  # use pre-defined strategies
           if (option == "the most confident") {  # the only strategy supported yet
-            tmp.gene.ids <- levels(factor(data.loc[, "GeneID"]))
-            tmp.ret.dfs <- lapply(tmp.gene.ids, ref.data = data.loc, function(x, ref.data) {
-                this.gene.loc <- ref.data[which(ref.data[, "GeneID"] == x), ]
-                this.max.score <- max(this.gene.loc[, "score"])
-                this.gene.loc[which(this.gene.loc[, "score"] == this.max.score), ]
-              })
-            ret.val <- bind_rows(tmp.ret.dfs)
-            if (nrow(ret.val) == 0) {
-              ret.val <- data.loc[1, ][-1, ]  # to save the colnames
-            }
+            tmp.max.list <- tapply(data.loc[, "score"], data.loc[, "GeneID"], max)
+            tmp.max.df <- data.frame(GeneID = as.numeric(names(tmp.max.list)), score = tmp.max.list, stringsAsFactors = FALSE)
+            tmp.max.res <- left_join(tmp.max.df, data.loc, by = c("GeneID", "score"))
+            ret.val <- tmp.max.res[, colnames(data.loc)]
           }  # else, do nothing
         } else {  # use score
           if (is.numeric(option)) {
@@ -298,8 +296,8 @@ Inside.AnalyzeClustersInteracts <- function(
       interact.pairs.all$cnt.allpairs <- append(interact.pairs.all$cnt.allpairs, nrow(pairs.subg.result))
       interact.pairs.all$strength.allpairs <- append(interact.pairs.all$strength.allpairs,
         EvaluateByFunc(pairs.subg.result, c("inter.LogFC.A", "inter.LogFC.B")))
+      prog.bar.p.p$tick()
     }
-    prog.bar.p.p$tick()
   }
   #end# return
   interact.pairs.all
@@ -323,6 +321,8 @@ Inside.AnalyzeClustersInteracts <- function(
 #' at least one genes given in this parameter.
 #' @param restricted.gene.pairs Character or data.frame. Analysis will be restricted in given gene pairs(i.e. interaction pairs). 
 #' The given format is explained in the below, see details for help.
+#' @param sub.sel.X.clusters [TODO] specific retrict to some clusters in analysis
+#' @param sub.sel.Y.clusters [TODO]
 #' @param sub.sel.exprs.changes Character. Use subset of \code{c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown")}.
 #' @param sub.sel.X.Location Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.X.Location.score.limit Character or Integer. The one in \code{character()} will be treated as predefined strategy, while
@@ -384,7 +384,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #'
 #' @return A list.
 #' \itemize{
-#'   \item list.clusters: names of clusters.
+#'   \item list.clusters: names of all involved clusters.
 #'   \item data.allpairs: a list of all interaction pairs. e.g. cluster: Astrocyte -> cluster: Microglia, if kClustersSplit is "%",
 #'         then, the interaction pair will be named "Astrocyte%Microglia", and use $data.allpairs[["Astrocyte%Microglia"]] to get details.
 #'   \item anno.allpairs: a list of lists. The sublists are 
@@ -427,6 +427,8 @@ AnalyzeClustersInteracts <- function(
   user.type.database = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
+  sub.sel.X.clusters = NULL,
+  sub.sel.Y.clusters = NULL,
   sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
@@ -440,11 +442,42 @@ AnalyzeClustersInteracts <- function(
   ind.colname.end.dual = 4
 ) {
   # generate default settings
+  this.fac.clusters <- levels(factor(fgenes.remapped.all$cluster))
   user.settings <- list(
+    X.clusters = this.fac.clusters,
+    Y.clusters = this.fac.clusters,
     exprs.logfc = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
     X.Location.score.limit = sub.sel.X.Location.score.limit,
     Y.Location.score.limit = sub.sel.Y.Location.score.limit)
   ### then the user parameters
+  ## select part of clusters in either X axis or Y axis
+  # for X
+  if (!is.null(sub.sel.X.clusters) && length(sub.sel.X.clusters) != 0) {
+    # check if selected clusters are available to use
+    invalid.X.clusters <- setdiff(sub.sel.X.clusters, this.fac.clusters)
+    if(length(invalid.X.clusters) > 0) {
+      warning("Select unknown clusters in X axis: ", invalid.X.clusters)
+    }
+    tmp.X.c <- as.character(intersect(sub.sel.X.clusters, this.fac.clusters))
+    if (length(tmp.X.c) == 0) {
+      stop("Selected clusters in X axis are all non-valid!")
+    } else {
+      user.settings[["X.clusters"]] <- tmp.X.c
+    }
+  }
+  # for Y
+  if (!is.null(sub.sel.Y.clusters) && length(sub.sel.Y.clusters) != 0) {
+    invalid.Y.clusters <- setdiff(sub.sel.Y.clusters, this.fac.clusters)
+    if(length(invalid.Y.clusters) > 0) {
+      warning("Select unknown clusters in Y axis: ", invalid.Y.clusters)
+    } 
+    tmp.Y.c <- as.character(intersect(sub.sel.Y.clusters, this.fac.clusters))
+    if (length(tmp.Y.c) == 0) {
+      stop("Selected clusters in Y axis are all non-valid!")
+    } else {
+      user.settings[["Y.clusters"]] <- tmp.Y.c
+    }
+  }
   ## fold change
   if (!is.null(sub.sel.exprs.changes) && length(sub.sel.exprs.changes) != 0) {
     # rather matching
@@ -515,6 +548,8 @@ AnalyzeClustersInteracts <- function(
   }
   # before running, print the selection used
   cat(paste0("\n---Strategy Used---", 
+    "\nClusters in X: ", paste0(user.settings$X.clusters, collapse = ", "), 
+    "\nClusters in Y: ", paste0(user.settings$Y.clusters, collapse = ", "), 
     "\nexprs.change: ", paste0(user.settings$exprs.logfc, collapse = ", "), 
     "\nLocation in X: ", ifelse(is.null(user.settings[["X.Location"]]), "-", paste0(user.settings[["X.Location"]], collapse = ", ")),  
     "\nLocation score in X: ", ifelse(is.null(user.settings[["X.Location.score.limit"]]), "-", paste0(user.settings[["X.Location.score.limit"]], collapse = ", ")), 

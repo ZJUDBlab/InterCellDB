@@ -91,7 +91,7 @@ Inside.CollectActionMapping <- function(
       # no change, res.actionid <- 1 (stay default)
     } else {
       # is_directional TRUE, a_is_acting TRUE, confirm that it is A-act-upon-B
-      ifconv <- if (onerow.info["inter.GeneName.A"] == act.A.genename) 0 else 1
+      ifconv <- ifelse(onerow.info["__Indicator__"] == "conv", 0, 1)
       if (onerow.info["action"] == "") {
         res.actionid <- match("A--oB", kaction.id.mapped) + ifconv
       } else {
@@ -159,71 +159,86 @@ GenerateMapDetailOnepairClusters <- function(
     actions.detailed = list()  # pairs that have known actions in actions.ref.db
   )
   print(paste0("Generating from ", paste0(clusters.onepair.select$clusters.name, collapse = " and "), "."))
-  this.act.detailed.id <- 0
-  prog.bar.gmoc <- progress::progress_bar$new(total = nrow(bt.pairs))
+  
+  # 
+  this.act.conv.pairs <- left_join(bt.pairs, actions.ref.db[, setdiff(colnames(actions.ref.db), c("inter.GeneID.A", "inter.GeneID.B"))], by = c("inter.GeneName.A", "inter.GeneName.B"))
+  # use rev actions to join again
+  this.act.rev.pairs <- left_join(bt.pairs, actions.ref.db[, setdiff(colnames(actions.ref.db), c("inter.GeneID.A", "inter.GeneID.B"))], 
+    by = c("inter.GeneName.A" = "inter.GeneName.B", "inter.GeneName.B" = "inter.GeneName.A"))
+  # additional infos for action_id
+  this.act.conv.pairs[, "__Indicator__"] <- "conv"
+  this.act.rev.pairs[, "__Indicator__"] <- "rev"
+  #
+  this.act.all.pairs <- rbind(this.act.conv.pairs, this.act.rev.pairs)
+  this.act.put.pairs <- this.act.all.pairs[which(!is.na(this.act.all.pairs[, "mode"])), ]
+  this.act.pv.pairs <- this.act.all.pairs[which(is.na(this.act.all.pairs[, "mode"])), ]
+  # rough selected put & preserved pairs
+  this.put.pairs <- this.act.put.pairs
+  this.pv.pairs <- this.act.pv.pairs
+
+  # further selection upon [put pairs] by action_id pattern
+  this.put.short.cut <- paste(this.put.pairs[, "inter.GeneID.A"], this.put.pairs[, "inter.GeneID.B"], sep = ">")
+  this.put.sc.ind.list <- tapply(1:length(this.put.short.cut), this.put.short.cut, function(x) {x})
+  # further selection upon [pv pairs] by overlap with [put pairs]
+  this.pv.short.cut <- paste(this.pv.pairs[, "inter.GeneID.A"], this.pv.pairs[, "inter.GeneID.B"], sep = ">")
+  this.pv.sc.ind.list <- tapply(1:length(this.pv.short.cut), this.pv.short.cut, function(x) {x})
+  # collect overlap ones and further remove these
+  tmp.overlap <- intersect(names(this.put.sc.ind.list), names(this.pv.sc.ind.list))
+  tmp.inds.overlap <- as.integer(unlist(lapply(tmp.overlap, total.list = this.pv.sc.ind.list, function(x, total.list){
+    total.list[[x]]
+    })))
+  this.pv.pairs <- this.pv.pairs[setdiff(1:nrow(this.pv.pairs), tmp.inds.overlap), ]
+
+  #
+  prog.bar.gmoc <- progress::progress_bar$new(total = length(this.put.sc.ind.list))
   prog.bar.gmoc$tick(0)
-  for (i in 1:nrow(bt.pairs)) {
-    onerow.tmp <- bt.pairs[i, ]
-    inds.conv.A <- which(actions.ref.db$inter.GeneName.A == onerow.tmp$inter.GeneName.A)
-    inds.conv.B <- which(actions.ref.db$inter.GeneName.B == onerow.tmp$inter.GeneName.B)
-    inds.conv.res <- intersect(inds.conv.A, inds.conv.B)
-    inds.rev.A <- which(actions.ref.db$inter.GeneName.B == onerow.tmp$inter.GeneName.A)
-    inds.rev.B <- which(actions.ref.db$inter.GeneName.A == onerow.tmp$inter.GeneName.B)
-    inds.rev.res <- intersect(inds.rev.A, inds.rev.B)
-    onerow.pairs <- actions.ref.db[union(inds.conv.res, inds.rev.res), ]  # all actions records for this pair
-    # extracting
-    action.A.genename <- onerow.tmp$inter.GeneName.A
-    action.B.genename <- onerow.tmp$inter.GeneName.B
-    action.A.exprs <- onerow.tmp$inter.Exprs.A
-    action.B.exprs <- onerow.tmp$inter.Exprs.B
-    action.A.logfc <- onerow.tmp$inter.LogFC.A
-    action.B.logfc <- onerow.tmp$inter.LogFC.B
-    if (nrow(onerow.pairs) > 0) {  # pairs that have known actions in actions.ref.db
-      action.infos <- apply(onerow.pairs, MARGIN = 1, 
-        act.A.genename = action.A.genename, act.B.genename = action.B.genename,
+  this.put.act.detailed <- lapply(this.put.sc.ind.list, tmp.prog = prog.bar.gmoc, this.put.pairs = this.put.pairs, 
+    function(x, tmp.prog, this.put.pairs) {
+      tmp.put.pairs <- this.put.pairs[x, ]
+      tmp.put.act.infos <- apply(tmp.put.pairs, MARGIN = 1,
+        act.A.genename = tmp.put.pairs[1, "inter.GeneName.A"],
+        act.B.genename = tmp.put.pairs[1, "inter.GeneName.B"],
         function(x, act.A.genename, act.B.genename) {
           Inside.CollectActionMapping(x, act.A.genename, act.B.genename)
-        }
-      )
-      action.infos <- t(action.infos)
+          })
+      tmp.put.act.infos <- t(tmp.put.act.infos)
       ## data trimming
       # deliminate those 1s when higher IDs exist, which means if directional is determined, leave out old ambiguous ones.
-      action.infos.df <- data.frame(
-        mode = as.character(action.infos[, 1]), 
-        actionid = as.integer(action.infos[, 2]),
+      tmp.put.act.infos.df <- data.frame(
+        mode = as.character(tmp.put.act.infos[, 1]), 
+        actionid = as.integer(tmp.put.act.infos[, 2]),
         stringsAsFactors = FALSE
       )
-      inds.del.1 <- which(action.infos.df$actionid == 1)  # to examine if more specific mode has been recorded
-      inds.rest <- which(action.infos.df$actionid != 1)
-      logic.del.1 <- action.infos.df[inds.del.1, "mode"] %in% action.infos.df[inds.rest, "mode"]
-      action.infos.df.exm <- rbind(action.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
-                     action.infos.df[inds.rest, ]
+      inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)  # to examine if more specific mode has been recorded
+      inds.rest <- which(tmp.put.act.infos.df$actionid != 1)
+      logic.del.1 <- tmp.put.act.infos.df[inds.del.1, "mode"] %in% tmp.put.act.infos.df[inds.rest, "mode"]
+      tmp.put.act.infos.df.exm <- rbind(tmp.put.act.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
+                     tmp.put.act.infos.df[inds.rest, ]
                    )
-      action.infos.df.exm <- unique(action.infos.df.exm)
-      onerow.res <- list(
-        act.A.genename = action.A.genename,
-        act.B.genename = action.B.genename,
-        act.A.exprs = action.A.exprs,
-        act.B.exprs = action.B.exprs,
-        act.A.logfc = action.A.logfc,
-        act.B.logfc = action.B.logfc,
-        action.infos = action.infos.df.exm
-      )   
-    } else {  # pairs that dont's have recorded known actions
-      onerow.res <- list(
-        act.A.genename = action.A.genename,
-        act.B.genename = action.B.genename,
-        act.A.exprs = action.A.exprs,
-        act.B.exprs = action.B.exprs,
-        act.A.logfc = action.A.logfc,
-        act.B.logfc = action.B.logfc,
-        action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
+      tmp.put.act.infos.df.exm <- unique(tmp.put.act.infos.df.exm)
+      # tick
+      tmp.prog$tick()
+      # return
+      list(
+        act.A.genename = tmp.put.pairs[1, "inter.GeneName.A"],  # use first row as it has at least 1 row
+        act.B.genename = tmp.put.pairs[1, "inter.GeneName.B"],
+        act.A.logfc = tmp.put.pairs[1, "inter.LogFC.A"],
+        act.B.logfc = tmp.put.pairs[1, "inter.LogFC.B"],
+        action.infos = tmp.put.act.infos.df.exm
       )
-    }
-    this.act.detailed.id <- this.act.detailed.id + 1
-    bt.pairs.result$actions.detailed[[this.act.detailed.id]] <- onerow.res
-    prog.bar.gmoc$tick()
-  }
+  })
+
+  # further pack up upon [pv pairs]
+  this.pv.act.detailed <- apply(this.pv.pairs, MARGIN = 1, function(x) {
+    list(act.A.genename = x["inter.GeneName.A"],
+         act.B.genename = x["inter.GeneName.B"],
+         act.A.logfc = x["inter.LogFC.A"],
+         act.B.logfc = x["inter.LogFC.B"],
+         action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
+        )
+    })
+
+  bt.pairs.result$actions.detailed <- c(this.put.act.detailed, this.pv.act.detailed)
   #end# return
   bt.pairs.result
 }

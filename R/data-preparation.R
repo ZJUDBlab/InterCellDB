@@ -36,7 +36,8 @@ DataPrep.RemapClustersMarkers <- function(
     inds.map.match <- match(markers.raw.unmatch$gene, map.synonyms.db$Synonym.each)
     print(paste0("In unmatched ", nrow(markers.raw.unmatch), " genes, ", length(which(!is.na(inds.map.match))), " are remapped from synonyms!"))
     if (length(which(is.na(inds.map.match))) > 0) {  # even after remap, still not matchable, so just leave out, and report in warning()
-      warning("These ", warning.given, " are not matched, \n: ", 
+      warning("These ", warning.given, " are not matched, and total number is (", 
+        length(which(is.na(inds.map.match))), ") :\n ", 
         paste0(markers.raw.unmatch$gene[which(is.na(inds.map.match))], collapse = ",  "), "."
       )
     }
@@ -46,7 +47,8 @@ DataPrep.RemapClustersMarkers <- function(
     # check if these remapped gene name are in dup.synonyms.ref
     logic.ifinddup <- which(tmp.gene.name.use.old %in% dup.synonyms.ref)
     if (length(logic.ifinddup) > 0)
-      warning("Synonyms of these ", warning.given, " are duplicate with others, and here recommend to do mannual check-up. ", 
+      warning("Synonyms of these (", length(logic.ifinddup), ") ", warning.given, 
+        " are duplicate with others, and here recommend to do mannual check-up. ", 
         "Pairs with old~new gene names are given. \n: ",
         paste0(paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~"), collapse = ",  "), "."
       )
