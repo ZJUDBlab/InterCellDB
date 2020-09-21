@@ -229,11 +229,12 @@ GenerateMapDetailOnepairClusters <- function(
   })
 
   # further pack up upon [pv pairs]
-  this.pv.act.detailed <- apply(this.pv.pairs, MARGIN = 1, function(x) {
-    list(act.A.genename = x["inter.GeneName.A"],
-         act.B.genename = x["inter.GeneName.B"],
-         act.A.logfc = x["inter.LogFC.A"],
-         act.B.logfc = x["inter.LogFC.B"],
+  this.pv.act.detailed <- lapply(1:nrow(this.pv.pairs), this.pv.pairs = this.pv.pairs, 
+    function(x, this.pv.pairs) {
+    list(act.A.genename = this.pv.pairs[x, "inter.GeneName.A"],
+         act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
+         act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
+         act.B.logfc = this.pv.pairs[x, "inter.LogFC.B"],
          action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
         )
     })
@@ -248,11 +249,15 @@ GenerateMapDetailOnepairClusters <- function(
 
 
 # [inside usage]
+# [TODO] to be exported and change onepair.dgsa outside!
+# #
+#
+#  #
 # This function is to collect hierachical information inside the raw data.
 #
 # @param onepair.gmoc List. Return value of GenerateMapDetailOnepairClusters().
 #
-Inside.CollectHierachyOnepairClusters <- function(
+CollectHierachyOnepairClusters <- function(
   onepair.gmoc
 ) {
   if (length(onepair.gmoc$actions.detailed) <= 0) {
@@ -279,69 +284,83 @@ Inside.CollectHierachyOnepairClusters <- function(
   )
   # process
   group.act.res <- group.proto.exprs.variations
-  for (i.list in 1:length(onepair.gmoc$actions.detailed)) {
-    this.pair.info <- onepair.gmoc$actions.detailed[[i.list]]
-    this.pair.actions <- this.pair.info$action.infos
-    # other identity infos
-    this.A.genename <- this.pair.info$act.A.genename
-    this.B.genename <- this.pair.info$act.B.genename
-    this.A.logfc  <- this.pair.info$act.A.logfc
-    this.B.logfc  <- this.pair.info$act.B.logfc
-    # do grouping upon gene.A & gene.B expression changes(logfc)
-    target.AB.in.group <- NULL
-    if (this.A.logfc > 0 && this.B.logfc > 0) {
-      target.AB.in.group <- "Cup.Dup"
+  prog.bar.dgsa <- progress::progress_bar$new(total = length(onepair.gmoc$actions.detailed))
+  prog.bar.dgsa$tick(0)
+  tmp.group.act.runout <- lapply(onepair.gmoc$actions.detailed, prog.bar.dgsa = prog.bar.dgsa,
+    function(x, prog.bar.dgsa) {
+      this.pair.info <- x
+      this.pair.actions <- this.pair.info$action.infos
+      # other identity infos
+      this.A.genename <- this.pair.info$act.A.genename
+      this.B.genename <- this.pair.info$act.B.genename
+      this.A.logfc  <- this.pair.info$act.A.logfc
+      this.B.logfc  <- this.pair.info$act.B.logfc
+      # do grouping upon gene.A & gene.B expression changes(logfc)
+      target.AB.in.group <- NULL
+      if (this.A.logfc > 0 && this.B.logfc > 0) {
+        target.AB.in.group <- "Cup.Dup"
+      }
+      if (this.A.logfc > 0 && this.B.logfc < 0) {
+        target.AB.in.group <- "Cup.Ddn"
+      }
+      if (this.A.logfc < 0 && this.B.logfc > 0) {
+        target.AB.in.group <- "Cdn.Dup"
+      }
+      if (this.A.logfc < 0 && this.B.logfc < 0) {
+        target.AB.in.group <- "Cdn.Ddn"
+      }
+      # do grouping upon action effects
+      this.pair.act.ids <- levels(factor(this.pair.actions[, "actionid"]))
+      target.AB.actions <- character()  # set length = 0
+      # A---B
+      if ((tmp.actionid = 1) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "A---B")
+      }
+      # A-->B
+      if ((tmp.actionid = 2) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "A-->B")
+      }
+      # A<--B
+      if ((tmp.actionid = 3) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "A<--B")
+      }
+      # A--|B
+      if ((tmp.actionid = 4) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "A--|B")
+      }
+      # A|--B
+      if ((tmp.actionid = 5) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "A|--B")
+      }
+      # A--oB
+      if ((tmp.actionid = 6) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "A--oB")
+      }
+      # Ao--B
+      if ((tmp.actionid = 7) %in% this.pair.act.ids) {
+        target.AB.actions <- c(target.AB.actions, "Ao--B")
+      }
+      # tick
+      prog.bar.dgsa$tick()
+      # return
+      data.frame(act.C.genename = this.A.genename,
+                 act.D.genename = this.B.genename,
+                 act.C.logfc = this.A.logfc,
+                 act.D.logfc = this.B.logfc,
+                 UPDN.group = target.AB.in.group,
+                 ACT.TYPE = target.AB.actions,
+                 stringsAsFactors = FALSE)
+  })
+  tmp.group.act.df <- bind_rows(tmp.group.act.runout)
+  # re-collection
+  inds.rc.groups <- tapply(1:nrow(tmp.group.act.df), tmp.group.act.df$UPDN.group, function(x) {x})
+  inds.rc.act.types <- tapply(1:nrow(tmp.group.act.df), tmp.group.act.df$ACT.TYPE, function(x) {x})
+  #
+  for (i.group in names(inds.rc.groups)) {
+    for (j in names(inds.rc.act.types)) {
+      tmp.sel.inds <- intersect(inds.rc.groups[[i.group]], inds.rc.act.types[[j]])
+      group.act.res[[i.group]][[j]] <- tmp.group.act.df[tmp.sel.inds, ]
     }
-    if (this.A.logfc > 0 && this.B.logfc < 0) {
-      target.AB.in.group <- "Cup.Ddn"
-    }
-    if (this.A.logfc < 0 && this.B.logfc > 0) {
-      target.AB.in.group <- "Cdn.Dup"
-    }
-    if (this.A.logfc < 0 && this.B.logfc < 0) {
-      target.AB.in.group <- "Cdn.Ddn"
-    }
-    # do grouping upon action effects
-    this.pair.act.ids <- levels(factor(this.pair.actions[, "actionid"]))
-    target.AB.actions <- character()  # set length = 0
-    # A---B
-    if ((tmp.actionid = 1) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "A---B")
-    }
-    # A-->B
-    if ((tmp.actionid = 2) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "A-->B")
-    }
-    # A<--B
-    if ((tmp.actionid = 3) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "A<--B")
-    }
-    # A--|B
-    if ((tmp.actionid = 4) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "A--|B")
-    }
-    # A|--B
-    if ((tmp.actionid = 5) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "A|--B")
-    }
-    # A--oB
-    if ((tmp.actionid = 6) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "A--oB")
-    }
-    # Ao--B
-    if ((tmp.actionid = 7) %in% this.pair.act.ids) {
-      target.AB.actions <- append(target.AB.actions, "Ao--B")
-    }
-    for (i.type in target.AB.actions) {
-      group.act.res[[target.AB.in.group]][[i.type]] <- rbind(group.act.res[[target.AB.in.group]][[i.type]], 
-        data.frame(act.C.genename = this.A.genename,
-               act.D.genename = this.B.genename,
-               act.C.logfc = this.A.logfc,
-               act.D.logfc = this.B.logfc,
-               stringsAsFactors = FALSE
-      ))
-    }
-    
   }
   #end# return
   group.act.res
@@ -466,7 +485,7 @@ Inside.PlotShowGrouping <- function(
 #' This function focuses on one interaction pair and its detailed information(expression changes, 
 #' gene-gene action effects), and get result from it.
 #'
-#' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
+#' @param onepair.dgsa List. Return value of \code{\link{CollectHierachyOnepairClusters}}.
 #' @param show.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
 #' @param show.action.effects Character. Select some action effects to be put in the result.
 #' @param scale.fill.discrete A ggplot object. It gives the colour strategy for plotting.
@@ -505,7 +524,7 @@ Inside.PlotShowGrouping <- function(
 #' @export
 #'
 GetResult.SummaryOnepairClusters <- function(
-  onepair.gmoc,
+  onepair.dgsa,
   show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
   show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"),
   scale.fill.discrete = scale_fill_brewer(palette = "Set3"),
@@ -519,8 +538,6 @@ GetResult.SummaryOnepairClusters <- function(
   caption.label.hjust = 0.5,
   caption.label.vjust = 1
 ) {
-  # process
-  onepair.dgsa <- Inside.CollectHierachyOnepairClusters(onepair.gmoc)
   # pre-result check
   notin.exprs.c <- setdiff(show.exprs.change, c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"))
   if (length(notin.exprs.c) > 0) {

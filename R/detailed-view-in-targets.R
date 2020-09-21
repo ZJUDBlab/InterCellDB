@@ -42,19 +42,8 @@
 GenerateVEinfos <- function(
   onepair.gmoc,
   fgenes.remapped.all,
-  is.directional = TRUE,
-  sel.mode.val = NULL,
-  sel.action.effect.val = NULL
+  is.directional = TRUE
 ) {
-  # predefined values extracted from database
-  pred.mode <- kpred.mode
-  pred.action.effect <- kpred.action.effect
-  # as it plot either directed or undirected graphs, new definition of action effects are given as below
-  # for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
-  # for "A-->B" or "A<--B",   given type: "positive"  --- kaction.id.mapped[c(2,3)]
-  # for "A--|B" or "A|--B",   given type: "negative"  --- kaction.id.mapped[c(4,5)]
-  # for "A--oB" or "Ao--B",   given type: "unspecified" --- kaction.id.mapped[c(6,7)]
-  #
   ### generate vertices list and edges list
   list.interact.pairs <- onepair.gmoc$actions.detailed
   anno.infos <- onepair.gmoc$anno.infos
@@ -68,13 +57,10 @@ GenerateVEinfos <- function(
   vertices.names <- character()
   vertices.A.names <- character()
   vertices.B.names <- character()
-  for (i in 1:length(list.interact.pairs)) {
-    this.list <- list.interact.pairs[[i]]
-    vertices.A.names <- append(vertices.A.names, this.list$act.A.genename)
-    vertices.B.names <- append(vertices.B.names, this.list$act.B.genename)
-  }
-  vertices.A.names <- unique(vertices.A.names)
-  vertices.B.names <- unique(vertices.B.names)
+  vertices.names <- sapply(list.interact.pairs, function(x) {c(x$act.A.genename, x$act.B.genename)})
+  vertices.names <- t(vertices.names)
+  vertices.A.names <- unique(as.character(vertices.names[, 1]))
+  vertices.B.names <- unique(as.character(vertices.names[, 2]))
   # pack vA vB to be df
   vertices.A.pack.df <- data.frame(GeneName = vertices.A.names, ClusterName = c(act.A.clustername), stringsAsFactors = FALSE)
   vertices.B.pack.df <- data.frame(GeneName = vertices.B.names, ClusterName = c(act.B.clustername), stringsAsFactors = FALSE)
@@ -116,6 +102,7 @@ GenerateVEinfos <- function(
   vertices.all.infos <- vertices.all.infos[, c(tmp.cols.first5, setdiff(colnames(vertices.all.infos), tmp.cols.first5))]  # rearrange the columns
   # change colnames in apx.*
   colnames(vertices.A.apx.types) <- colnames(vertices.B.apx.types) <- c("GeneName", "Type")
+
   ## --- edges ---
   # predefined function
   gen.edges.vei.inside <- function(act.part1.UID, act.part2.UID, action.mode, action.effect) {
@@ -129,54 +116,99 @@ GenerateVEinfos <- function(
     tmp.all.pert  # return
   }
   # the process
-  this.act.result <- list()  # list of data.frame
-  for (i in 1:length(list.interact.pairs)) {
-    this.list <- list.interact.pairs[[i]]
-    act.A.genename <- this.list$act.A.genename
-    act.A.UID <- intersect(which(vertices.all.infos[, "GeneName"] == act.A.genename), which(vertices.all.infos[, "ClusterName"] == afterV.A.clustername))
-    act.B.genename <- this.list$act.B.genename
-    act.B.UID <- intersect(which(vertices.all.infos[, "GeneName"] == act.B.genename), which(vertices.all.infos[, "ClusterName"] == afterV.B.clustername))
-    act.infos <- this.list$action.infos
-    if (nrow(act.infos) > 0) {
-      for (j in 1:nrow(act.infos)) {
-        this.row <- act.infos[j, ]
-        rownames(this.row) <- NULL
-        if (this.row["actionid"] == 1) {  # for undirected one, give two directed edge and special symbol representing those
-          this.act.result <- append(this.act.result, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "undirected"))
-          if (!is.directional) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "undirected"))
-          }
-        } else {
-          if (this.row["actionid"] < 2 || this.row["actionid"] > 7) {
-            stop(paste0("Undefined actionid from @param onepair.gmoc$actions.detailed[[", i, "]]!"))
-          }
-          if (this.row["actionid"] == 2) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "positive"))
-          } 
-          if (this.row["actionid"] == 3 && !is.directional) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "positive"))
-          }
-          if (this.row["actionid"] == 4) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "negative"))
-          }
-          if (this.row["actionid"] == 5 && !is.directional) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "negative"))
-          }
-          if (this.row["actionid"] == 6) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "unspecified"))
-          }
-          if (this.row["actionid"] == 7 && !is.directional) {
-            this.act.result <- append(this.act.result, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "unspecified"))
+  tmp.vertices.all.gene.inds <- tapply(1:nrow(vertices.all.infos), vertices.all.infos[, "GeneName"], function(x) {x})
+  tmp.vertices.all.cluster.inds <- tapply(1:nrow(vertices.all.infos), vertices.all.infos[, "ClusterName"], function(x) {x})
+  prog.bar.edge.collect <- progress::progress_bar$new(total = length(list.interact.pairs))
+  prog.bar.edge.collect$tick(0)
+  this.act.result <- lapply(list.interact.pairs, vertices.all.infos =  vertices.all.infos, 
+    afterV.A.clustername = afterV.A.clustername, afterV.B.clustername = afterV.B.clustername, 
+    tmp.gene.inds = tmp.vertices.all.gene.inds, tmp.cluster.inds = tmp.vertices.all.cluster.inds, 
+    prog.bar.edge.collect = prog.bar.edge.collect, 
+    gen.edges.vei.inside = gen.edges.vei.inside,  # function
+    function(x, vertices.all.infos, afterV.A.clustername, afterV.B.clustername, 
+      tmp.gene.inds, tmp.cluster.inds, prog.bar.edge.collect, gen.edges.vei.inside) {
+      this.list <- x
+      act.A.genename <- this.list$act.A.genename
+      act.A.UID <- intersect(tmp.gene.inds[[act.A.genename]], tmp.cluster.inds[[afterV.A.clustername]])
+      act.B.genename <- this.list$act.B.genename
+      act.B.UID <- intersect(tmp.gene.inds[[act.B.genename]], tmp.cluster.inds[[afterV.B.clustername]])
+      act.infos <- this.list$action.infos
+      tmp.act.res <- list()  # for return
+      if (nrow(act.infos) > 0) {
+        for (j in 1:nrow(act.infos)) {
+          this.row <- act.infos[j, ]
+          rownames(this.row) <- NULL
+          if (this.row["actionid"] == 1) {  # for undirected one, give two directed edge and special symbol representing those
+            tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "undirected"))
+            if (!is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "undirected"))
+            }
+          } else {
+            if (this.row["actionid"] < 2 || this.row["actionid"] > 7) {
+              stop(paste0("Undefined actionid from @param onepair.gmoc$actions.detailed[[", i, "]]!"))
+            }
+            if (this.row["actionid"] == 2) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "positive"))
+            } 
+            if (this.row["actionid"] == 3 && !is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "positive"))
+            }
+            if (this.row["actionid"] == 4) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "negative"))
+            }
+            if (this.row["actionid"] == 5 && !is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "negative"))
+            }
+            if (this.row["actionid"] == 6) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "unspecified"))
+            }
+            if (this.row["actionid"] == 7 && !is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "unspecified"))
+            }
           }
         }
       }
-    }
-  }
+      prog.bar.edge.collect$tick()
+      bind_rows(tmp.act.res)
+  })
   edges.all.infos <- bind_rows(this.act.result)
+  #end# return
+  VEinfos <- list(cluster.name.A = afterV.A.clustername, cluster.name.B = afterV.B.clustername,
+    edges.infos = edges.all.infos, 
+    vertices.infos = vertices.all.infos,
+    vertices.apx.type.A = vertices.A.apx.types,
+    vertices.apx.type.B = vertices.B.apx.types
+    )
+}
+
+
+
+# [TODO] need to be exported
+# #
+#
+#  #
+#
+TrimVEinfos <- function(
+  VEinfos, 
+  sel.mode.val = NULL, 
+  sel.action.effect.val = NULL
+) {
+  afterV.A.clustername <- VEinfos$cluster.name.A
+  afterV.B.clustername <- VEinfos$cluster.name.B
+  vertices.all.infos <- VEinfos$vertices.infos
+  edges.all.infos <- VEinfos$edges.infos
+  vertices.A.apx.types <- VEinfos$vertices.A.apx.types
+  vertices.B.apx.types <- VEinfos$vertices.B.apx.types
+  # as it plot either directed or undirected graphs, new definition of action effects are given as below
+  # for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
+  # for "A-->B" or "A<--B",   given type: "positive"  --- kaction.id.mapped[c(2,3)]
+  # for "A--|B" or "A|--B",   given type: "negative"  --- kaction.id.mapped[c(4,5)]
+  # for "A--oB" or "Ao--B",   given type: "unspecified" --- kaction.id.mapped[c(6,7)]
+  #
   ### select target edges.part.infos and vertices.part.infos
   ## check if valid, sel.mode.val, sel.action.effect.val
-  predefined.mode.list <- pred.mode
-  predefined.action.effect.list <- pred.action.effect
+  predefined.mode.list <- kpred.mode
+  predefined.action.effect.list <- kpred.action.effect
   if ((sum(sel.mode.val %in% predefined.mode.list) == length(sel.mode.val) ||
      is.null(sel.mode.val)) &&
     (sum(sel.action.effect.val %in% predefined.action.effect.list) == length(sel.action.effect.val) ||
@@ -226,8 +258,6 @@ GenerateVEinfos <- function(
     vertices.apx.type.B = vertices.B.apx.types
     )
 }
-
-
 
 
 
