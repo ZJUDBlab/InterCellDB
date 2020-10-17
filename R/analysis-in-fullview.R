@@ -66,7 +66,7 @@ Inside.AnalyzeClustersInteracts <- function(
   }
   # find all interactions between every two clusters
   interact.pairs.all <- list(
-    list.clusters = unique(c(to.use.X.clusters, to.use.Y.clusters)),
+    list.clusters = list(x.axis = unique(to.use.X.clusters), y.axis = unique(to.use.Y.clusters)),
     data.allpairs = list(),
     anno.allpairs = list(location.A = list(), location.B = list(),
                          type.A = list(), type.B = list()),
@@ -78,6 +78,9 @@ Inside.AnalyzeClustersInteracts <- function(
   prog.bar.p.p$tick(0)
   this.inds.X.clusters <- match(to.use.X.clusters, fac.clusters)
   this.inds.Y.clusters <- match(to.use.Y.clusters, fac.clusters)
+  # constant
+  # 1. use for location - "the most confident" strategy
+  const.loc.ref.max.list <- tapply(anno.location.ref[, "score"], anno.location.ref[, "GeneID"], max)
   for (i in this.inds.X.clusters) {
     for (k in this.inds.Y.clusters) {
       interact.name <- paste0(fac.clusters[i], kClustersSplit, fac.clusters[k])  # naming interaction
@@ -253,7 +256,7 @@ Inside.AnalyzeClustersInteracts <- function(
       ## after doing subgroup
       pairs.subg.result <- pairs.v4.aft.user.type
       ## re-slim with Location
-      func.location.score.inside <- function(data.loc, anno.location.ref, option) {
+      func.location.score.inside <- function(data.loc, anno.location.ref, strategy1.ref, option) {
         ret.val <- data.loc
         if (nrow(ret.val) == 0) {
           return(ret.val)
@@ -261,11 +264,17 @@ Inside.AnalyzeClustersInteracts <- function(
         if (is.character(option)) {  # use pre-defined strategies
           if (option == "the most confident") {  # the only strategy supported yet
             tmp.max.list <- tapply(data.loc[, "score"], data.loc[, "GeneID"], max)
-            ref.max.list <- tapply(anno.location.ref[, "score"], anno.location.ref[, "GeneID"], max)
+            ref.max.list <- strategy1.ref  # used here
             ref.slim.max.list <- ref.max.list[which(names(ref.max.list) %in% names(tmp.max.list))]
             # to compare the max value
+            tmp.max.list <- tmp.max.list[which(!is.na(tmp.max.list))]  # to prevent some genes have no detailed locations
             tmp.max.list <- tmp.max.list[order(names(tmp.max.list), decreasing = FALSE)]
             ref.slim.max.list <- ref.slim.max.list[order(names(ref.slim.max.list), decreasing = FALSE)]
+            # caught the error
+        if (length(tmp.max.list) != length(ref.slim.max.list)) {
+          stop("Unexpected error in location strategy!")
+        }
+            # else run
             tmp.max.list <- tmp.max.list[which(tmp.max.list == ref.slim.max.list)]
             tmp.max.df <- data.frame(GeneID = as.numeric(names(tmp.max.list)), score = tmp.max.list, stringsAsFactors = FALSE)
             tmp.max.res <- left_join(tmp.max.df, data.loc, by = c("GeneID", "score"))
@@ -283,9 +292,9 @@ Inside.AnalyzeClustersInteracts <- function(
       }
       # - Location
       this.A.locations <- this.A.locations[which(this.A.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.A"]), ]
-      this.A.locations <- func.location.score.inside(this.A.locations, anno.location.ref, subgroup.options$X.Location.score.limit)
+      this.A.locations <- func.location.score.inside(this.A.locations, anno.location.ref, const.loc.ref.max.list, subgroup.options$X.Location.score.limit)
       this.B.locations <- this.B.locations[which(this.B.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.B"]), ]
-      this.B.locations <- func.location.score.inside(this.B.locations, anno.location.ref, subgroup.options$Y.Location.score.limit)
+      this.B.locations <- func.location.score.inside(this.B.locations, anno.location.ref, const.loc.ref.max.list, subgroup.options$Y.Location.score.limit)
       # re-slim rescue here
       pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.A"] %in% this.A.locations[, "GeneID"]), ]
       pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.B"] %in% this.B.locations[, "GeneID"]), ]
@@ -692,8 +701,8 @@ GetResult.SummaryClustersInteracts <- function(
   }
   # process
   fac.clusters <- interact.pairs.acted$list.clusters  # all clusters related
-  fac.x.clusters <- fac.clusters
-  fac.y.clusters <- fac.clusters
+  fac.x.clusters <- fac.clusters$x.axis
+  fac.y.clusters <- fac.clusters$y.axis
   if (!is.null(show.clusters.in.x) && length(show.clusters.in.x) != 0) {  # select part of clusters to be shown in x-axis
     ind.m.x <- match(show.clusters.in.x, fac.x.clusters)
     fac.x.clusters <- fac.x.clusters[ind.m.x[which(!is.na(ind.m.x))]]
