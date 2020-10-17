@@ -4,13 +4,7 @@
 \alias{GenerateVEinfos}
 \title{Generate data about vertices and edges}
 \usage{
-GenerateVEinfos(
-  onepair.gmoc,
-  fgenes.remapped.all,
-  is.directional = TRUE,
-  sel.mode.val = NULL,
-  sel.action.effect.val = NULL
-)
+GenerateVEinfos(onepair.gmoc, fgenes.remapped.all, is.directional = TRUE)
 }
 \arguments{
 \item{onepair.gmoc}{List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.}

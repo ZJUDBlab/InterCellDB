@@ -9,7 +9,7 @@ Inside.EvaluateByABS <- function(
 ) {
   eval.res <- 0.0
   if (nrow(pairs.ref) > 0) {
-    eval.res <- sum(abs(pairs.ref[, colname.eval[1]] * pairs.ref[, colname.eval[2]])) / nrow(pairs.ref)
+    eval.res <- sum(abs(pairs.ref[, colname.eval[1]] * pairs.ref[, colname.eval[2]]))
   }
   eval.res
 }
@@ -253,7 +253,7 @@ Inside.AnalyzeClustersInteracts <- function(
       ## after doing subgroup
       pairs.subg.result <- pairs.v4.aft.user.type
       ## re-slim with Location
-      func.location.score.inside <- function(data.loc, option) {
+      func.location.score.inside <- function(data.loc, anno.location.ref, option) {
         ret.val <- data.loc
         if (nrow(ret.val) == 0) {
           return(ret.val)
@@ -261,6 +261,12 @@ Inside.AnalyzeClustersInteracts <- function(
         if (is.character(option)) {  # use pre-defined strategies
           if (option == "the most confident") {  # the only strategy supported yet
             tmp.max.list <- tapply(data.loc[, "score"], data.loc[, "GeneID"], max)
+            ref.max.list <- tapply(anno.location.ref[, "score"], anno.location.ref[, "GeneID"], max)
+            ref.slim.max.list <- ref.max.list[which(names(ref.max.list) %in% names(tmp.max.list))]
+            # to compare the max value
+            tmp.max.list <- tmp.max.list[order(names(tmp.max.list), decreasing = FALSE)]
+            ref.slim.max.list <- ref.slim.max.list[order(names(ref.slim.max.list), decreasing = FALSE)]
+            tmp.max.list <- tmp.max.list[which(tmp.max.list == ref.slim.max.list)]
             tmp.max.df <- data.frame(GeneID = as.numeric(names(tmp.max.list)), score = tmp.max.list, stringsAsFactors = FALSE)
             tmp.max.res <- left_join(tmp.max.df, data.loc, by = c("GeneID", "score"))
             ret.val <- tmp.max.res[, colnames(data.loc)]
@@ -277,9 +283,9 @@ Inside.AnalyzeClustersInteracts <- function(
       }
       # - Location
       this.A.locations <- this.A.locations[which(this.A.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.A"]), ]
-      this.A.locations <- func.location.score.inside(this.A.locations, subgroup.options$X.Location.score.limit)
+      this.A.locations <- func.location.score.inside(this.A.locations, anno.location.ref, subgroup.options$X.Location.score.limit)
       this.B.locations <- this.B.locations[which(this.B.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.B"]), ]
-      this.B.locations <- func.location.score.inside(this.B.locations, subgroup.options$Y.Location.score.limit)
+      this.B.locations <- func.location.score.inside(this.B.locations, anno.location.ref, subgroup.options$Y.Location.score.limit)
       # re-slim rescue here
       pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.A"] %in% this.A.locations[, "GeneID"]), ]
       pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.B"] %in% this.B.locations[, "GeneID"]), ]

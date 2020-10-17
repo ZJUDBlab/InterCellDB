@@ -5,7 +5,7 @@
 \title{Get result of analysis on one pair}
 \usage{
 GetResult.SummaryOnepairClusters(
-  onepair.gmoc,
+  onepair.dgsa,
   show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
   show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B",
     "A---B"),
@@ -22,7 +22,7 @@ GetResult.SummaryOnepairClusters(
 )
 }
 \arguments{
-\item{onepair.gmoc}{List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.}
+\item{onepair.dgsa}{List. Return value of \code{\link{CollectHierachyOnepairClusters}}.}
 
 \item{show.exprs.change}{Character. Use exprssion level change of clusters to select part of data to be shown.}
 

@@ -11,5 +11,5 @@ Imports: circlize, cowplot, ggplot2, grid, gridBase, progress, ComplexHeatmap, d
 Description: This tool provides databases covering human and mouse, and provides bunches of functions intended to serve for data analysis of scRNA-seq. Its databases collect a variety of data source, including STRING, NCBI-gene, GO, HGNC, Mesh, etc. Its function on analysis ranges from fullview of cell-cell-interaction to specific interactions between specific clusters.
 License: GPL (>= 2)
 LazyData: true
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Encoding: UTF-8

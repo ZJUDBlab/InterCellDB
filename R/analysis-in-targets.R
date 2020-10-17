@@ -271,7 +271,7 @@ CollectHierachyOnepairClusters <- function(
     "A--|B" = data.frame(),  # "A--|B"  #4
     "A|--B" = data.frame(),  # "A|--B"  #5
     "A--oB" = data.frame(),  # "A--oB"  #6
-    "Ao--B" = data.frame()   # "Ao--B"  #7  
+    "Ao--B" = data.frame()   # "Ao--B"  #7
   )
   op.clustername <- onepair.gmoc$clusters.name[1]
   rv.clustername <- onepair.gmoc$clusters.name[2]

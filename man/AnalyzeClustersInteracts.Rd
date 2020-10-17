@@ -12,6 +12,8 @@ AnalyzeClustersInteracts(
   user.type.database = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
+  sub.sel.X.clusters = NULL,
+  sub.sel.Y.clusters = NULL,
   sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
@@ -56,6 +58,10 @@ at least one genes given in this parameter.}
 \item{restricted.gene.pairs}{Character or data.frame. Analysis will be restricted in given gene pairs(i.e. interaction pairs). 
 The given format is explained in the below, see details for help.}
 
+\item{sub.sel.X.clusters}{[TODO] specific retrict to some clusters in analysis}
+
+\item{sub.sel.Y.clusters}{[TODO]}
+
 \item{sub.sel.exprs.changes}{Character. Use subset of \code{c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown")}.}
 
 \item{sub.sel.X.Location}{Character. Its value depends on the database used, see details for help.}
@@ -83,7 +89,7 @@ without any additional check.}
 \value{
 A list.
 \itemize{
-  \item list.clusters: names of clusters.
+  \item list.clusters: names of all involved clusters.
   \item data.allpairs: a list of all interaction pairs. e.g. cluster: Astrocyte -> cluster: Microglia, if kClustersSplit is "%",
         then, the interaction pair will be named "Astrocyte%Microglia", and use $data.allpairs[["Astrocyte%Microglia"]] to get details.
   \item anno.allpairs: a list of lists. The sublists are 
@@ -139,7 +145,8 @@ This function gives as much as possible freedom for users to choose to analyze a
         In mouse, use database \code{anno.type.mouse.ref.db}, and use the code \code{levels(factor(anno.type.mouse.ref.db$Keyword.Name))}.
   \item \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} + \code{sub.sel.user.type.colname}: Those give a more flexible way for subset selection.
         It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
-        \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that colum.
+        \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that column, and if any of them were set \code{NULL}, the  
+        corresponding part will not add restriction on this user type.
   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 }

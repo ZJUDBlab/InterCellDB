@@ -20,7 +20,7 @@ when match target synonym back to its authorized genename.}
 }
 \value{
 Data.frame.
-| -1 -2 -3 ...|
+| <col-1> <col-2> <col-3> ...|
 
 | GeneID Gene.name user.type ...|
 
