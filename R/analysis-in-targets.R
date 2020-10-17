@@ -36,8 +36,8 @@ ExtractTargetOnepairClusters <- function(
   cluster.name.C,
   cluster.name.D
 ) {
-  if (!(cluster.name.C %in% interact.pairs.acted$list.clusters &&
-      cluster.name.D %in% interact.pairs.acted$list.clusters)) {  # check if given cluster.name.* are in clusters.name list
+  if (!(cluster.name.C %in% as.character(unlist(interact.pairs.acted$list.clusters)) &&
+      cluster.name.D %in% as.character(unlist(interact.pairs.acted$list.clusters)))) {  # check if given cluster.name.* are in clusters.name list
     stop("Error: Target one-pair clusters not found, as giving undefined name of clusters.")
   }
   this.clusters.name <- c(cluster.name.C, cluster.name.D)

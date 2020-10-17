@@ -902,7 +902,7 @@ PlotClusters.Circos <- function(
   } else {
     if (!is.null(clusters.select.auto) && !((length(clusters.select.auto) == 0))) {
       # check if these are valid clusters' names
-      logic.ifclusters <- clusters.select.auto %in% interact.pairs.acted$list.clusters
+      logic.ifclusters <- clusters.select.auto %in% as.character(unique(unlist(interact.pairs.acted$list.clusters)))
       if (sum(logic.ifclusters) == length(logic.ifclusters)) {
         # generating interacts' names
         for (i.cluster in clusters.select.auto) {
