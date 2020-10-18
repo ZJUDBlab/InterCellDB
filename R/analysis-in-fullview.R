@@ -46,6 +46,7 @@ Inside.AnalyzeClustersInteracts <- function(
   sub.sel.user.type.colname = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
+  calculation.formula = EvaluateByFunc,
   ind.colname.end.dual = 4
 ) {
   # check if the column named "cluster" exists, so as "gene" and "avg_logFC"
@@ -310,7 +311,7 @@ Inside.AnalyzeClustersInteracts <- function(
       interact.pairs.all$name.allpairs <- append(interact.pairs.all$name.allpairs, interact.name)
       interact.pairs.all$cnt.allpairs <- append(interact.pairs.all$cnt.allpairs, nrow(pairs.subg.result))
       interact.pairs.all$strength.allpairs <- append(interact.pairs.all$strength.allpairs,
-        EvaluateByFunc(pairs.subg.result, c("inter.LogFC.A", "inter.LogFC.B")))
+        calculation.formula(pairs.subg.result, c("inter.LogFC.A", "inter.LogFC.B")))
       prog.bar.p.p$tick()
     }
   }
@@ -350,6 +351,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param sub.sel.X.user.type Its mode depends on what datatype user has defined. The function will accept anything given in this parameter
 #' without any additional check.
 #' @param sub.sel.Y.user.type Like \code{sub.sel.X.user.type}.
+#' @param calculation.formula [TODO]
 #' @param ind.colname.end.dual Integer. Use default value provided only when the pairs.ref database is modified by users.
 #'
 #' @details
@@ -454,6 +456,7 @@ AnalyzeClustersInteracts <- function(
   sub.sel.user.type.colname = NULL,
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
+  calculation.formula = EvaluateByFunc,
   ind.colname.end.dual = 4
 ) {
   # generate default settings
@@ -584,6 +587,7 @@ AnalyzeClustersInteracts <- function(
             sub.sel.user.type.colname = sub.sel.user.type.colname,
             restricted.some.genes = restricted.some.genes,
             restricted.gene.pairs = restricted.gene.pairs,
+            calculation.formula = calculation.formula,
             ind.colname.end.dual = ind.colname.end.dual)
   #end# return value
   res
