@@ -24,6 +24,7 @@ AnalyzeClustersInteracts(
   sub.sel.user.type.colname = NULL,
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
+  calculation.formula = EvaluateByFunc,
   ind.colname.end.dual = 4
 )
 }
@@ -83,6 +84,8 @@ the one in \code{integer()} will be treated as score limit range. See details fo
 without any additional check.}
 
 \item{sub.sel.Y.user.type}{Like \code{sub.sel.X.user.type}.}
+
+\item{calculation.formula}{[TODO]}
 
 \item{ind.colname.end.dual}{Integer. Use default value provided only when the pairs.ref database is modified by users.}
 }

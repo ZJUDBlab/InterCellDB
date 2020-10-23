@@ -6,14 +6,15 @@
 #'
 #' @param interact.pairs.acted A list. The return value of \code{\link{AnalyzeClustersInteracts}}.
 #' @param clusters.onepair.select TODO
-#' @param merge.confidence.on.diff
-#' @param merge.confidence.on.shared
-#' @param twist.fold.change.mul
-#' @param top.ignored.genes
-#' @param top.n.cnt
-#' @param top.n.score
+#' @param merge.confidence.on.diff TODO
+#' @param merge.confidence.on.shared TODO
+#' @param twist.fold.change.mul TODO
+#' @param top.ignored.genes TODO
+#' @param top.n.cnt TODO
+#' @param top.n.score TODO
 #' @param option.calc.score Integer. Defining the method use in calculating score. The default settings is: 
 #' use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.
+#' @param ... TODO
 #'
 #' @details
 #' TODO [NOTE] as this function is based on interact.pairs.acted, if limits have been
@@ -292,7 +293,6 @@ FindSpecialGenesInOnepairCluster <- function(
 #' @param cmp.extend.positive TODO
 #' @param cmp.extend.negative TODO
 #' @param ... [TODO] a lot of param in \code{FindSpecialGenesInOnepairCluster} will be passed
-#' @param 
 #'
 #'
 #' @details
