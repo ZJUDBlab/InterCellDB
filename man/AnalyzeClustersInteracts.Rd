@@ -21,6 +21,7 @@ AnalyzeClustersInteracts(
   sub.sel.Y.Location.score.limit = c("the most confident"),
   sub.sel.X.Type = character(),
   sub.sel.Y.Type = character(),
+  sub.sel.user.merge.option = "intersect",
   sub.sel.user.type.colname = NULL,
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
@@ -77,6 +78,8 @@ the one in \code{integer()} will be treated as score limit range. See details fo
 \item{sub.sel.X.Type}{Character. Its value depends on the database used, see details for help.}
 
 \item{sub.sel.Y.Type}{Like \code{sub.sel.X.Type}.}
+
+\item{sub.sel.user.merge.option}{[TODO] choose union or intersect strategy}
 
 \item{sub.sel.user.type.colname}{Character. It gives the column name that will be used for user-defined purposes.}
 
@@ -150,6 +153,7 @@ This function gives as much as possible freedom for users to choose to analyze a
         It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
         \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that column, and if any of them were set \code{NULL}, the  
         corresponding part will not add restriction on this user type.
+  \item \code{sub.sel.user.merge.option}: [TODO]
   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 }
