@@ -248,15 +248,21 @@ GenerateMapDetailOnepairClusters <- function(
 
 
 
-# [inside usage]
-# [TODO] to be exported and change onepair.dgsa outside!
-# #
-#
-#  #
-# This function is to collect hierachical information inside the raw data.
-#
-# @param onepair.gmoc List. Return value of GenerateMapDetailOnepairClusters().
-#
+#' TODO
+#' 
+#' @description
+#' TODO
+#'
+#' @param onepair.gmoc List. Return value of GenerateMapDetailOnepairClusters().
+#' 
+#' @details
+#' This function is to collect hierachical information inside the raw data.
+#'
+#' @return
+#' TODO
+#'
+#' @export
+#'
 CollectHierachyOnepairClusters <- function(
   onepair.gmoc
 ) {

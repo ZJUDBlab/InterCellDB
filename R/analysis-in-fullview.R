@@ -103,7 +103,7 @@ Inside.AnalyzeClustersInteracts <- function(
       colnames(pairs.ib.ka) <- colnames(pairs.ref)
       # all
       pairs.sp.ikab <- rbind(pairs.ia.kb, pairs.ib.ka)
-      pairs.sp.ikab <- DoPartUnique(pairs.sp.ikab, c(1,2))  # do part unique
+      # pairs.sp.ikab <- DoPartUnique(pairs.sp.ikab, c(1,2))  # do part unique # delay this
       if (!is.null(restricted.gene.pairs)) {  # using restricted gene pairs
         if (is.data.frame(restricted.gene.pairs)) {  # repack pairs
           # check validity if given data.frame
@@ -245,17 +245,28 @@ Inside.AnalyzeClustersInteracts <- function(
         if (is.null(subgroup.options[["Y.user.type"]])) {
           pairs.v4.aft.user.type <- pairs.v4.upre.A
         } else {
-          # slim the dataset
-          tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v4.upre.A[, "inter.GeneID.B"])))
-          tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
-          this.B.user.types <- tmp.B.user.types[which(tmp.B.user.types[, sub.sel.user.type.colname] %in% subgroup.options$Y.user.type), ]
-          pairs.v4.aft.user.type <- pairs.v4.upre.A[which(pairs.v4.upre.A[, "inter.GeneID.B"] %in% this.B.user.types[, "GeneID"]), ]  
+          if (subgroup.options[["user.merge.option"]] == "union") {
+            tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v3.aft.type[, "inter.GeneID.B"])))
+            tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
+            this.B.user.types <- tmp.B.user.types[which(tmp.B.user.types[, sub.sel.user.type.colname] %in% subgroup.options$Y.user.type), ]
+            pairs.v4.upre.B <- pairs.v3.aft.type[which(pairs.v3.aft.type[, "inter.GeneID.B"] %in% this.B.user.types[, "GeneID"]), ]
+            pairs.v4.aft.user.type <- rbind(pairs.v4.upre.A, pairs.v4.upre.B)  # union the result
+          } else {
+            # if (subgroup.options[["user.merge.option"]] == "intersect")  # the default way
+            # slim the dataset
+            tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v4.upre.A[, "inter.GeneID.B"])))
+            tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
+            this.B.user.types <- tmp.B.user.types[which(tmp.B.user.types[, sub.sel.user.type.colname] %in% subgroup.options$Y.user.type), ]
+            pairs.v4.aft.user.type <- pairs.v4.upre.A[which(pairs.v4.upre.A[, "inter.GeneID.B"] %in% this.B.user.types[, "GeneID"]), ]
+          }
         }
       } else {
         pairs.v4.aft.user.type <- pairs.v3.aft.type
       }
       ## after doing subgroup
       pairs.subg.result <- pairs.v4.aft.user.type
+      # Do Unique
+      pairs.subg.result <- DoPartUnique(pairs.subg.result, c(1,2))
       ## re-slim with Location
       func.location.score.inside <- function(data.loc, anno.location.ref, strategy1.ref, option) {
         ret.val <- data.loc
@@ -347,6 +358,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param sub.sel.Y.Location.score.limit Like \code{sub.sel.X.Location.score.limit}.
 #' @param sub.sel.X.Type Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.Y.Type Like \code{sub.sel.X.Type}.
+#' @param sub.sel.user.merge.option [TODO] choose union or intersect strategy
 #' @param sub.sel.user.type.colname Character. It gives the column name that will be used for user-defined purposes.
 #' @param sub.sel.X.user.type Its mode depends on what datatype user has defined. The function will accept anything given in this parameter
 #' without any additional check.
@@ -395,6 +407,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #'         It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
 #'         \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that column, and if any of them were set \code{NULL}, the  
 #'         corresponding part will not add restriction on this user type.
+#'   \item \code{sub.sel.user.merge.option}: [TODO]
 #'   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
 #'          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 #' }
@@ -453,12 +466,15 @@ AnalyzeClustersInteracts <- function(
   sub.sel.Y.Location.score.limit = c("the most confident"),
   sub.sel.X.Type = character(),
   sub.sel.Y.Type = character(),
+  sub.sel.user.merge.option = "intersect",
   sub.sel.user.type.colname = NULL,
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
   calculation.formula = EvaluateByFunc,
   ind.colname.end.dual = 4
 ) {
+  # CONST: user merge option 
+  user.merge.option.list <- c("intersect", "union")
   # generate default settings
   this.fac.clusters <- levels(factor(fgenes.remapped.all$cluster))
   user.settings <- list(
@@ -534,7 +550,13 @@ AnalyzeClustersInteracts <- function(
     user.settings[["Y.Type"]] <- as.character(Tc.Cap.simple.vec(sub.sel.Y.Type))
   }
   ## user type
-  # check
+  # check#1
+  if ((length(sub.sel.user.merge.option) == 1) && (sub.sel.user.merge.option %in% user.merge.option.list)) {
+    user.settings[["user.merge.option"]] <- sub.sel.user.merge.option
+  } else {
+    stop("User merge option error: undefined merge options!")
+  }
+  # check#2
   if (!is.null(user.type.database) && 
       (class(user.type.database) == "data.frame" && nrow(user.type.database) > 0) &&
       (length(sub.sel.user.type.colname) == 1 && (sub.sel.user.type.colname %in% colnames(user.type.database) == TRUE))) {
@@ -576,6 +598,7 @@ AnalyzeClustersInteracts <- function(
     "\nType in X: ", ifelse(is.null(user.settings[["X.Type"]]), "-", paste0(user.settings[["X.Type"]], collapse = ", ")), 
     "\nType in Y: ", ifelse(is.null(user.settings[["Y.Type"]]), "-", paste0(user.settings[["Y.Type"]], collapse = ", ")), 
     "\nUse user database: ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
+    "\nUse user merge option: ", ifelse(!is.null(user.type.database), user.settings[["user.merge.option"]], "NOTUSED"),
     "\nUse some genes: ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
     "\nUse some gene pairs: ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
     "\n"
