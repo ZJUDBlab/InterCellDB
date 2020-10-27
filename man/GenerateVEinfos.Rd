@@ -4,7 +4,12 @@
 \alias{GenerateVEinfos}
 \title{Generate data about vertices and edges}
 \usage{
-GenerateVEinfos(onepair.gmoc, fgenes.remapped.all, is.directional = TRUE)
+GenerateVEinfos(
+  onepair.gmoc,
+  fgenes.remapped.all,
+  is.directional = TRUE,
+  if.ignore.annos = FALSE
+)
 }
 \arguments{
 \item{onepair.gmoc}{List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.}
@@ -14,6 +19,8 @@ GenerateVEinfos(onepair.gmoc, fgenes.remapped.all, is.directional = TRUE)
 
 \item{is.directional}{Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 otherwise bi-directional VEinfos will be generated.}
+
+\item{if.ignore.annos}{Logic. [TODO]. if set TRUE, ignore the locations and types, mainly used for circos plot.}
 }
 \value{
 A list.

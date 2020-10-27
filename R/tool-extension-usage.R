@@ -135,6 +135,7 @@ Tool.FindGenesFromGO <- function(
 #' and all permutation of interacts between these clusters will be used.
 #' @param is.directional Logic. It is passed to \code{GenerateVEinfos}. If TRUE, it only uses single direction 
 #' of clusters' interaction, otherwise use the bi-directional.
+#' @param if.ignore.annos Logic. [TODO]
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
 #' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
@@ -179,6 +180,7 @@ Tool.PlotInteractsInMultipleClusters <- function(
   select.interacts = NULL,
   clusters.select.auto = NULL,
   is.directional = TRUE,
+  if.ignore.annos = TRUE,
   sel.mode.val = NULL,
   sel.action.effect.val = NULL,
   show.legend = FALSE,
@@ -188,13 +190,14 @@ Tool.PlotInteractsInMultipleClusters <- function(
   link.cor.border.colour = c("grey"),
   link.cor.arrow.drawn = c(TRUE, TRUE, TRUE, FALSE),
   link.cor.arrow.type = c("triangle", "ellipse", "curved", "circle"),
-  link.cor.arrow.length = c(0.4, 0.3, 0.3, 0.2)
+  link.cor.arrow.length = c(0.4, 0.3, 0.3, 0.2),
+  ...
 ) {
   # pre-process set
   pred.mode <- kpred.mode
   pred.action.effect <- kpred.action.effect
   # pre-process check
-  if (length(link.cor.colour) != 1 && length(link.cor.colour) < length(pred.mode)) {
+  if ((length(link.cor.colour) != 1) && (length(link.cor.colour) < length(pred.mode))) {
     warning("Given insufficent mode-specific colour, use unified colour-'grey' instead.!")
     link.cor.colour <- c("grey")
   }
@@ -245,10 +248,8 @@ Tool.PlotInteractsInMultipleClusters <- function(
     tmp.rcluster.B <- tmp.related.clusters[2]
     tmp.AB.1p <- ExtractTargetOnepairClusters(interact.pairs.acted, tmp.rcluster.A, tmp.rcluster.B)
     tmp.gmoc <- GenerateMapDetailOnepairClusters(tmp.AB.1p, actions.ref.db)
-    tmp.VEinfos <- GenerateVEinfos(tmp.gmoc, fgenes.remapped.all,
-                    is.directional = is.directional,
-                    sel.mode.val = sel.mode.val, 
-                    sel.action.effect.val = sel.action.effect.val)
+    tmp.VEinfos <- GenerateVEinfos(tmp.gmoc, fgenes.remapped.all, is.directional = is.directional, if.ignore.annos = if.ignore.annos)
+    tmp.VEinfos <- TrimVEinfos(tmp.VEinfos, sel.mode.val = sel.mode.val, sel.action.effect.val = sel.action.effect.val)
     if (tmp.rcluster.A == tmp.rcluster.B) {
       tmp.rcluster.B <- paste0(tmp.rcluster.B, ".mirror")
     }

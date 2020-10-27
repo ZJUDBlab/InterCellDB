@@ -12,6 +12,7 @@ Tool.PlotInteractsInMultipleClusters(
   select.interacts = NULL,
   clusters.select.auto = NULL,
   is.directional = TRUE,
+  if.ignore.annos = TRUE,
   sel.mode.val = NULL,
   sel.action.effect.val = NULL,
   show.legend = FALSE,
@@ -22,7 +23,8 @@ Tool.PlotInteractsInMultipleClusters(
   link.cor.border.colour = c("grey"),
   link.cor.arrow.drawn = c(TRUE, TRUE, TRUE, FALSE),
   link.cor.arrow.type = c("triangle", "ellipse", "curved", "circle"),
-  link.cor.arrow.length = c(0.4, 0.3, 0.3, 0.2)
+  link.cor.arrow.length = c(0.4, 0.3, 0.3, 0.2),
+  ...
 )
 }
 \arguments{
@@ -48,6 +50,8 @@ and all permutation of interacts between these clusters will be used.}
 
 \item{is.directional}{Logic. It is passed to \code{GenerateVEinfos}. If TRUE, it only uses single direction 
 of clusters' interaction, otherwise use the bi-directional.}
+
+\item{if.ignore.annos}{Logic. [TODO]}
 
 \item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
 please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.}

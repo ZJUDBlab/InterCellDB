@@ -10,6 +10,7 @@
 #' @inheritParams Inside.DummyFgenes 
 #' @param is.directional Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 #' otherwise bi-directional VEinfos will be generated.
+#' @param if.ignore.annos Logic. [TODO]. if set TRUE, ignore the locations and types, mainly used for circos plot.
 #'
 #' @details
 #' This function only uses actions that are already known, i.e. recorded thoroughly in some databases,
@@ -38,7 +39,8 @@
 GenerateVEinfos <- function(
   onepair.gmoc,
   fgenes.remapped.all,
-  is.directional = TRUE
+  is.directional = TRUE,
+  if.ignore.annos = FALSE
 ) {
   ### generate vertices list and edges list
   list.interact.pairs <- onepair.gmoc$actions.detailed
@@ -89,6 +91,10 @@ GenerateVEinfos <- function(
     vertices.B.pack.df$ClusterName <- afterV.B.clustername
   }
   vertices.all.infos <- rbind(vertices.A.pack.df, vertices.B.pack.df)
+  # do unique if locations and types are not cared
+  if (if.ignore.annos == TRUE) {
+    vertices.all.infos <- DoPartUnique(vertices.all.infos, cols.select = match(c("GeneName", "ClusterName"), colnames(vertices.all.infos)))
+  }
   vertices.all.infos$UID <- 1:nrow(vertices.all.infos)
   rownames(vertices.all.infos) <- NULL
   # change colnames in vertices.all
