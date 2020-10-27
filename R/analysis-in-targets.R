@@ -43,7 +43,7 @@ ExtractTargetOnepairClusters <- function(
   this.clusters.name <- c(cluster.name.C, cluster.name.D)
   this.sel.name <- paste0(cluster.name.C, kClustersSplit, cluster.name.D) 
   ## slim - locations
-  this.loc.slim.tg.cols <- c("Gene.name", "GO.Term.target", "score")
+  this.loc.slim.tg.cols <- c("Gene.name", "GO.Term.target")
   this.loc.save.cols <- c("GeneID", "Gene.name", "GO.Term.target")
   # loc.A
   tmp.A.raw.loc <- interact.pairs.acted$anno.allpairs$location.A[[this.sel.name]]

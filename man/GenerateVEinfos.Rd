@@ -14,12 +14,6 @@ GenerateVEinfos(onepair.gmoc, fgenes.remapped.all, is.directional = TRUE)
 
 \item{is.directional}{Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 otherwise bi-directional VEinfos will be generated.}
-
-\item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
-please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.}
-
-\item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
-please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.}
 }
 \value{
 A list.

@@ -10,7 +10,8 @@ FindSpecialGenesInOnepairCluster(
   merge.confidence.on.diff = 0.8,
   merge.confidence.on.shared = 0.8,
   twist.fold.change.mul = 1,
-  top.ignored.genes = character(),
+  top.ignored.genes.applier = character(),
+  top.ignored.genes.receiver = character(),
   top.n.score.positive = 10,
   top.n.score.negative = 10,
   option.calc.score = 0,
@@ -28,7 +29,9 @@ FindSpecialGenesInOnepairCluster(
 
 \item{twist.fold.change.mul}{TODO}
 
-\item{top.ignored.genes}{TODO}
+\item{top.ignored.genes.applier}{TODO}
+
+\item{top.ignored.genes.receiver}{TODO}
 
 \item{option.calc.score}{Integer. Defining the method use in calculating score. The default settings is: 
 use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.}

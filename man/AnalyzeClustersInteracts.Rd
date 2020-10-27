@@ -71,7 +71,7 @@ The given format is explained in the below, see details for help.}
 \item{sub.sel.X.Location.score.limit}{Character or Integer. The one in \code{character()} will be treated as predefined strategy, while
 the one in \code{integer()} will be treated as score limit range. See details for help.}
 
-\item{sub.sel.Y.Location}{Like \code{sub.sel.X.Location}.}
+\item{sub.sel.Y.Location}{Like \code{sub.sel.X.Location}. [TODO] remove the default strategy "the most confident"}
 
 \item{sub.sel.Y.Location.score.limit}{Like \code{sub.sel.X.Location.score.limit}.}
 

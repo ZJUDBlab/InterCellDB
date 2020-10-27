@@ -283,7 +283,7 @@ Inside.AnalyzeClustersInteracts <- function(
             tmp.max.list <- tmp.max.list[order(names(tmp.max.list), decreasing = FALSE)]
             ref.slim.max.list <- ref.slim.max.list[order(names(ref.slim.max.list), decreasing = FALSE)]
             # caught the error
-        if (length(tmp.max.list) != length(ref.slim.max.list)) {
+        if (length(tmp.max.list) != length(ref.slim.max.list)) {  # [TODO] strategy may be removed
           stop("Unexpected error in location strategy!")
         }
             # else run
@@ -354,7 +354,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param sub.sel.X.Location Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.X.Location.score.limit Character or Integer. The one in \code{character()} will be treated as predefined strategy, while
 #' the one in \code{integer()} will be treated as score limit range. See details for help.
-#' @param sub.sel.Y.Location Like \code{sub.sel.X.Location}.
+#' @param sub.sel.Y.Location Like \code{sub.sel.X.Location}. [TODO] remove the default strategy "the most confident"
 #' @param sub.sel.Y.Location.score.limit Like \code{sub.sel.X.Location.score.limit}.
 #' @param sub.sel.X.Type Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.Y.Type Like \code{sub.sel.X.Type}.

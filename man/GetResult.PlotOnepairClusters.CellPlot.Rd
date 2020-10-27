@@ -29,7 +29,7 @@ GetResult.PlotOnepairClusters.CellPlot(
 }
 \arguments{
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
-\code{GenerateVEinfos()}.}
+\code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
 
 \item{area.extend.times}{Numeric. If a warning given like "Cannot be located inside!" or something else, 
 one should change this paramemter to be larger to get all vertices allocated.}
