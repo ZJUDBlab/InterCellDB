@@ -9,7 +9,8 @@
 #' @param merge.confidence.on.diff TODO
 #' @param merge.confidence.on.shared TODO
 #' @param twist.fold.change.mul TODO
-#' @param top.ignored.genes TODO
+#' @param top.ignored.genes.applier TODO
+#' @param top.ignored.genes.receiver TODO
 #' @param top.n.cnt TODO
 #' @param top.n.score TODO
 #' @param option.calc.score Integer. Defining the method use in calculating score. The default settings is: 
@@ -38,7 +39,8 @@ FindSpecialGenesInOnepairCluster <- function(
 	merge.confidence.on.diff = 0.8,
 	merge.confidence.on.shared = 0.8,
 	twist.fold.change.mul = 1,
-	top.ignored.genes = character(),
+	top.ignored.genes.applier = character(),
+	top.ignored.genes.receiver = character(),
 	top.n.score.positive = 10,
 	top.n.score.negative = 10,
 	option.calc.score = 0,
@@ -101,7 +103,7 @@ FindSpecialGenesInOnepairCluster <- function(
 			tmp.C.df <- data.frame(genes = names(tmp.genes.C), interacts.cnt = tmp.genes.C, stringsAsFactors = FALSE)
 			tmp.C.geneA.sums <- tapply(target.pairs[, "inter.LogFC.B"], target.pairs$inter.GeneName.A, optionx = optionx, tiny.calc)
 			tmp.C.geneA.itself <- tapply(target.pairs[, "inter.LogFC.A"], target.pairs$inter.GeneName.A, mean)
-			tmp.C.df$interact.score <- tmp.C.geneA.sums * tmp.C.geneA.itself
+			tmp.C.df$interact.score <- tmp.C.geneA.sums * abs(tmp.C.geneA.itself)
 			tmp.C.df$interact.avg.score <- tmp.C.df$interact.score / tmp.C.df$interacts.cnt
 			tmp.C.df$interact.marker <- ifelse(tmp.C.geneA.itself > 0, "UPreg", "DNreg")  # marker indicate the A if it is upregulated or not
 			# calculate the score of reciever cells
@@ -109,7 +111,7 @@ FindSpecialGenesInOnepairCluster <- function(
 			tmp.D.df <- data.frame(genes = names(tmp.genes.D), interacts.cnt = tmp.genes.D, stringsAsFactors = FALSE)
 			tmp.D.geneB.sums <- tapply(target.pairs[, "inter.LogFC.A"], target.pairs$inter.GeneName.B, optionx = optionx, tiny.calc)
 			tmp.D.geneB.itself <- tapply(target.pairs[, "inter.LogFC.B"], target.pairs$inter.GeneName.B, mean)
-			tmp.D.df$interact.score <- tmp.D.geneB.sums * tmp.D.geneB.itself
+			tmp.D.df$interact.score <- tmp.D.geneB.sums * abs(tmp.D.geneB.itself)
 			tmp.D.df$interact.avg.score <- tmp.D.df$interact.score / tmp.D.df$interacts.cnt
 			tmp.D.df$interact.marker <- ifelse(tmp.D.geneB.itself > 0, "UPreg", "DNreg")  # marker indicate the B if it is upregulated or not
 		}
@@ -145,7 +147,7 @@ FindSpecialGenesInOnepairCluster <- function(
 			tmp.shared.pairs <- left_join(tmp.shared.pairs[, c("interacts.name", "this.mul.fc")], p.x.pairs.tgs[, c("interacts.name", "interacts.mul.fc")], by = c("interacts.name"))
 			# compare all the shared ones' twist
 			tmp.shared.eval <- exp(tmp.shared.pairs[, "this.mul.fc"] - tmp.shared.pairs[, "interacts.mul.fc"])
-			tmp.shared.eval.within.twist <- tmp.shared.eval > twist.fold.change.mul.it[1] & tmp.shared.eval < twist.fold.change.mul.it[2]
+			tmp.shared.eval.within.twist <- (tmp.shared.eval > twist.fold.change.mul.it[1]) & (tmp.shared.eval < twist.fold.change.mul.it[2])
 			p.x.collect.diff.pairs <- c(p.x.collect.diff.pairs, this.pair.tgs[tmp.p.x.diff.inds, "interacts.name"])
 			p.x.collect.shared.orig.pairs <- c(p.x.collect.shared.orig.pairs, this.pair.tgs[tmp.p.x.shared.inds, "interacts.name"])
 			p.x.collect.shared.pairs <- c(p.x.collect.shared.pairs, tmp.shared.pairs[which(tmp.shared.eval.within.twist == FALSE), "interacts.name"])
@@ -204,8 +206,8 @@ FindSpecialGenesInOnepairCluster <- function(
 	this.D.spdf <- this.merge.res.tl$part.D
 
 	# ignore some genes in ranking plot
-	this.C.spdf <- this.C.spdf[which(this.C.spdf$genes %in% (setdiff(this.C.spdf$genes, top.ignored.genes))), ]
-	this.D.spdf <- this.D.spdf[which(this.D.spdf$genes %in% (setdiff(this.D.spdf$genes, top.ignored.genes))), ]
+	this.C.spdf <- this.C.spdf[which(this.C.spdf$genes %in% (setdiff(this.C.spdf$genes, top.ignored.genes.applier))), ]
+	this.D.spdf <- this.D.spdf[which(this.D.spdf$genes %in% (setdiff(this.D.spdf$genes, top.ignored.genes.receiver))), ]
 
 	#
 	inside.topn.score.sort <- function(df, target.col, n.top.sel, decreasing) {
@@ -222,7 +224,19 @@ FindSpecialGenesInOnepairCluster <- function(
 			df.sub.2 <- df.sub.2[1:(n.top.sel[2]), ]
 		}
 		#
-		rbind(df.sub.1, df.sub.2)
+		ret.df <- df.sub.1
+		if (nrow(df.sub.1) != 0 && nrow(df.sub.2) != 0) {
+			ret.df <- rbind(df.sub.2, df.sub.1[nrow(df.sub.1):1, ])
+		} else {
+			if (nrow(df.sub.2) != 0) {
+				ret.df <- df.sub.2[nrow(df.sub.2):1, ]
+			} else {
+				if (nrow(df.sub.1) != 0) {
+					ret.df <- df.sub.1[nrow(df.sub.1):1, ]
+				}
+			}
+		}
+		ret.df
 	}
 
 	if (nrow(this.C.spdf) == 0 || nrow(this.D.spdf) == 0) {
@@ -240,41 +254,43 @@ FindSpecialGenesInOnepairCluster <- function(
 	this.plot.C.score <- this.plot.C.score + 
 			geom_col(aes(fill = interact.marker), colour = "black") + 
 			scale_fill_manual(name = "UpDn", values = c("grey", "red"), breaks = c("DNreg", "UPreg")) + 
-			scale_x_discrete(breaks = this.C.spdf.score$genes, limits = this.C.spdf.score$genes[length(this.C.spdf.score$genes):1]) + 
-			coord_flip()
+			scale_x_discrete(breaks = this.C.spdf.score$genes, limits = this.C.spdf.score$genes) + 
+			coord_flip() + 
+			labs(title = this.cluster.C)
 
 	this.plot.D.score <- ggplot(this.D.spdf.score, aes(x = genes, y = interact.score))
 	this.plot.D.score <- this.plot.D.score + 
 			geom_col(aes(fill = interact.marker), colour = "black") + 
 			scale_fill_manual(name = "UpDn", values = c("lightgrey", "green"), breaks = c("DNreg", "UPreg")) + 
-			scale_x_discrete(breaks = this.D.spdf.score$genes, limits = this.D.spdf.score$genes[length(this.D.spdf.score$genes):1]) + 
-			coord_flip()
+			scale_x_discrete(breaks = this.D.spdf.score$genes, limits = this.D.spdf.score$genes) + 
+			coord_flip() + 
+			labs(title = this.cluster.D)
 
 	## average score plots (consider > 0 and < 0)
-	this.C.spdf.avg.score <- inside.topn.score.sort(this.C.spdf, "interact.avg.score", c(top.n.score.positive, top.n.score.negative), TRUE)
-	this.D.spdf.avg.score <- inside.topn.score.sort(this.D.spdf, "interact.avg.score", c(top.n.score.positive, top.n.score.negative), TRUE)
-	
-	this.plot.C.avg.score <- ggplot(this.C.spdf.avg.score, aes(x = genes, y = interact.avg.score))
-	this.plot.C.avg.score <- this.plot.C.avg.score + 
-			geom_col(aes(fill = interact.marker), colour = "black") + 
-			scale_fill_manual(name = "UpDn", values = c("grey", "red"), breaks = c("DNreg", "UPreg")) + 
-			scale_x_discrete(breaks = this.C.spdf.avg.score$genes, limits = this.C.spdf.avg.score$genes[length(this.C.spdf.avg.score$genes):1]) + 
-			coord_flip()
-
-	this.plot.D.avg.score <- ggplot(this.D.spdf.avg.score, aes(x = genes, y = interact.avg.score))
-	this.plot.D.avg.score <- this.plot.D.avg.score + 
-			geom_col(aes(fill = interact.marker), colour = "black") + 
-			scale_fill_manual(name = "UpDn", values = c("lightgrey", "green"), breaks = c("DNreg", "UPreg")) + 
-			scale_x_discrete(breaks = this.D.spdf.avg.score$genes, limits = this.D.spdf.avg.score$genes[length(this.D.spdf.avg.score$genes):1]) + 
-			coord_flip()
+#	this.C.spdf.avg.score <- inside.topn.score.sort(this.C.spdf, "interact.avg.score", c(top.n.score.positive, top.n.score.negative), TRUE)
+#	this.D.spdf.avg.score <- inside.topn.score.sort(this.D.spdf, "interact.avg.score", c(top.n.score.positive, top.n.score.negative), TRUE)
+#
+#	this.plot.C.avg.score <- ggplot(this.C.spdf.avg.score, aes(x = genes, y = interact.avg.score))
+#	this.plot.C.avg.score <- this.plot.C.avg.score + 
+#			geom_col(aes(fill = interact.marker), colour = "black") + 
+#			scale_fill_manual(name = "UpDn", values = c("grey", "red"), breaks = c("DNreg", "UPreg")) + 
+#			scale_x_discrete(breaks = this.C.spdf.avg.score$genes, limits = this.C.spdf.avg.score$genes) + 
+#			coord_flip()
+#
+#	this.plot.D.avg.score <- ggplot(this.D.spdf.avg.score, aes(x = genes, y = interact.avg.score))
+#	this.plot.D.avg.score <- this.plot.D.avg.score + 
+#			geom_col(aes(fill = interact.marker), colour = "black") + 
+#			scale_fill_manual(name = "UpDn", values = c("lightgrey", "green"), breaks = c("DNreg", "UPreg")) + 
+#			scale_x_discrete(breaks = this.D.spdf.avg.score$genes, limits = this.D.spdf.avg.score$genes) + 
+#			coord_flip()
 
 	#
-	this.final.4plots <- plot_grid(this.plot.C.score, this.plot.D.score, this.plot.C.avg.score, this.plot.D.avg.score, 
-		ncol = 2, align = "vh")
+	this.final.4plots <- plot_grid(this.plot.C.score, this.plot.D.score, ncol = 2, align = "vh")
 
 	#
 	list(plot = this.final.4plots, tables = list(part.C = this.C.spdf, part.D = this.D.spdf),
-		for.test = this.merge.res.df)  # TODO	
+		genes.top.on.score = list(part.C = this.C.spdf.score$genes, part.D = this.D.spdf.score$genes), 
+		special.pairs.df = this.merge.res.df)  # TODO	
 }
 
 
