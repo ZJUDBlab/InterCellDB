@@ -1,8 +1,8 @@
 
 
-# [inside usage] [TODO-after-know math]
+# [inside usage]
 # This function evaluates the power of gene-interact pairs by the formula:
-#   SUM(abs(LogFC[geneA]) * abs(LogFC[geneB])) / COUNT(<pairs>)
+#   SUM(abs(LogFC[geneA] * LogFC[geneB]))
 Inside.EvaluateByABS <- function(
   pairs.ref,
   colname.eval = c("inter.LogFC.A", "inter.LogFC.B")
@@ -13,7 +13,7 @@ Inside.EvaluateByABS <- function(
   }
   eval.res
 }
-EvaluateByFunc <- Inside.EvaluateByABS
+FullView.Evaluation.func.default <- Inside.EvaluateByABS
 
 
 
@@ -46,7 +46,7 @@ Inside.AnalyzeClustersInteracts <- function(
   sub.sel.user.type.colname = NULL,
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
-  calculation.formula = EvaluateByFunc,
+  calculation.formula = FullView.Evaluation.func.default,
   ind.colname.end.dual = 4
 ) {
   # check if the column named "cluster" exists, so as "gene" and "avg_logFC"
@@ -245,7 +245,7 @@ Inside.AnalyzeClustersInteracts <- function(
         if (is.null(subgroup.options[["Y.user.type"]])) {
           pairs.v4.aft.user.type <- pairs.v4.upre.A
         } else {
-          if (subgroup.options[["user.merge.option"]] == "union") {
+          if (subgroup.options[["user.merge.option"]] == "union" && !is.null(subgroup.options[["X.user.type"]])) {
             tmp.inds.B.user.types <- which(user.type.database$GeneID %in% levels(factor(pairs.v3.aft.type[, "inter.GeneID.B"])))
             tmp.B.user.types <- user.type.database[tmp.inds.B.user.types, c("GeneID", "Gene.name", sub.sel.user.type.colname)]
             this.B.user.types <- tmp.B.user.types[which(tmp.B.user.types[, sub.sel.user.type.colname] %in% subgroup.options$Y.user.type), ]
@@ -283,9 +283,9 @@ Inside.AnalyzeClustersInteracts <- function(
             tmp.max.list <- tmp.max.list[order(names(tmp.max.list), decreasing = FALSE)]
             ref.slim.max.list <- ref.slim.max.list[order(names(ref.slim.max.list), decreasing = FALSE)]
             # caught the error
-        if (length(tmp.max.list) != length(ref.slim.max.list)) {  # [TODO] strategy may be removed
-          stop("Unexpected error in location strategy!")
-        }
+            if (length(tmp.max.list) != length(ref.slim.max.list)) {
+              stop("Unexpected error in location strategy! Please avoid using this strategy in current situation!")
+            }
             # else run
             tmp.max.list <- tmp.max.list[which(tmp.max.list == ref.slim.max.list)]
             tmp.max.df <- data.frame(GeneID = as.numeric(names(tmp.max.list)), score = tmp.max.list, stringsAsFactors = FALSE)
@@ -348,22 +348,22 @@ Inside.AnalyzeClustersInteracts <- function(
 #' at least one genes given in this parameter.
 #' @param restricted.gene.pairs Character or data.frame. Analysis will be restricted in given gene pairs(i.e. interaction pairs). 
 #' The given format is explained in the below, see details for help.
-#' @param sub.sel.X.clusters [TODO] specific retrict to some clusters in analysis
-#' @param sub.sel.Y.clusters [TODO]
+#' @param sub.sel.X.clusters Character. It specifies part of clusters(in X axis) to be put in analysis.
+#' @param sub.sel.Y.clusters Character. It specifies part of clusters(in Y axis) to be put in analysis.
 #' @param sub.sel.exprs.changes Character. Use subset of \code{c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown")}.
 #' @param sub.sel.X.Location Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.X.Location.score.limit Character or Integer. The one in \code{character()} will be treated as predefined strategy, while
 #' the one in \code{integer()} will be treated as score limit range. See details for help.
-#' @param sub.sel.Y.Location Like \code{sub.sel.X.Location}. [TODO] remove the default strategy "the most confident"
+#' @param sub.sel.Y.Location Like \code{sub.sel.X.Location}.
 #' @param sub.sel.Y.Location.score.limit Like \code{sub.sel.X.Location.score.limit}.
 #' @param sub.sel.X.Type Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.Y.Type Like \code{sub.sel.X.Type}.
-#' @param sub.sel.user.merge.option [TODO] choose union or intersect strategy
+#' @param sub.sel.user.merge.option Character. It chooses "union" or "intersect" strategy. See details for help.
 #' @param sub.sel.user.type.colname Character. It gives the column name that will be used for user-defined purposes.
 #' @param sub.sel.X.user.type Its mode depends on what datatype user has defined. The function will accept anything given in this parameter
 #' without any additional check.
 #' @param sub.sel.Y.user.type Like \code{sub.sel.X.user.type}.
-#' @param calculation.formula [TODO]
+#' @param calculation.formula 
 #' @param ind.colname.end.dual Integer. Use default value provided only when the pairs.ref database is modified by users.
 #'
 #' @details
@@ -407,7 +407,10 @@ Inside.AnalyzeClustersInteracts <- function(
 #'         It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
 #'         \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that column, and if any of them were set \code{NULL}, the  
 #'         corresponding part will not add restriction on this user type.
-#'   \item \code{sub.sel.user.merge.option}: [TODO]
+#'   \item \code{sub.sel.user.merge.option}: The strategy "intersect" is the default strategy, which works well when either \code{sub.sel.X.user.type} or 
+#'         \code{sub.sel.Y.user.type} is given. If both two user.type(X and Y) are given, the "intersect" strategy will work in the way that it first uses 
+#'         \code{sub.sel.X.user.type} to select part of the data, and then uses \code{sub.sel.Y.user.type} to get one further subset of data. Meanwhile, 
+#'         the "union" strategy will apply each user.type(X, Y) restriction independently on data selection, and bind the results eventually.
 #'   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
 #'          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 #' }
@@ -470,7 +473,7 @@ AnalyzeClustersInteracts <- function(
   sub.sel.user.type.colname = NULL,
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
-  calculation.formula = EvaluateByFunc,
+  calculation.formula = FullView.Evaluation.func.default,
   ind.colname.end.dual = 4
 ) {
   # CONST: user merge option 
@@ -658,7 +661,8 @@ AnalyzeClustersInteracts <- function(
 #' It calculates:
 #' \itemize{
 #'   \item count: count of interaction pairs.
-#'   \item power: strength of interaction pairs, which is calculated by formula: [TODO-formula].
+#'   \item power: strength of interaction pairs, which is calculated by formula: SUM(abs(LogFC[geneA] * LogFC[geneB])), 
+#'                as the function defines: \code{FullView.Evaluation.func.default}.
 #' }
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/detailed-view-in-targets.R
 \name{GetResult.PlotOnepairClusters.GeneCrosstalk}
 \alias{GetResult.PlotOnepairClusters.GeneCrosstalk}
-\title{[TODO]}
+\title{Evaluation gene pairs for one pair of clusters}
 \usage{
 GetResult.PlotOnepairClusters.GeneCrosstalk(
   VEinfos,
@@ -18,12 +18,50 @@ GetResult.PlotOnepairClusters.GeneCrosstalk(
   nodes.size.range = c(2, 8)
 )
 }
+\arguments{
+\item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
+\code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
+
+\item{fgenes.remapped.all}{Data.frame. Informations about feature genes(markers), prefer using return value of 
+\code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.}
+
+\item{direction.A.to.B}{Logic. If set NULL, use all given gene pairs, and if set TRUE, use only gene pairs with actions
+specified as the pattern "A to B"(either positive or negative or unspecified, etc), while if set FALSE, use gene pairs 
+with actions as "B to A".}
+
+\item{colnames.to.cmp}{Character. The colnames to be used as evaluation params, currently only 2 params are supported.
+The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.}
+
+\item{range.to.use}{List. It specifies the user specified ranges for evaluation params.}
+
+\item{formula.to.use}{List. It gives the functions to be used for evaluation params.}
+
+\item{axis.order.xy}{Character. It determines how the gene names will be ordered in the axis when plotting.}
+
+\item{axis.order.xy.decreasing}{Logic. It determines whether the orders are of decreasing pattern or increasing pattern.}
+
+\item{nodes.colour.seq}{Character. It specifies the colour sequence of the nodes.}
+
+\item{nodes.colour.value.seq}{Numeric. It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.}
+
+\item{nodes.size.range}{Numeric. It specifies the size range of the nodes.}
+}
 \value{
-[TODO]
+List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
+\itemize{
+  \item plot: the object of \pkg{ggplot2}.
+  \item table: a list of \code{data.frame}.
+}
 }
 \description{
-[TODO]
+This function evaluates the importance of some specific gene pairs of one pair of clusters, 
+and the default evaluation params are LogFC and p_val_adj.
 }
 \details{
-[TODO]
+This function uses user-selected gene pairs, and uses evalution params to calculate the relative importance of each gene pair.
+It calculates in default settings:
+\itemize{
+  \item LogFC: the log of fold changes, which indicates the relative gene expression.
+  \item p_val_adj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
+}
 }

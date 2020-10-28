@@ -51,7 +51,8 @@ and all permutation of interacts between these clusters will be used.}
 \item{is.directional}{Logic. It is passed to \code{GenerateVEinfos}. If TRUE, it only uses single direction 
 of clusters' interaction, otherwise use the bi-directional.}
 
-\item{if.ignore.annos}{Logic. [TODO]}
+\item{if.ignore.annos}{Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+be treated as the same, and only one row information will be reserved.}
 
 \item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
 please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.}

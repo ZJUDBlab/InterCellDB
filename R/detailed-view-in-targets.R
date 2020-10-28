@@ -10,11 +10,13 @@
 #' @inheritParams Inside.DummyFgenes 
 #' @param is.directional Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 #' otherwise bi-directional VEinfos will be generated.
-#' @param if.ignore.annos Logic. [TODO]. if set TRUE, ignore the locations and types, mainly used for circos plot.
+#' @param if.ignore.annos Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+#' be treated as the same, and only one row information will be reserved.
 #'
 #' @details
-#' This function only uses actions that are already known, i.e. recorded thoroughly in some databases,
-#' to generate formatted data structure(with vertices and edges).
+#' This function uses actions that are recorded in STRING act database, but only a small part of 
+#' actions are thoroughly difined in the database.
+#' This function is used to generate formatted data structure(with vertices and edges).
 #'
 #' In vertices, all gene informations are well recorded, and every gene is given one unique ID.
 #'
@@ -185,10 +187,10 @@ GenerateVEinfos <- function(
 
 
 
-#' [TODO]
+#' Trim the vertices and edges infos
 #'
 #' @description
-#' [TODO]
+#' This function uses mode and action.effect as the restrictions when users select part of the result.
 #'
 #' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
 #' \code{GenerateVEinfos()}.
@@ -198,7 +200,11 @@ GenerateVEinfos <- function(
 #' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.
 #'
 #' @details
-#' [TODO]
+#' The whole list of mode or action.effect is defined as global variable that is given within the package.
+#' kpred.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
+#' As the action database given now is not completed well, it is recommended to select upon
+#' action.effect, while leaving all different modes preserved.
+#'
 #'
 #'
 #' @export
@@ -291,6 +297,8 @@ ScatterSimple.Plot <- function(
   density.half.near = 1 / 3.0,  # default will be 1/3
   coords.xy.colnames = c("gx", "gy")
 ) {
+  # warning or stop for area.extend.times
+  ssp.words <- " Please increases the area.extend.times by multiply it by 10."
   # pre-check
   if (nrow(data.veinfo) < 1) {
     if (!is.null(colnames(data.veinfo))) {
@@ -308,7 +316,7 @@ ScatterSimple.Plot <- function(
   #
   this.puts.cnt <- ext.len - 2  # exclude the edges and the center
   if (this.puts.cnt < 1) {
-    stop("Too small ext.len")
+    stop("Too small ext.len!", ssp.words)
   }
   # sample
   if (sample.gap.degree < 1 || sample.gap.degree > 360) {
@@ -317,14 +325,14 @@ ScatterSimple.Plot <- function(
   this.deg.splits <- floor(360 / sample.gap.degree)
   # check capacity
   if (this.puts.cnt * this.deg.splits <= nrow(data.veinfo)) {
-    stop("Cannot be located inside!")
+    stop("Cannot be located inside!", ssp.words)
   }
 
   # scatter preparation
   radius.near.center <- ceiling(density.half.near * this.puts.cnt)
   rad.start.away.center <- radius.near.center + 1
   if (rad.start.away.center >= ext.len) {
-    stop(paste0("Too small ext.len: ", ext.len))
+    stop(paste0("Too small ext.len: ", ext.len, ssp.words))
   }
   tmp.sel.near.c <- floor(nrow(data.veinfo) * density.half.near)
   data.sel.near.c <- 1:ifelse(tmp.sel.near.c >= 1, tmp.sel.near.c, 1)
@@ -336,14 +344,14 @@ ScatterSimple.Plot <- function(
   sp.deg.near.c <- sample(1:this.deg.splits, length(1:this.deg.splits))
   sp.total.near.c <- length(sp.rad.near.c) * length(sp.deg.near.c)
   if (sp.total.near.c < nrow(data.in.near.c)) {
-    stop("Capacity error in near center!")
+    stop("Capacity error in near center!", ssp.words)
   }
   # in away from center
   sp.rad.away.c <- sample(rad.start.away.center:this.puts.cnt, length(rad.start.away.center:this.puts.cnt))
   sp.deg.away.c <- sample(1:this.deg.splits, length(1:this.deg.splits))
   sp.total.away.c <- length(sp.rad.away.c) * length(sp.deg.away.c)
   if (sp.total.away.c < nrow(data.in.away.c)) {
-    stop("Capacity error away from center!")
+    stop("Capacity error away from center!", ssp.words)
   }
   ### scatter process (use deg.* as ref and extend it)
   ## get coords
@@ -452,7 +460,7 @@ Inside.TransCoords.Enlarge.Rotate <- function(
 #'
 GetResult.PlotOnepairClusters.CellPlot <- function(
   VEinfos,
-  area.extend.times = 1,  # [TODO]
+  area.extend.times = 10,  # [TODO] add default to 10 to be able to tackle most cases
   hide.locations.A = NULL,
   hide.types.A = NULL,
   hide.locations.B = NULL,
@@ -517,7 +525,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   }
   # merge hide inds
   tmp.inds.hide <- c(tmp.inds.A.loc, tmp.inds.A.type, tmp.inds.B.loc, tmp.inds.B.type)
-  if (length(tmp.inds.hide) != 0) {  # [TODO] remove from edges
+  if (length(tmp.inds.hide) != 0) {
     # so then the vertices
     vertices.infos <- vertices.infos[-tmp.inds.hide, ]
     # hide sole vertices
@@ -828,21 +836,27 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
 
 
 
-#' [TODO]
+#' Formula on calculating LogFC
 #'
 #' @description
-#' [TODO]
+#' This is the default formula on calculating LogFC values, and is 
+#' belong to \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}.
+#'
+#' @param data.f vector. The operated data.
+#' @param data.b vector. The operated data with its length the same as the 1st parameter.
 #'
 #' @details
-#' [TODO]
+#' This is the default formula for calculation. Users can define their own formula,
+#' as well as define their own evalution parameter besides LogFC(by changing the 
+#' param - \code{colnames.to.cmp} of \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}).
 #'
 #'
 #'
 #' @export
 #'
 Tool.formula.onLogFC.default <- function(
-  data.f,  # vector
-  data.b   # vector
+  data.f, 
+  data.b
 ) {
   if (length(data.f) != length(data.b)) {
     stop("Unexpected non-identical length data input!")
@@ -852,21 +866,27 @@ Tool.formula.onLogFC.default <- function(
 
 
 
-#' [TODO]
+#' Formula on calculating p_val_adj
 #'
 #' @description
-#' [TODO]
+#' This is the default formula on calculating p_val_adj values, and is 
+#' belong to \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}.
+#'
+#' @param data.f vector. The operated data.
+#' @param data.b vector. The operated data with its length the same as the 1st parameter.
 #'
 #' @details
-#' [TODO]
+#' This is the default formula for calculation. Users can define their own formula,
+#' as well as define their own evalution parameter besides p_val_adj(by changing the 
+#' param - \code{colnames.to.cmp} of \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}).
 #'
 #'
 #'
 #' @export
 #'
 Tool.formula.onPValAdj.default <- function(
-  data.f,  # vector
-  data.b   # vector
+  data.f, 
+  data.b
 ) {
   if (length(data.f) != length(data.b)) {
     stop("Unexpected non-identical length data input!")
@@ -884,17 +904,43 @@ Tool.formula.onPValAdj.default <- function(
 
 
 
-#' [TODO]
+#' Evaluation gene pairs for one pair of clusters
 #'
 #' @description
-#' [TODO]
+#' This function evaluates the importance of some specific gene pairs of one pair of clusters, 
+#' and the default evaluation params are LogFC and p_val_adj.
+#'
+#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
+#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
+#' @inheritParams Inside.DummyFgenes
+#' @param direction.A.to.B Logic. If set NULL, use all given gene pairs, and if set TRUE, use only gene pairs with actions
+#' specified as the pattern "A to B"(either positive or negative or unspecified, etc), while if set FALSE, use gene pairs 
+#' with actions as "B to A".
+#' @param colnames.to.cmp Character. The colnames to be used as evaluation params, currently only 2 params are supported.
+#' The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.
+#' @param range.to.use List. It specifies the user specified ranges for evaluation params.
+#' @param formula.to.use List. It gives the functions to be used for evaluation params.
+#' @param axis.order.xy Character. It determines how the gene names will be ordered in the axis when plotting.
+#' @param axis.order.xy.decreasing Logic. It determines whether the orders are of decreasing pattern or increasing pattern.
+#' @param nodes.colour.seq Character. It specifies the colour sequence of the nodes.
+#' @param nodes.colour.value.seq Numeric. It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.
+#' @param nodes.size.range Numeric. It specifies the size range of the nodes.
+#'
 #'
 #' @details
-#' [TODO]
+#' This function uses user-selected gene pairs, and uses evalution params to calculate the relative importance of each gene pair.
+#' It calculates in default settings:
+#' \itemize{
+#'   \item LogFC: the log of fold changes, which indicates the relative gene expression.
+#'   \item p_val_adj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
+#' }
 #'
 #' @return
-#' [TODO]
-#'
+#' List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
+#' \itemize{
+#'   \item plot: the object of \pkg{ggplot2}.
+#'   \item table: a list of \code{data.frame}.
+#' }
 #'
 #'
 #'

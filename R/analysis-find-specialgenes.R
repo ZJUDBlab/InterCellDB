@@ -2,28 +2,51 @@
 #' Find special genes in one pair of interacting clusters
 #'
 #' @description
-#' TODO
+#' This function is used to find special genes in one pair of interacting clusters. Genes are special
+#' if it passes some limitations when comparing to other pairs of interacting clusters. 
 #'
-#' @param interact.pairs.acted A list. The return value of \code{\link{AnalyzeClustersInteracts}}.
-#' @param clusters.onepair.select TODO
-#' @param merge.confidence.on.diff TODO
-#' @param merge.confidence.on.shared TODO
-#' @param twist.fold.change.mul TODO
-#' @param top.ignored.genes.applier TODO
-#' @param top.ignored.genes.receiver TODO
-#' @param top.n.cnt TODO
-#' @param top.n.score TODO
+#' @param interact.pairs.acted List. The return value of \code{\link{AnalyzeClustersInteracts}}.
+#' @param clusters.onepair.select List. Return value of \code{\link{ExtractTargetOnepairClusters}}.
+#' @param merge.confidence.on.diff Numeric. Range (0,1) is available. One gene pair is special when it is unique  
+#' all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" unique.
+#' @param merge.confidence.on.shared Numeric. Range (0,1) is available. When one gene pair is not unqiue to single 
+#' interacting cluster, it could be evaluated as special when the overall expression level changes is different to 
+#' all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" different.
+#' @param twist.fold.change.mul Numeric. It defines the lower and upper bound of acceptable difference of expression level.
+#' Gene pairs that are out of this bound will be seen as special gene pairs.
+#' @param top.ignored.genes.applier Character. It is used to remove some uncared genes from analysis, and is applied on the 
+#' former one in a interacting cluster.
+#' @param top.ignored.genes.receiver Character. Like \code{top.ignored.genes.applier}, but it is for the latter one 
+#' in a interacting cluster.
+#' @param top.n.score.positive Numeric. It specifies the count of top positive scores.
+#' @param top.n.score.negative Numeric. It specifies the count of top negative scores.
 #' @param option.calc.score Integer. Defining the method use in calculating score. The default settings is: 
 #' use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.
-#' @param ... TODO
 #'
 #' @details
-#' TODO [NOTE] as this function is based on interact.pairs.acted, if limits have been
-#' put upon the clusters in x-axis or y-axis, the compared interacting pairs will be limited 
+#' If the pair of interacting clusters is C -> D, then the C will be called applier, 
+#' and D will be called reciever.
+#'
+#' To be noted, as this function is based on interact.pairs.acted, if limits have been
+#' put upon the clusters in x-axis or y-axis, the interacting pairs compared will be limited 
 #' corresponding to the limits put upon clusters.
 #'
-#' @return 
-#' TODO [TODO] change the import to be kind of importFrom
+#' @return List.
+#' \itemize{
+#'   \item plot: plot top ranked special genes.
+#'   \item tables: a list of 2 data.frames.
+#'         \itemize{
+#'           \item part.C: it records all significant special genes and their scores for the "applier" part.
+#'           \item part.D: it records all significant special genes and their scores for the "reciever" part.
+#'		   }
+#'   \item genes.top.on.score: a list of 2 list of genes.
+#'         \itemize{
+#'           \item part.C: it gives the specified number of top ranked special genes for the "applier" part.
+#'           \item part.D: it gives the specified number of top ranked special genes for the "reciever" part.
+#'         }
+#'   \item special.pairs.df: this table records all special gene pairs for this pair of interacting cluters.
+#' }
+#' 
 #'
 #'
 #' @import dplyr
@@ -265,32 +288,13 @@ FindSpecialGenesInOnepairCluster <- function(
 			scale_x_discrete(breaks = this.D.spdf.score$genes, limits = this.D.spdf.score$genes) + 
 			coord_flip() + 
 			labs(title = this.cluster.D)
-
-	## average score plots (consider > 0 and < 0)
-#	this.C.spdf.avg.score <- inside.topn.score.sort(this.C.spdf, "interact.avg.score", c(top.n.score.positive, top.n.score.negative), TRUE)
-#	this.D.spdf.avg.score <- inside.topn.score.sort(this.D.spdf, "interact.avg.score", c(top.n.score.positive, top.n.score.negative), TRUE)
-#
-#	this.plot.C.avg.score <- ggplot(this.C.spdf.avg.score, aes(x = genes, y = interact.avg.score))
-#	this.plot.C.avg.score <- this.plot.C.avg.score + 
-#			geom_col(aes(fill = interact.marker), colour = "black") + 
-#			scale_fill_manual(name = "UpDn", values = c("grey", "red"), breaks = c("DNreg", "UPreg")) + 
-#			scale_x_discrete(breaks = this.C.spdf.avg.score$genes, limits = this.C.spdf.avg.score$genes) + 
-#			coord_flip()
-#
-#	this.plot.D.avg.score <- ggplot(this.D.spdf.avg.score, aes(x = genes, y = interact.avg.score))
-#	this.plot.D.avg.score <- this.plot.D.avg.score + 
-#			geom_col(aes(fill = interact.marker), colour = "black") + 
-#			scale_fill_manual(name = "UpDn", values = c("lightgrey", "green"), breaks = c("DNreg", "UPreg")) + 
-#			scale_x_discrete(breaks = this.D.spdf.avg.score$genes, limits = this.D.spdf.avg.score$genes) + 
-#			coord_flip()
-
 	#
 	this.final.4plots <- plot_grid(this.plot.C.score, this.plot.D.score, ncol = 2, align = "vh")
 
 	#
 	list(plot = this.final.4plots, tables = list(part.C = this.C.spdf, part.D = this.D.spdf),
 		genes.top.on.score = list(part.C = this.C.spdf.score$genes, part.D = this.D.spdf.score$genes), 
-		special.pairs.df = this.merge.res.df)  # TODO	
+		special.pairs.df = this.merge.res.df)
 }
 
 

@@ -19,37 +19,59 @@ FindSpecialGenesInOnepairCluster(
 )
 }
 \arguments{
-\item{interact.pairs.acted}{A list. The return value of \code{\link{AnalyzeClustersInteracts}}.}
+\item{interact.pairs.acted}{List. The return value of \code{\link{AnalyzeClustersInteracts}}.}
 
-\item{clusters.onepair.select}{TODO}
+\item{clusters.onepair.select}{List. Return value of \code{\link{ExtractTargetOnepairClusters}}.}
 
-\item{merge.confidence.on.diff}{TODO}
+\item{merge.confidence.on.diff}{Numeric. Range (0,1) is available. One gene pair is special when it is unique
+all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" unique.}
 
-\item{merge.confidence.on.shared}{TODO}
+\item{merge.confidence.on.shared}{Numeric. Range (0,1) is available. When one gene pair is not unqiue to single 
+interacting cluster, it could be evaluated as special when the overall expression level changes is different to 
+all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" different.}
 
-\item{twist.fold.change.mul}{TODO}
+\item{twist.fold.change.mul}{Numeric. It defines the lower and upper bound of acceptable difference of expression level.
+Gene pairs that are out of this bound will be seen as special gene pairs.}
 
-\item{top.ignored.genes.applier}{TODO}
+\item{top.ignored.genes.applier}{Character. It is used to remove some uncared genes from analysis, and is applied on the 
+former one in a interacting cluster.}
 
-\item{top.ignored.genes.receiver}{TODO}
+\item{top.ignored.genes.receiver}{Character. Like \code{top.ignored.genes.applier}, but it is for the latter one 
+in a interacting cluster.}
+
+\item{top.n.score.positive}{Numeric. It specifies the count of top positive scores.}
+
+\item{top.n.score.negative}{Numeric. It specifies the count of top negative scores.}
 
 \item{option.calc.score}{Integer. Defining the method use in calculating score. The default settings is: 
 use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.}
-
-\item{...}{TODO}
-
-\item{top.n.cnt}{TODO}
-
-\item{top.n.score}{TODO}
 }
 \value{
-TODO [TODO] change the import to be kind of importFrom
+List.
+\itemize{
+  \item plot: plot top ranked special genes.
+  \item tables: a list of 2 data.frames.
+        \itemize{
+          \item part.C: it records all significant special genes and their scores for the "applier" part.
+          \item part.D: it records all significant special genes and their scores for the "reciever" part.
+	   }
+  \item genes.top.on.score: a list of 2 list of genes.
+        \itemize{
+          \item part.C: it gives the specified number of top ranked special genes for the "applier" part.
+          \item part.D: it gives the specified number of top ranked special genes for the "reciever" part.
+        }
+  \item special.pairs.df: this table records all special gene pairs for this pair of interacting cluters.
+}
 }
 \description{
-TODO
+This function is used to find special genes in one pair of interacting clusters. Genes are special
+if it passes some limitations when comparing to other pairs of interacting clusters.
 }
 \details{
-TODO [NOTE] as this function is based on interact.pairs.acted, if limits have been
-put upon the clusters in x-axis or y-axis, the compared interacting pairs will be limited 
+If the pair of interacting clusters is C -> D, then the C will be called applier, 
+and D will be called reciever.
+
+To be noted, as this function is based on interact.pairs.acted, if limits have been
+put upon the clusters in x-axis or y-axis, the interacting pairs compared will be limited 
 corresponding to the limits put upon clusters.
 }

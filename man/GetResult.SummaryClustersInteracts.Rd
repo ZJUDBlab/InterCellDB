@@ -83,7 +83,8 @@ This function uses some subset of interaction pairs, and does calculations in cl
 It calculates:
 \itemize{
   \item count: count of interaction pairs.
-  \item power: strength of interaction pairs, which is calculated by formula: [TODO-formula].
+  \item power: strength of interaction pairs, which is calculated by formula: SUM(abs(LogFC[geneA] * LogFC[geneB])), 
+               as the function defines: \code{FullView.Evaluation.func.default}.
 }
 }
 \examples{

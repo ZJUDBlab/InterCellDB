@@ -25,7 +25,7 @@ AnalyzeClustersInteracts(
   sub.sel.user.type.colname = NULL,
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
-  calculation.formula = EvaluateByFunc,
+  calculation.formula = FullView.Evaluation.func.default,
   ind.colname.end.dual = 4
 )
 }
@@ -60,9 +60,9 @@ at least one genes given in this parameter.}
 \item{restricted.gene.pairs}{Character or data.frame. Analysis will be restricted in given gene pairs(i.e. interaction pairs). 
 The given format is explained in the below, see details for help.}
 
-\item{sub.sel.X.clusters}{[TODO] specific retrict to some clusters in analysis}
+\item{sub.sel.X.clusters}{Character. It specifies part of clusters(in X axis) to be put in analysis.}
 
-\item{sub.sel.Y.clusters}{[TODO]}
+\item{sub.sel.Y.clusters}{Character. It specifies part of clusters(in Y axis) to be put in analysis.}
 
 \item{sub.sel.exprs.changes}{Character. Use subset of \code{c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown")}.}
 
@@ -71,7 +71,7 @@ The given format is explained in the below, see details for help.}
 \item{sub.sel.X.Location.score.limit}{Character or Integer. The one in \code{character()} will be treated as predefined strategy, while
 the one in \code{integer()} will be treated as score limit range. See details for help.}
 
-\item{sub.sel.Y.Location}{Like \code{sub.sel.X.Location}. [TODO] remove the default strategy "the most confident"}
+\item{sub.sel.Y.Location}{Like \code{sub.sel.X.Location}.}
 
 \item{sub.sel.Y.Location.score.limit}{Like \code{sub.sel.X.Location.score.limit}.}
 
@@ -79,7 +79,7 @@ the one in \code{integer()} will be treated as score limit range. See details fo
 
 \item{sub.sel.Y.Type}{Like \code{sub.sel.X.Type}.}
 
-\item{sub.sel.user.merge.option}{[TODO] choose union or intersect strategy}
+\item{sub.sel.user.merge.option}{Character. It chooses "union" or "intersect" strategy. See details for help.}
 
 \item{sub.sel.user.type.colname}{Character. It gives the column name that will be used for user-defined purposes.}
 
@@ -88,7 +88,7 @@ without any additional check.}
 
 \item{sub.sel.Y.user.type}{Like \code{sub.sel.X.user.type}.}
 
-\item{calculation.formula}{[TODO]}
+\item{calculation.formula}{}
 
 \item{ind.colname.end.dual}{Integer. Use default value provided only when the pairs.ref database is modified by users.}
 }
@@ -153,7 +153,10 @@ This function gives as much as possible freedom for users to choose to analyze a
         It uses the database given in another parameter \code{user.type.database}. \code{sub.sel.user.type.colname} selects which column to be used. 
         \code{sub.sel.X.user.type} & \code{sub.sel.Y.user.type} select the specific items in that column, and if any of them were set \code{NULL}, the  
         corresponding part will not add restriction on this user type.
-  \item \code{sub.sel.user.merge.option}: [TODO]
+  \item \code{sub.sel.user.merge.option}: The strategy "intersect" is the default strategy, which works well when either \code{sub.sel.X.user.type} or 
+        \code{sub.sel.Y.user.type} is given. If both two user.type(X and Y) are given, the "intersect" strategy will work in the way that it first uses 
+        \code{sub.sel.X.user.type} to select part of the data, and then uses \code{sub.sel.Y.user.type} to get one further subset of data. Meanwhile, 
+        the "union" strategy will apply each user.type(X, Y) restriction independently on data selection, and bind the results eventually.
   \item \code{ind.colname.end.dual}: It is the index when column of pairs.ref begin to provide information about the pair itself
          but not for the 2 genes in that pair. In almost all circumstances, this parameter is required not to be modified.
 }

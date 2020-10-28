@@ -20,7 +20,8 @@ GenerateVEinfos(
 \item{is.directional}{Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 otherwise bi-directional VEinfos will be generated.}
 
-\item{if.ignore.annos}{Logic. [TODO]. if set TRUE, ignore the locations and types, mainly used for circos plot.}
+\item{if.ignore.annos}{Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+be treated as the same, and only one row information will be reserved.}
 }
 \value{
 A list.
@@ -37,8 +38,9 @@ This function uses detailed informations about one interaction pair(return value
 \code{GenerateMapDetailOnepairClusters()}), to generate data for drawing relation plot.
 }
 \details{
-This function only uses actions that are already known, i.e. recorded thoroughly in some databases,
-to generate formatted data structure(with vertices and edges).
+This function uses actions that are recorded in STRING act database, but only a small part of 
+actions are thoroughly difined in the database.
+This function is used to generate formatted data structure(with vertices and edges).
 
 In vertices, all gene informations are well recorded, and every gene is given one unique ID.
 

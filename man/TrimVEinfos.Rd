@@ -2,7 +2,7 @@
 % Please edit documentation in R/detailed-view-in-targets.R
 \name{TrimVEinfos}
 \alias{TrimVEinfos}
-\title{[TODO]}
+\title{Trim the vertices and edges infos}
 \usage{
 TrimVEinfos(VEinfos, sel.mode.val = NULL, sel.action.effect.val = NULL)
 }
@@ -17,8 +17,11 @@ please specify detailed and accurate values in subset of \code{CellTalkDB::kpred
 please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.}
 }
 \description{
-[TODO]
+This function uses mode and action.effect as the restrictions when users select part of the result.
 }
 \details{
-[TODO]
+The whole list of mode or action.effect is defined as global variable that is given within the package.
+kpred.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
+As the action database given now is not completed well, it is recommended to select upon
+action.effect, while leaving all different modes preserved.
 }

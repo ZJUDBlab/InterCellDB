@@ -2,13 +2,21 @@
 % Please edit documentation in R/detailed-view-in-targets.R
 \name{Tool.formula.onLogFC.default}
 \alias{Tool.formula.onLogFC.default}
-\title{[TODO]}
+\title{Formula on calculating LogFC}
 \usage{
 Tool.formula.onLogFC.default(data.f, data.b)
 }
+\arguments{
+\item{data.f}{vector. The operated data.}
+
+\item{data.b}{vector. The operated data with its length the same as the 1st parameter.}
+}
 \description{
-[TODO]
+This is the default formula on calculating LogFC values, and is 
+belong to \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}.
 }
 \details{
-[TODO]
+This is the default formula for calculation. Users can define their own formula,
+as well as define their own evalution parameter besides LogFC(by changing the 
+param - \code{colnames.to.cmp} of \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}).
 }

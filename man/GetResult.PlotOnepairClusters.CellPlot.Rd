@@ -6,7 +6,7 @@
 \usage{
 GetResult.PlotOnepairClusters.CellPlot(
   VEinfos,
-  area.extend.times = 1,
+  area.extend.times = 10,
   hide.locations.A = NULL,
   hide.types.A = NULL,
   hide.locations.B = NULL,
