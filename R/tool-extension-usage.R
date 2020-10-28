@@ -97,6 +97,7 @@ Tool.FindGenesFromGO <- function(
 			warning("The following GO_IDs are not found: \n ", paste0(go.ID.given.nonexist, collapse = ", "), ".")
 		}
 	}
+  res.go.id.match.list <- go.ref.db[which(go.ref.db$GO_ID %in% go.ID.given.exist), "GeneName"]
 	# term matching
 	go.term.given.nonexist <- character()
 	go.term.given.exist <- character()
@@ -108,10 +109,11 @@ Tool.FindGenesFromGO <- function(
 			warning("The following GO_terms are not found: \n ", paste0(go.term.given.nonexist, collapse = ", "), ".")
 		}
 	}
+  res.go.term.match.list <- go.ref.db[which(go.ref.db$GO_term %in% go.term.given.exist), "GeneName"]
 	# finish transformation
-	go.final.useID <- c(go.ID.given.exist, go.term.given.exist)
-	res.go.rel.genes <- unique(go.ref.db[which(go.ref.db$GO_ID %in% go.final.useID), "GeneName"])  # [TODO] GeneName -> Gene.name
-	# return
+	res.go.rel.genes <- unique(as.character(c(res.go.id.match.list, res.go.term.match.list)))
+	res.go.rel.genes <- res.go.rel.genes[order(res.go.rel.genes)]
+  # return
 	res.go.rel.genes
 }
 
@@ -135,7 +137,8 @@ Tool.FindGenesFromGO <- function(
 #' and all permutation of interacts between these clusters will be used.
 #' @param is.directional Logic. It is passed to \code{GenerateVEinfos}. If TRUE, it only uses single direction 
 #' of clusters' interaction, otherwise use the bi-directional.
-#' @param if.ignore.annos Logic. [TODO]
+#' @param if.ignore.annos Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+#' be treated as the same, and only one row information will be reserved.
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
 #' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
