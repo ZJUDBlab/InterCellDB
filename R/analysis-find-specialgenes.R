@@ -40,7 +40,7 @@
 #'           \item part.C: it records all significant special genes and their scores for the "applier" part.
 #'           \item part.D: it records all significant special genes and their scores for the "reciever" part.
 #'		   }
-#'   \item genes.top.on.score: a list of 2 list of genes.
+#'   \item genes.top.on.col: a list of 2 list of genes.
 #'         \itemize{
 #'           \item part.C: it gives the specified number of top ranked special genes for the "applier" part.
 #'           \item part.D: it gives the specified number of top ranked special genes for the "reciever" part.
@@ -60,7 +60,7 @@
 FindSpecialGenesInOnepairCluster <- function(
 	interact.pairs.acted,
 	clusters.onepair.select,
-	evaluation.method = "interactive-first",
+	evaluation.method = "special-score",
 	merge.confidence.on.diff = 0.8,
 	merge.confidence.on.shared = 0.8,
 	twist.fold.change.mul = 1,
@@ -207,8 +207,9 @@ FindSpecialGenesInOnepairCluster <- function(
 	p.D.collect.pairs <- inside.collect.pass.twist.one.pair.each(all.pairs.interacts, other.pairs.names.D, this.pair.tgs, twist.fold.change.mul.it)
 	# different strategy
 	this.C.spdf <- this.D.spdf <- data.frame()
-	if (evaluation.method == "interactive-first") {
+	if (evaluation.method == "special-score") {
 		# get speical genes in diff ones
+		p.C.diff.tgs.pnames <- p.D.diff.tgs.pnames <- character()
 		if (length(p.C.collect.pairs$diff) > 0) {
 			# for diff pairs, it is special if it only appears in restricted number of interacting clusters
 			p.C.collect.diff.dups <- tapply(1:length(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
@@ -220,6 +221,7 @@ FindSpecialGenesInOnepairCluster <- function(
 			p.D.diff.tgs.pnames <- names(p.D.collect.diff.dups[which(p.D.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.D)))])
 		}
 		# get speical genes in shared ones
+		p.C.shared.tgs.pnames <- p.D.shared.tgs.pnames <- character()
 		if (length(p.C.collect.pairs$shared) > 0) {
 			# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
 			p.C.collect.shared.dups <- tapply(1:length(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
@@ -252,7 +254,7 @@ FindSpecialGenesInOnepairCluster <- function(
 		this.C.spdf <- this.merge.res.tl$part.C
 		this.D.spdf <- this.merge.res.tl$part.D
 	} else {
-		if (evaluation.method == "count-first") {
+		if (evaluation.method == "special-index") {
 			# get diff index (how diff it is among those interacting pairs)
 			if (length(p.C.collect.pairs$diff) > 0) {
 				# for diff pairs, it is special if it only appears in restricted number of interacting clusters
@@ -334,7 +336,7 @@ FindSpecialGenesInOnepairCluster <- function(
 	}
 
 	### draw plots
-	if (evaluation.method == "interactive-first") {
+	if (evaluation.method == "special-score") {
 		## score plots (consider > 0 and < 0)
 		tmp.sym.Y <- sym("interact.score")
 		this.C.spdf.col <- inside.topn.col.sort(this.C.spdf, "interact.score", c(top.n.col.positive, top.n.col.negative), TRUE)
@@ -365,7 +367,7 @@ FindSpecialGenesInOnepairCluster <- function(
 
 	#
 	list(plot = this.final.4plots, tables = list(part.C = this.C.spdf, part.D = this.D.spdf),
-		genes.top.on.score = list(part.C = this.C.spdf.col$genes, part.D = this.D.spdf.col$genes), 
+		genes.top.on.col = list(part.C = this.C.spdf.col$genes, part.D = this.D.spdf.col$genes), 
 		special.pairs.df = this.merge.res.df)
 }
 
