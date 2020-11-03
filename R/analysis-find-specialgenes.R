@@ -1,12 +1,13 @@
 
 #' Find special genes in one pair of interacting clusters
 #'
-#' @description
+#' @description [TODO] as different strategy used, params description needs to be changed.
 #' This function is used to find special genes in one pair of interacting clusters. Genes are special
 #' if it passes some limitations when comparing to other pairs of interacting clusters. 
 #'
 #' @param interact.pairs.acted List. The return value of \code{\link{AnalyzeClustersInteracts}}.
 #' @param clusters.onepair.select List. Return value of \code{\link{ExtractTargetOnepairClusters}}.
+#' @param evaluation.method [TODO]
 #' @param merge.confidence.on.diff Numeric. Range (0,1) is available. One gene pair is special when it is unique  
 #' all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" unique.
 #' @param merge.confidence.on.shared Numeric. Range (0,1) is available. When one gene pair is not unqiue to single 
@@ -18,8 +19,8 @@
 #' former one in a interacting cluster.
 #' @param top.ignored.genes.receiver Character. Like \code{top.ignored.genes.applier}, but it is for the latter one 
 #' in a interacting cluster.
-#' @param top.n.score.positive Numeric. It specifies the count of top positive scores.
-#' @param top.n.score.negative Numeric. It specifies the count of top negative scores.
+#' @param top.n.col.positive Numeric. [TODO] It specifies the count of top positive scores.
+#' @param top.n.col.negative Numeric. [TODO] It specifies the count of top negative scores.
 #' @param option.calc.score Integer. Defining the method use in calculating score. The default settings is: 
 #' use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.
 #'
@@ -59,13 +60,14 @@
 FindSpecialGenesInOnepairCluster <- function(
 	interact.pairs.acted,
 	clusters.onepair.select,
+	evaluation.method = "interactive-first",
 	merge.confidence.on.diff = 0.8,
 	merge.confidence.on.shared = 0.8,
 	twist.fold.change.mul = 1,
 	top.ignored.genes.applier = character(),
 	top.ignored.genes.receiver = character(),
-	top.n.score.positive = 10,
-	top.n.score.negative = 10,
+	top.n.col.positive = 10,
+	top.n.col.negative = 10,
 	option.calc.score = 0,
 	...
 ) {
@@ -141,6 +143,29 @@ FindSpecialGenesInOnepairCluster <- function(
 		return(list(part.C = tmp.C.df, part.D = tmp.D.df))
 	}
 
+	inside.uq.cnt.on.selected.interacts <- function(
+		target.pairs
+	) {
+		tmp.C.df <- data.frame(genes = character(), interacts.cnt = numeric(), interacts.uq.cnt = numeric())
+		tmp.D.df <- tmp.C.df
+		# function for tapply
+		if (nrow(target.pairs) != 0) {
+			# calculate the score of applier cells
+			tmp.genes.C <- tapply(1:nrow(target.pairs), target.pairs$inter.GeneName.A, length)
+			tmp.C.df <- data.frame(genes = names(tmp.genes.C), interacts.cnt = tmp.genes.C, stringsAsFactors = FALSE)
+			tmp.C.geneA.itself <- tapply(target.pairs[, "inter.LogFC.A"], target.pairs$inter.GeneName.A, mean)
+			tmp.C.df$interacts.uq.cnt <- tmp.C.df$interacts.cnt  * exp(tmp.C.geneA.itself)
+			tmp.C.df$interact.marker <- ifelse(tmp.C.geneA.itself > 0, "UPreg", "DNreg")  # marker indicate the A if it is upregulated or not
+			# calculate the score of reciever cells
+			tmp.genes.D <- tapply(1:nrow(target.pairs), target.pairs$inter.GeneName.B, length)
+			tmp.D.df <- data.frame(genes = names(tmp.genes.D), interacts.cnt = tmp.genes.D, stringsAsFactors = FALSE)
+			tmp.D.geneB.itself <- tapply(target.pairs[, "inter.LogFC.B"], target.pairs$inter.GeneName.B, mean)
+			tmp.D.df$interacts.uq.cnt <- tmp.D.df$interacts.cnt * exp(tmp.D.geneB.itself)
+			tmp.D.df$interact.marker <- ifelse(tmp.D.geneB.itself > 0, "UPreg", "DNreg")  # marker indicate the B if it is upregulated or not
+		}
+		return(list(part.C = tmp.C.df, part.D = tmp.D.df))
+	}
+
 	# compare this to ohter under 1 v-line & 1 h-line
 	twist.fold.change.mul.up <- twist.fold.change.mul + 1
 	twist.fold.change.mul.it <- c(1 / twist.fold.change.mul.up, twist.fold.change.mul.up)
@@ -180,60 +205,106 @@ FindSpecialGenesInOnepairCluster <- function(
 	#
 	p.C.collect.pairs <- inside.collect.pass.twist.one.pair.each(all.pairs.interacts, other.pairs.names.C, this.pair.tgs, twist.fold.change.mul.it)
 	p.D.collect.pairs <- inside.collect.pass.twist.one.pair.each(all.pairs.interacts, other.pairs.names.D, this.pair.tgs, twist.fold.change.mul.it)
-	#
-	p.C.diff.tgs.pnames <- character()
-	p.D.diff.tgs.pnames <- character()
-	if (length(p.C.collect.pairs$diff) > 0) {
-		# for diff pairs, it is special if it only appears in restricted number of interacting clusters
-		p.C.collect.diff.dups <- tapply(1:length(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
-		# collect names of gene pairs in diff pairs
-		p.C.diff.tgs.pnames <- names(p.C.collect.diff.dups[which(p.C.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.C)))])
-	} 
-	if (length(p.D.collect.pairs$diff) > 0) {
-		p.D.collect.diff.dups <- tapply(1:length(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
-		p.D.diff.tgs.pnames <- names(p.D.collect.diff.dups[which(p.D.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.D)))])
-	}
-	#
-	p.C.shared.tgs.pnames <- character()
-	p.D.shared.tgs.pnames <- character()
-	if (length(p.C.collect.pairs$shared) > 0) {
-		# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
-		p.C.collect.shared.dups <- tapply(1:length(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
-		p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
-		# get the shared orig collection
-		p.C.collect.shared.orig <- tapply(1:length(p.C.collect.pairs$shared.orig), p.C.collect.pairs$shared.orig, length)
-		p.C.collect.shared.orig <- p.C.collect.shared.orig[which(names(p.C.collect.shared.orig) %in% names(p.C.collect.shared.dups))]
-		p.C.collect.shared.orig <- p.C.collect.shared.orig[order(names(p.C.collect.shared.orig))]
-		# collect names of gene pairs in shared pairs
-		p.C.shared.tgs.pnames <- names(p.C.collect.shared.dups[which(p.C.collect.shared.dups >= floor(merge.confidence.on.shared * p.C.collect.shared.orig))])
-	}
-	if (length(p.D.collect.pairs$shared) > 0) {
-		p.D.collect.shared.dups <- tapply(1:length(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
-		p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
-		p.D.collect.shared.orig <- tapply(1:length(p.D.collect.pairs$shared.orig), p.D.collect.pairs$shared.orig, length)
-		p.D.collect.shared.orig <- p.D.collect.shared.orig[which(names(p.D.collect.shared.orig) %in% names(p.D.collect.shared.dups))]
-		p.D.collect.shared.orig <- p.D.collect.shared.orig[order(names(p.D.collect.shared.orig))]
-		p.D.shared.tgs.pnames <- names(p.D.collect.shared.dups[which(p.D.collect.shared.dups >= floor(merge.confidence.on.shared * p.D.collect.shared.orig))])
-	}
-	# merge result
-	p.C.tgs.pnames <- c(p.C.diff.tgs.pnames, p.C.shared.tgs.pnames)
-	p.D.tgs.pnames <- c(p.D.diff.tgs.pnames, p.D.shared.tgs.pnames)
-	# get the special pairs, seperately
-	this.C.res.df <- this.pair.interacts[match(p.C.tgs.pnames, this.pair.tgs[, "interacts.name"]), ]
-	this.D.res.df <- this.pair.interacts[match(p.D.tgs.pnames, this.pair.tgs[, "interacts.name"]), ]
-	this.merge.res.df <- DoPartUnique(rbind(this.C.res.df, this.D.res.df), c(1,2))
+	# different strategy
+	this.C.spdf <- this.D.spdf <- data.frame()
+	if (evaluation.method == "interactive-first") {
+		# get speical genes in diff ones
+		if (length(p.C.collect.pairs$diff) > 0) {
+			# for diff pairs, it is special if it only appears in restricted number of interacting clusters
+			p.C.collect.diff.dups <- tapply(1:length(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
+			# collect names of gene pairs in diff pairs
+			p.C.diff.tgs.pnames <- names(p.C.collect.diff.dups[which(p.C.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.C)))])
+		} 
+		if (length(p.D.collect.pairs$diff) > 0) {
+			p.D.collect.diff.dups <- tapply(1:length(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
+			p.D.diff.tgs.pnames <- names(p.D.collect.diff.dups[which(p.D.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.D)))])
+		}
+		# get speical genes in shared ones
+		if (length(p.C.collect.pairs$shared) > 0) {
+			# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
+			p.C.collect.shared.dups <- tapply(1:length(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
+			p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
+			# get the shared orig collection
+			p.C.collect.shared.orig <- tapply(1:length(p.C.collect.pairs$shared.orig), p.C.collect.pairs$shared.orig, length)
+			p.C.collect.shared.orig <- p.C.collect.shared.orig[which(names(p.C.collect.shared.orig) %in% names(p.C.collect.shared.dups))]
+			p.C.collect.shared.orig <- p.C.collect.shared.orig[order(names(p.C.collect.shared.orig))]
+			# collect names of gene pairs in shared pairs
+			p.C.shared.tgs.pnames <- names(p.C.collect.shared.dups[which(p.C.collect.shared.dups >= floor(merge.confidence.on.shared * p.C.collect.shared.orig))])
+		}
+		if (length(p.D.collect.pairs$shared) > 0) {
+			p.D.collect.shared.dups <- tapply(1:length(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
+			p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
+			p.D.collect.shared.orig <- tapply(1:length(p.D.collect.pairs$shared.orig), p.D.collect.pairs$shared.orig, length)
+			p.D.collect.shared.orig <- p.D.collect.shared.orig[which(names(p.D.collect.shared.orig) %in% names(p.D.collect.shared.dups))]
+			p.D.collect.shared.orig <- p.D.collect.shared.orig[order(names(p.D.collect.shared.orig))]
+			p.D.shared.tgs.pnames <- names(p.D.collect.shared.dups[which(p.D.collect.shared.dups >= floor(merge.confidence.on.shared * p.D.collect.shared.orig))])
+		}
+		# merge result
+		p.C.tgs.pnames <- c(p.C.diff.tgs.pnames, p.C.shared.tgs.pnames)
+		p.D.tgs.pnames <- c(p.D.diff.tgs.pnames, p.D.shared.tgs.pnames)
+		# get the special pairs, seperately
+		this.C.res.df <- this.pair.interacts[match(p.C.tgs.pnames, this.pair.tgs[, "interacts.name"]), ]
+		this.D.res.df <- this.pair.interacts[match(p.D.tgs.pnames, this.pair.tgs[, "interacts.name"]), ]
+		this.merge.res.df <- DoPartUnique(rbind(this.C.res.df, this.D.res.df), c(1,2))
 
-	# calculate the scores of special pairs
-	this.merge.res.tl <- inside.score.on.selected.interacts(this.merge.res.df, option.calc.score)
-	this.C.spdf <- this.merge.res.tl$part.C
-	this.D.spdf <- this.merge.res.tl$part.D
+		# calculate the scores of special pairs
+		this.merge.res.tl <- inside.score.on.selected.interacts(this.merge.res.df, option.calc.score)
+		this.C.spdf <- this.merge.res.tl$part.C
+		this.D.spdf <- this.merge.res.tl$part.D
+	} else {
+		if (evaluation.method == "count-first") {
+			# get diff index (how diff it is among those interacting pairs)
+			if (length(p.C.collect.pairs$diff) > 0) {
+				# for diff pairs, it is special if it only appears in restricted number of interacting clusters
+				p.C.collect.diff.dups <- tapply(1:length(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
+			} 
+			if (length(p.D.collect.pairs$diff) > 0) {
+				p.D.collect.diff.dups <- tapply(1:length(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
+			}
+			# get speical genes in shared ones
+			if (length(p.C.collect.pairs$shared) > 0) {
+				# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
+				p.C.collect.shared.dups <- tapply(1:length(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
+				p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
+			}
+			if (length(p.D.collect.pairs$shared) > 0) {
+				p.D.collect.shared.dups <- tapply(1:length(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
+				p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
+			}
+			# merge result
+			p.CD.merge.dups <- c(p.C.collect.diff.dups, p.D.collect.diff.dups, p.C.collect.shared.dups, p.D.collect.shared.dups)
+			p.CD.tgs <- tapply(p.CD.merge.dups, names(p.CD.merge.dups), sum)
+			if (merge.confidence.on.diff == merge.confidence.on.shared) {
+				tmp.merge.conf <- merge.confidence.on.diff
+			} else {
+				tmp.merge.conf <- (merge.confidence.on.diff + merge.confidence.on.shared) / 2
+				warning("Under strategy: ", evaluation.method, ". With 2 different *.merge.confidence.*, automatically use the average!")
+			}
+			p.passed.CD.tgs.pnames <- names(p.CD.tgs[which(p.CD.tgs >= floor(tmp.merge.conf * (length(other.pairs.names.C) + length(other.pairs.names.D))))])
+			# get the special pairs
+			this.merge.res.df <- this.pair.interacts[match(p.passed.CD.tgs.pnames, this.pair.tgs[, "interacts.name"]), ]
 
+			# calculate the cnt of special pairs in the gene-special manner
+			this.merge.res.tl <- inside.uq.cnt.on.selected.interacts(this.merge.res.df)
+			this.C.spdf <- this.merge.res.tl$part.C
+			this.D.spdf <- this.merge.res.tl$part.D
+		} else {
+			stop("Error: Undefined strategy! ", evaluation.method)
+		}
+	}
+	
 	# ignore some genes in ranking plot
 	this.C.spdf <- this.C.spdf[which(this.C.spdf$genes %in% (setdiff(this.C.spdf$genes, top.ignored.genes.applier))), ]
 	this.D.spdf <- this.D.spdf[which(this.D.spdf$genes %in% (setdiff(this.D.spdf$genes, top.ignored.genes.receiver))), ]
 
+	if (nrow(this.C.spdf) == 0 || nrow(this.D.spdf) == 0) {
+		cat("Quit with no speical genes, in interact [", this.cluster.C, " and ", this.cluster.D, "]!\n", 
+			"Re-check if too strict restrictions were given!\n")
+		return(NULL)
+	}
+
 	#
-	inside.topn.score.sort <- function(df, target.col, n.top.sel, decreasing) {
+	inside.topn.col.sort <- function(df, target.col, n.top.sel, decreasing) {
 		#
 		df.sub.1 <- df[which(df[, target.col] > 0), ]
 		df.sub.1 <- df.sub.1[order(df.sub.1[, target.col], decreasing = decreasing), ]
@@ -262,38 +333,39 @@ FindSpecialGenesInOnepairCluster <- function(
 		ret.df
 	}
 
-	if (nrow(this.C.spdf) == 0 || nrow(this.D.spdf) == 0) {
-		cat("Quit with no speical genes, in interact [", this.cluster.C, " and ", this.cluster.D, "]!\n", 
-			"Re-check if too strict restrictions were given!\n")
-		return(NULL)
-	}
-
 	### draw plots
-	## score plots (consider > 0 and < 0)
-	this.C.spdf.score <- inside.topn.score.sort(this.C.spdf, "interact.score", c(top.n.score.positive, top.n.score.negative), TRUE)
-	this.D.spdf.score <- inside.topn.score.sort(this.D.spdf, "interact.score", c(top.n.score.positive, top.n.score.negative), TRUE)
-	
-	this.plot.C.score <- ggplot(this.C.spdf.score, aes(x = genes, y = interact.score))
-	this.plot.C.score <- this.plot.C.score + 
+	if (evaluation.method == "interactive-first") {
+		## score plots (consider > 0 and < 0)
+		tmp.sym.Y <- sym("interact.score")
+		this.C.spdf.col <- inside.topn.col.sort(this.C.spdf, "interact.score", c(top.n.col.positive, top.n.col.negative), TRUE)
+		this.D.spdf.col <- inside.topn.col.sort(this.D.spdf, "interact.score", c(top.n.col.positive, top.n.col.negative), TRUE)
+	} else {
+		## uq.cnt plots
+		tmp.sym.Y <- sym("interacts.uq.cnt")
+		this.C.spdf.col <- inside.topn.col.sort(this.C.spdf, "interacts.uq.cnt", c(top.n.col.positive, top.n.col.negative), TRUE)
+		this.D.spdf.col <- inside.topn.col.sort(this.D.spdf, "interacts.uq.cnt", c(top.n.col.positive, top.n.col.negative), TRUE)
+	}
+	this.plot.C.col <- ggplot(this.C.spdf.col, aes(x = genes, y = !!tmp.sym.Y))
+	this.plot.C.col <- this.plot.C.col + 
 			geom_col(aes(fill = interact.marker), colour = "black") + 
 			scale_fill_manual(name = "UpDn", values = c("grey", "red"), breaks = c("DNreg", "UPreg")) + 
-			scale_x_discrete(breaks = this.C.spdf.score$genes, limits = this.C.spdf.score$genes) + 
+			scale_x_discrete(breaks = this.C.spdf.col$genes, limits = this.C.spdf.col$genes) + 
 			coord_flip() + 
 			labs(title = this.cluster.C)
 
-	this.plot.D.score <- ggplot(this.D.spdf.score, aes(x = genes, y = interact.score))
-	this.plot.D.score <- this.plot.D.score + 
+	this.plot.D.col <- ggplot(this.D.spdf.col, aes(x = genes, y = !!tmp.sym.Y))
+	this.plot.D.col <- this.plot.D.col + 
 			geom_col(aes(fill = interact.marker), colour = "black") + 
 			scale_fill_manual(name = "UpDn", values = c("lightgrey", "green"), breaks = c("DNreg", "UPreg")) + 
-			scale_x_discrete(breaks = this.D.spdf.score$genes, limits = this.D.spdf.score$genes) + 
+			scale_x_discrete(breaks = this.D.spdf.col$genes, limits = this.D.spdf.col$genes) + 
 			coord_flip() + 
 			labs(title = this.cluster.D)
 	#
-	this.final.4plots <- plot_grid(this.plot.C.score, this.plot.D.score, ncol = 2, align = "vh")
+	this.final.4plots <- plot_grid(this.plot.C.col, this.plot.D.col, ncol = 2, align = "vh")
 
 	#
 	list(plot = this.final.4plots, tables = list(part.C = this.C.spdf, part.D = this.D.spdf),
-		genes.top.on.score = list(part.C = this.C.spdf.score$genes, part.D = this.D.spdf.score$genes), 
+		genes.top.on.score = list(part.C = this.C.spdf.col$genes, part.D = this.D.spdf.col$genes), 
 		special.pairs.df = this.merge.res.df)
 }
 
