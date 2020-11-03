@@ -72,8 +72,7 @@ pbmc <- RunTSNE(pbmc, dims = 1:this.choose.dims)
 DimPlot(pbmc, reduction = "tsne")
 
 # FindAllMarkers: Finding differentially expressed features
-pbmc.markers <- FindAllMarkers(pbmc, only.pos = FALSE, min.pct = 0.25, logfc.threshold = 0.25)
-
+pbmc.markers <- FindAllMarkers(pbmc, only.pos = FALSE, min.pct = 0.1, logfc.threshold = 0)
 
 # when reaching here, the process is done
 pbmc.markers  # it is the result CellTalkDB most need!

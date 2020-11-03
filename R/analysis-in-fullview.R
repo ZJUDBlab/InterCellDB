@@ -126,9 +126,8 @@ Inside.AnalyzeClustersInteracts <- function(
       if (!is.null(restricted.some.genes)) {  # using retricted genes
         df.ref.somegenes <- data.frame(part.genes = restricted.some.genes, indicator.A = 1, indicator.B = 1, stringsAsFactors = FALSE)
         pairs.sp.ikab <- left_join(pairs.sp.ikab, df.ref.somegenes[, c("part.genes", "indicator.A")], by = c("inter.GeneName.A" = "part.genes"))
-        pairs.sp.ikab <- pairs.sp.ikab[which(!is.na(pairs.sp.ikab[, "indicator.A"])), ]
         pairs.sp.ikab <- left_join(pairs.sp.ikab, df.ref.somegenes[, c("part.genes", "indicator.B")], by = c("inter.GeneName.B" = "part.genes"))
-        pairs.sp.ikab <- pairs.sp.ikab[which(!is.na(pairs.sp.ikab[, "indicator.B"])), ]
+        pairs.sp.ikab <- pairs.sp.ikab[union(which(!is.na(pairs.sp.ikab[, "indicator.A"])), which(!is.na(pairs.sp.ikab[, "indicator.B"]))), ]
         inds.rm.some.genes <- which(colnames(pairs.sp.ikab) %in% c("indicator.A", "indicator.B"))
         pairs.sp.ikab <- pairs.sp.ikab[, -inds.rm.some.genes]
       }
