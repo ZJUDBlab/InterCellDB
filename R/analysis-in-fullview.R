@@ -637,6 +637,7 @@ AnalyzeClustersInteracts <- function(
 #' @param cnt.max.limit Numeric. Specify the upper limit of count, whose value is highly user-defined and data-dependent.
 #' @param cnt.min.limit Numeric. Specify the lower limit of count, like \code{cnt.max.limit}.
 #' @param hide.cnt.label Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.
+#' @param nodes.size [TODO]
 #' @param nodes.colour.seq Character. Given colours will be used to generate colour gradient for plotting.
 #' @param nodes.colour.value.seq Numeric. If set NULL, evenly place each colour in \code{nodes.colour.seq} vector.
 #' Otherwise, numeric values with the same length of \code{nodes.colour.seq} should be given to specify the positions corresponding to each colour.
@@ -707,6 +708,7 @@ GetResult.SummaryClustersInteracts <- function(
   cnt.max.limit = NULL,
   cnt.min.limit = NULL,
   hide.cnt.label = FALSE,  # hide the labels 
+  nodes.size = c(1, 6),
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   nodes.colour.value.seq = c(0.0, 0.5, 1.0),
   label.power.options = list(hjust = "middle", vjust = "top", nudge.x = 0, nudge.y = -0.3, size = 2),
@@ -813,7 +815,7 @@ GetResult.SummaryClustersInteracts <- function(
   plot.res <- plot.res + geom_point(aes(size = cnt.limit, colour = power.limit)) + 
                          scale_x_discrete(limits = fac.x.clusters, breaks = fac.x.clusters) + 
                          scale_y_discrete(limits = fac.y.clusters, breaks = fac.y.clusters) + 
-                         scale_size(name = "Count") + 
+                         scale_size(name = "Count", range = nodes.size) + 
                          scale_colour_gradientn(name = "Power", colours = nodes.colour.seq, values = nodes.colour.value.seq)
   # add labels for those out of range ( > cnt.max.limit or < cnt.min.limit)
   part.on.cnt.db <- data.frame(x = pairs.plot.db$x, y = pairs.plot.db$y, cnt.orig = pairs.plot.db$cnt.orig, stringsAsFactors = FALSE)
