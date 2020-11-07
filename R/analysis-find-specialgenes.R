@@ -15,9 +15,9 @@
 #' all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" different.
 #' @param twist.fold.change.mul Numeric. It defines the lower and upper bound of acceptable difference of expression level.
 #' Gene pairs that are out of this bound will be seen as special gene pairs.
-#' @param top.ignored.genes.applier Character. It is used to remove some uncared genes from analysis, and is applied on the 
+#' @param top.ignored.genes.sender Character. It is used to remove some uncared genes from analysis, and is applied on the 
 #' former one in a interacting cluster.
-#' @param top.ignored.genes.receiver Character. Like \code{top.ignored.genes.applier}, but it is for the latter one 
+#' @param top.ignored.genes.receiver Character. Like \code{top.ignored.genes.sender}, but it is for the latter one 
 #' in a interacting cluster.
 #' @param top.n.col.positive Numeric. [TODO] It specifies the count of top positive scores.
 #' @param top.n.col.negative Numeric. [TODO] It specifies the count of top negative scores.
@@ -25,7 +25,7 @@
 #' use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.
 #'
 #' @details
-#' If the pair of interacting clusters is C -> D, then the C will be called applier, 
+#' If the pair of interacting clusters is C -> D, then the C will be called sender, 
 #' and D will be called reciever.
 #'
 #' To be noted, as this function is based on interact.pairs.acted, if limits have been
@@ -37,12 +37,12 @@
 #'   \item plot: plot top ranked special genes.
 #'   \item tables: a list of 2 data.frames.
 #'         \itemize{
-#'           \item part.C: it records all significant special genes and their scores for the "applier" part.
+#'           \item part.C: it records all significant special genes and their scores for the "sender" part.
 #'           \item part.D: it records all significant special genes and their scores for the "reciever" part.
 #'		   }
 #'   \item genes.top.on.col: a list of 2 list of genes.
 #'         \itemize{
-#'           \item part.C: it gives the specified number of top ranked special genes for the "applier" part.
+#'           \item part.C: it gives the specified number of top ranked special genes for the "sender" part.
 #'           \item part.D: it gives the specified number of top ranked special genes for the "reciever" part.
 #'         }
 #'   \item special.pairs.df: this table records all special gene pairs for this pair of interacting cluters.
@@ -64,7 +64,7 @@ FindSpecialGenesInOnepairCluster <- function(
 	merge.confidence.on.diff = 0.8,
 	merge.confidence.on.shared = 0.8,
 	twist.fold.change.mul = 1,
-	top.ignored.genes.applier = character(),
+	top.ignored.genes.sender = character(),
 	top.ignored.genes.receiver = character(),
 	top.n.col.positive = 10,
 	top.n.col.negative = 10,
@@ -123,7 +123,7 @@ FindSpecialGenesInOnepairCluster <- function(
 			}
 		}
 		if (nrow(target.pairs) != 0) {
-			# calculate the score of applier cells
+			# calculate the score of sender cells
 			tmp.genes.C <- tapply(1:nrow(target.pairs), target.pairs$inter.GeneName.A, length)
 			tmp.C.df <- data.frame(genes = names(tmp.genes.C), interacts.cnt = tmp.genes.C, stringsAsFactors = FALSE)
 			tmp.C.geneA.sums <- tapply(target.pairs[, "inter.LogFC.B"], target.pairs$inter.GeneName.A, optionx = optionx, tiny.calc)
@@ -150,7 +150,7 @@ FindSpecialGenesInOnepairCluster <- function(
 		tmp.D.df <- tmp.C.df
 		# function for tapply
 		if (nrow(target.pairs) != 0) {
-			# calculate the score of applier cells
+			# calculate the score of sender cells
 			tmp.genes.C <- tapply(1:nrow(target.pairs), target.pairs$inter.GeneName.A, length)
 			tmp.C.df <- data.frame(genes = names(tmp.genes.C), interacts.cnt = tmp.genes.C, stringsAsFactors = FALSE)
 			tmp.C.geneA.itself <- tapply(target.pairs[, "inter.LogFC.A"], target.pairs$inter.GeneName.A, mean)
@@ -296,7 +296,7 @@ FindSpecialGenesInOnepairCluster <- function(
 	}
 	
 	# ignore some genes in ranking plot
-	this.C.spdf <- this.C.spdf[which(this.C.spdf$genes %in% (setdiff(this.C.spdf$genes, top.ignored.genes.applier))), ]
+	this.C.spdf <- this.C.spdf[which(this.C.spdf$genes %in% (setdiff(this.C.spdf$genes, top.ignored.genes.sender))), ]
 	this.D.spdf <- this.D.spdf[which(this.D.spdf$genes %in% (setdiff(this.D.spdf$genes, top.ignored.genes.receiver))), ]
 
 	if (nrow(this.C.spdf) == 0 || nrow(this.D.spdf) == 0) {
@@ -382,7 +382,7 @@ FindSpecialGenesInOnepairCluster <- function(
 #'
 #' @param interact.pairs.acted TODO
 #' @param cluster.name TODO
-#' @param cluster.applier.or.receiver TODO
+#' @param cluster.sender.or.receiver TODO
 #' @param common.change.confidence TODO
 #' @param cmp.extend.positive TODO
 #' @param cmp.extend.negative TODO
@@ -401,10 +401,10 @@ FindSpecialGenesInOnepairCluster <- function(
 #'
 #' @export
 #'
-FindCommonChangedGenesInOnepairCluster <- function(
+FindCommonChangedGenesInOneCluster <- function(
 	interact.pairs.acted,
 	cluster.name,
-	cluster.applier.or.receiver = TRUE,
+	cluster.sender.or.receiver = TRUE,
 	common.change.confidence = 0.8,
 	cmp.extend.positive = 0.25,
 	cmp.extend.negative = 0.25,
@@ -416,7 +416,7 @@ FindCommonChangedGenesInOnepairCluster <- function(
 	#
 	other.clusters <- setdiff(all.clusters, cluster.to.cmp)
 	other.imp.genes.df <- lapply(other.clusters, cluster = cluster.to.cmp, 
-		cluster.position = cluster.applier.or.receiver, full.ref = interact.pairs.acted,
+		cluster.position = cluster.sender.or.receiver, full.ref = interact.pairs.acted,
 		over0.percent = cmp.extend.positive, under0.percent = cmp.extend.negative,
 		...,
 		function(x, cluster, cluster.position, full.ref, over0.percent, under0.percent, ...) {
