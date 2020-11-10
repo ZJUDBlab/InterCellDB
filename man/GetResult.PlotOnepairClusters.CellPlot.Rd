@@ -12,6 +12,9 @@ GetResult.PlotOnepairClusters.CellPlot(
   hide.locations.B = NULL,
   hide.types.B = NULL,
   hide.sole.vertices = TRUE,
+  expand.gap.radius.list = list(ECM = 2, PM = 3, CTP = 2, OTHER = 2),
+  expand.gap.degree.list = list(ECM = 60, PM = 180, CTP = 60, OTHER = 60),
+  expand.center.density.list = list(ECM = 0.25, PM = 0.25, CTP = 0.25, OTHER = 0.25),
   nodes.size = 3,
   nodes.colour = "grey",
   nodes.alpha = 0.8,
@@ -43,6 +46,12 @@ one should change this paramemter to be larger to get all vertices allocated.}
 \item{hide.types.B}{Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.}
 
 \item{hide.sole.vertices}{Character. It hides sole vertices which have no available edges.}
+
+\item{expand.gap.radius.list}{[TODO]}
+
+\item{expand.gap.degree.list}{[TODO]}
+
+\item{expand.center.density.list}{[TODO]}
 
 \item{nodes.size}{Numeric. Size of nodes.}
 
