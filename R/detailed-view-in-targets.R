@@ -293,8 +293,9 @@ ScatterSimple.Plot <- function(
   data.veinfo,
   center.xy,  # (x, y)
   ext.len,  # circle, if non-circle is wanted, use coords.trans functions
-  sample.gap.degree = 30,  # default will be 30
-  density.half.near = 1 / 3.0,  # default will be 1/3
+  radius.gap.factor = 1,
+  sample.gap.degree = 60,  # default will be 30
+  density.half.near = 1 / 4.0,  # default will be 1/3
   coords.xy.colnames = c("gx", "gy")
 ) {
   # warning or stop for area.extend.times
@@ -340,27 +341,35 @@ ScatterSimple.Plot <- function(
   data.in.away.c <- data.veinfo[setdiff(1:nrow(data.veinfo), data.sel.near.c), ]
   ## scatter capacity
   # in near center
-  sp.rad.near.c <- sample(1:radius.near.center, length(1:radius.near.center))
-  sp.deg.near.c <- sample(1:this.deg.splits, length(1:this.deg.splits))
+  tmp.used.near.center <- floor(radius.near.center / radius.gap.factor)
+  sp.rad.near.c <- (1:tmp.used.near.center) * radius.gap.factor
+  sp.deg.near.c <- 1:this.deg.splits
+  #sp.rad.near.c <- sample(1:tmp.used.near.center, length(1:tmp.used.near.center)) * radius.gap.factor
+  #sp.deg.near.c <- sample(1:this.deg.splits, length(1:this.deg.splits))
   sp.total.near.c <- length(sp.rad.near.c) * length(sp.deg.near.c)
-  if (sp.total.near.c < nrow(data.in.near.c)) {
+  if (sp.total.near.c < nrow(data.in.near.c) || tmp.used.near.center == 0) {
     stop("Capacity error in near center!", ssp.words)
   }
   # in away from center
-  sp.rad.away.c <- sample(rad.start.away.center:this.puts.cnt, length(rad.start.away.center:this.puts.cnt))
-  sp.deg.away.c <- sample(1:this.deg.splits, length(1:this.deg.splits))
+  tmp.used.away.center <- floor((this.puts.cnt - rad.start.away.center + 1) / radius.gap.factor)
+  sp.rad.away.c <- (1:tmp.used.away.center) * radius.gap.factor + rad.start.away.center
+  sp.deg.away.c <- 1:this.deg.splits
+  #sp.rad.away.c <- sample(1:tmp.used.away.center, length(1:tmp.used.away.center)) * radius.gap.factor + rad.start.away.center
+  #sp.deg.away.c <- sample(1:this.deg.splits, length(1:this.deg.splits))
   sp.total.away.c <- length(sp.rad.away.c) * length(sp.deg.away.c)
-  if (sp.total.away.c < nrow(data.in.away.c)) {
+  if (sp.total.away.c < nrow(data.in.away.c) || tmp.used.away.center == 0) {
     stop("Capacity error away from center!", ssp.words)
   }
   ### scatter process (use deg.* as ref and extend it)
   ## get coords
   gen.coords.ssp <- function(data.input, sp.deg.seq, sp.rad.seq, sample.gap.degree, center.xy) {
-    tmp.suit.deg.times <- ceiling(nrow(data.input) / length(sp.deg.seq))
-    tmp.suit.rad.times <- ceiling(tmp.suit.deg.times * length(sp.deg.seq) / length(sp.rad.seq))
-    tmp.sref.deg <- rep(sp.deg.seq, times = tmp.suit.deg.times) * sample.gap.degree
-    tmp.sref.rad <- rep(sp.rad.seq, times = tmp.suit.rad.times)
-    length(tmp.sref.deg) <- length(tmp.sref.rad) <- nrow(data.input)
+    # full sequence of deg and rad
+    full.sref.deg <- rep(sp.deg.seq, times = length(sp.rad.seq)) * sample.gap.degree
+    full.sref.rad <- rep(sp.rad.seq, each = length(sp.deg.seq))
+    # needed count
+    tmp.scnt <- sample(1:length(full.sref.deg), nrow(data.input))
+    tmp.sref.deg <- full.sref.deg[tmp.scnt]
+    tmp.sref.rad <- full.sref.rad[tmp.scnt]
     coords.res <- data.frame(x.s = cos(tmp.sref.deg) * tmp.sref.rad + center.xy[1],
                  y.s = sin(tmp.sref.deg) * tmp.sref.rad + center.xy[2])
     coords.res
@@ -389,13 +398,14 @@ Inside.TransCoords.Enlarge.Rotate <- function(
   orig.coords,
   enlarge.xy.times,  # c(x.times, y.times)
   rotate.degree,
+  enlarge.xy.ref = c(0, 0),
   rotate.xy.ref = c(0, 0)
 ) {
   this.xvals <- orig.coords[, 1]
   this.yvals <- orig.coords[, 2]
   # enlarge
-  this.xvals <- this.xvals * enlarge.xy.times[1]
-  this.yvals <- this.yvals * enlarge.xy.times[2]
+  this.xvals <- (this.xvals - enlarge.xy.ref[1]) * enlarge.xy.times[1] + enlarge.xy.ref[1]
+  this.yvals <- (this.yvals - enlarge.xy.ref[2]) * enlarge.xy.times[2] + enlarge.xy.ref[2]
   # rotate
   rotate.x.ref <- rotate.xy.ref[1]
   rotate.y.ref <- rotate.xy.ref[2]
@@ -430,6 +440,9 @@ Inside.TransCoords.Enlarge.Rotate <- function(
 #' @param hide.locations.B Character. It applies extra limitation on the locations of B in gene pairs formatted as A-B.
 #' @param hide.types.B Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.
 #' @param hide.sole.vertices Character. It hides sole vertices which have no available edges.
+#' @param expand.gap.radius.list [TODO]
+#' @param expand.gap.degree.list [TODO]
+#' @param expand.center.density.list [TODO]
 #' @param nodes.size Numeric. Size of nodes.
 #' @param nodes.colour Character. Colour of nodes.
 #' @param nodes.alpha Numeric. Alpha of nodes.
@@ -466,6 +479,9 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   hide.locations.B = NULL,
   hide.types.B = NULL,
   hide.sole.vertices = TRUE,  # if TRUE, remove those edges cannot formed vertices
+  expand.gap.radius.list = list(ECM = 2, PM = 3, CTP = 2, OTHER = 2),
+  expand.gap.degree.list = list(ECM = 60, PM = 180, CTP = 60, OTHER = 60),
+  expand.center.density.list = list(ECM = 0.25, PM = 0.25, CTP = 0.25, OTHER = 0.25),
   nodes.size = 3,
   nodes.colour = "grey",
   nodes.alpha = 0.8,
@@ -644,57 +660,88 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   this.vx.ext.infos <- data.frame()
   ## plot tools
   # NULL
-  ## plot Plasma Membrane [TODO] other way
+  ## plot Plasma Membrane
   # A
   this.pmem.A.ctp.xy <- c(-50, 0) * area.extend.times
-  this.pmem.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.pmem, ], this.pmem.A.ctp.xy, 5 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+  this.pmem.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.pmem, ], this.pmem.A.ctp.xy, 5 * area.extend.times, 
+    radius.gap.factor = expand.gap.radius.list$PM, 
+    sample.gap.degree = expand.gap.degree.list$PM, 
+    density.half.near = expand.center.density.list$PM, 
+    coords.xy.colnames = c("gx", "gy"))
   this.pmem.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.pmem.A.vx.ext[, c("gx", "gy")], 
-    enlarge.xy.times = c(1, 9), rotate.degree = 0, rotate.xy.ref = this.pmem.A.ctp.xy)
+    enlarge.xy.times = c(1, 9), rotate.degree = 0, 
+    enlarge.xy.ref = this.pmem.A.ctp.xy, rotate.xy.ref = this.pmem.A.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.pmem.A.vx.ext)
   # B
   this.pmem.B.ctp.xy <- c(50, 0) * area.extend.times
-  this.pmem.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.pmem, ], this.pmem.B.ctp.xy, 5 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+  this.pmem.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.pmem, ], this.pmem.B.ctp.xy, 5 * area.extend.times, 
+    radius.gap.factor = expand.gap.radius.list$PM, 
+    sample.gap.degree = expand.gap.degree.list$PM, 
+    density.half.near = expand.center.density.list$PM, 
+    coords.xy.colnames = c("gx", "gy"))
   this.pmem.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.pmem.B.vx.ext[, c("gx", "gy")], 
-    enlarge.xy.times = c(1, 9), rotate.degree = 0, rotate.xy.ref = this.pmem.B.ctp.xy)
+    enlarge.xy.times = c(1, 9), rotate.degree = 0, 
+    enlarge.xy.ref = this.pmem.B.ctp.xy, rotate.xy.ref = this.pmem.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.pmem.B.vx.ext)
 
   ## plot Extracellular Region
   # A
   this.exm.A.ctp.xy <- c(-30, 0) * area.extend.times
-  this.exm.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.exm, ], this.exm.A.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+  this.exm.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.exm, ], this.exm.A.ctp.xy, 10 * area.extend.times, 
+    radius.gap.factor = expand.gap.radius.list$ECM, 
+    sample.gap.degree = expand.gap.degree.list$ECM, 
+    density.half.near = expand.center.density.list$ECM, 
+    coords.xy.colnames = c("gx", "gy"))
   this.exm.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.exm.A.vx.ext[, c("gx", "gy")], 
-    enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.exm.A.ctp.xy)
+    enlarge.xy.times = c(1, 4), rotate.degree = 0, 
+    enlarge.xy.ref = this.exm.A.ctp.xy, rotate.xy.ref = this.exm.A.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.exm.A.vx.ext)
   # B
   this.exm.B.ctp.xy <- c(30, 0) * area.extend.times
-  this.exm.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.exm, ], this.exm.B.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+  this.exm.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.exm, ], this.exm.B.ctp.xy, 10 * area.extend.times, 
+    radius.gap.factor = expand.gap.radius.list$ECM, 
+    sample.gap.degree = expand.gap.degree.list$ECM, 
+    density.half.near = expand.center.density.list$ECM,
+    coords.xy.colnames = c("gx", "gy"))
   this.exm.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.exm.B.vx.ext[, c("gx", "gy")], 
-    enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.exm.B.ctp.xy)
+    enlarge.xy.times = c(1, 4), rotate.degree = 0, 
+    enlarge.xy.ref = this.exm.B.ctp.xy, rotate.xy.ref = this.exm.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.exm.B.vx.ext)
 
   ## plot Other
   # A
   this.other.A.ctp.xy <- c(-185, 0) * area.extend.times
-  this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], this.other.A.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+  this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], this.other.A.ctp.xy, 10 * area.extend.times, 
+    radius.gap.factor = expand.gap.radius.list$OTHER, 
+    sample.gap.degree = expand.gap.degree.list$OTHER, 
+    density.half.near = expand.center.density.list$OTHER, 
+    coords.xy.colnames = c("gx", "gy"))
   this.other.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.A.vx.ext[, c("gx", "gy")], 
-    enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.other.A.ctp.xy)
+    enlarge.xy.times = c(1, 4), rotate.degree = 0, 
+    enlarge.xy.ref = this.other.A.ctp.xy, rotate.xy.ref = this.other.A.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.A.vx.ext)
   # B
   this.other.B.ctp.xy <- c(185, 0) * area.extend.times
-  this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], this.other.B.ctp.xy, 10 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+  this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], this.other.B.ctp.xy, 10 * area.extend.times, 
+    radius.gap.factor = expand.gap.radius.list$OTHER, 
+    sample.gap.degree = expand.gap.degree.list$OTHER, 
+    density.half.near = expand.center.density.list$OTHER, 
+    coords.xy.colnames = c("gx", "gy"))
   this.other.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.B.vx.ext[, c("gx", "gy")], 
-    enlarge.xy.times = c(1, 4), rotate.degree = 0, rotate.xy.ref = this.other.B.ctp.xy)
+    enlarge.xy.times = c(1, 4), rotate.degree = 0, 
+    enlarge.xy.ref = this.other.B.ctp.xy, rotate.xy.ref = this.other.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.B.vx.ext)
 
   ## plot common
-  gen.coords.put.ps <- function(x, inds.ref, ctp.ref, vertices.infos) {
+  gen.coords.put.ps <- function(x, inds.ref, ctp.ref, vertices.infos, radius.gap.factor) {
     this.res <- NULL
     this.inds <- inds.ref[[x]]
     if (length(this.inds) > 0) {
       tmp.ind.m <- match(x, ctp.ref$Map.Items)
       this.ctp <- as.numeric(ctp.ref[tmp.ind.m, c("tpx", "tpy")])
       this.points <- vertices.infos[this.inds, ]
-      this.res <- ScatterSimple.Plot(this.points, this.ctp, 12 * area.extend.times, coords.xy.colnames = c("gx", "gy"))
+      this.res <- ScatterSimple.Plot(this.points, this.ctp, 12 * area.extend.times, 
+        radius.gap.factor = radius.gap.factor, coords.xy.colnames = c("gx", "gy"))
     }
     this.res
   }
@@ -711,6 +758,9 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
     inds.ref = this.inds.A.common,
     ctp.ref = this.common.A.ctp.xy,
     vertices.infos = vertices.infos,
+    radius.gap.factor = expand.gap.radius.list$CTP, 
+    sample.gap.degree = expand.gap.degree.list$CTP, 
+    density.half.near = expand.center.density.list$CTP, 
     FUN = gen.coords.put.ps
     )
   this.vx.ext.infos <- rbind(this.vx.ext.infos, bind_rows(this.common.A.vx.inlist))
@@ -727,6 +777,9 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
     inds.ref = this.inds.B.common,
     ctp.ref = this.common.B.ctp.xy,
     vertices.infos = vertices.infos,
+    radius.gap.factor = expand.gap.radius.list$CTP, 
+    sample.gap.degree = expand.gap.degree.list$CTP, 
+    density.half.near = expand.center.density.list$CTP, 
     FUN = gen.coords.put.ps
     )
   this.vx.ext.infos <- rbind(this.vx.ext.infos, bind_rows(this.common.B.vx.inlist))
