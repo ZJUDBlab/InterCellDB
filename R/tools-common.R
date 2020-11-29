@@ -122,15 +122,13 @@ DoPartUnique <- function(
 	if (sum(cols.select %in% c(1:ncol(xxpairs))) != length(cols.select)) {
 		stop("Columns selected are undefined! Please check again!")
 	}
-	rownames(xxpairs) <- NULL
+	# rownames(xxpairs) <- NULL
 	tmp.uni <- xxpairs[, cols.select]
+	rownames(tmp.uni) <- NULL
 	tmp.uni <- unique(tmp.uni)
 	xxpairs <- xxpairs[as.integer(rownames(tmp.uni)),]
-	#end# return
 	xxpairs
 }
-
-
 
 
 
