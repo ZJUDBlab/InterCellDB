@@ -637,7 +637,7 @@ AnalyzeClustersInteracts <- function(
 #' @param cnt.max.limit Numeric. Specify the upper limit of count, whose value is highly user-defined and data-dependent.
 #' @param cnt.min.limit Numeric. Specify the lower limit of count, like \code{cnt.max.limit}.
 #' @param hide.cnt.label Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.
-#' @param nodes.size [TODO]
+#' @param nodes.size Numeric. It specifies the size of the nodes in the graph.
 #' @param nodes.colour.seq Character. Given colours will be used to generate colour gradient for plotting.
 #' @param nodes.colour.value.seq Numeric. If set NULL, evenly place each colour in \code{nodes.colour.seq} vector.
 #' Otherwise, numeric values with the same length of \code{nodes.colour.seq} should be given to specify the positions corresponding to each colour.

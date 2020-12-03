@@ -77,7 +77,8 @@ ExtractTargetOnepairClusters <- function(
 Inside.CollectActionMapping <- function(
   onerow.info,
   act.A.genename,
-  act.B.genename
+  act.B.genename,
+  put.colnames
 ) {
   res.mode <- onerow.info["mode"]
   res.actionid <- 1
@@ -91,7 +92,7 @@ Inside.CollectActionMapping <- function(
       # no change, res.actionid <- 1 (stay default)
     } else {
       # is_directional TRUE, a_is_acting TRUE, confirm that it is A-act-upon-B
-      ifconv <- ifelse(onerow.info["__Indicator__"] == "conv", 0, 1)
+      ifconv <- ifelse(onerow.info[put.colnames] == "conv", 0, 1)
       if (onerow.info["action"] == "") {
         res.actionid <- match("A--oB", kaction.id.mapped) + ifconv
       } else {
@@ -166,8 +167,19 @@ GenerateMapDetailOnepairClusters <- function(
   this.act.rev.pairs <- left_join(bt.pairs, actions.ref.db[, setdiff(colnames(actions.ref.db), c("inter.GeneID.A", "inter.GeneID.B"))], 
     by = c("inter.GeneName.A" = "inter.GeneName.B", "inter.GeneName.B" = "inter.GeneName.A"))
   # additional infos for action_id
-  this.act.conv.pairs[, "__Indicator__"] <- "conv"
-  this.act.rev.pairs[, "__Indicator__"] <- "rev"
+  tmp.tried.indicator.colname <- "__Indicator__"
+  for (tried.indicator.i in 1:100) {
+    if ((tmp.tried.indicator.colname %in% colnames(this.act.conv.pairs)) == TRUE) {
+      tmp.tried.indicator.colname <- paste0(tmp.tried.indicator.colname, i)
+    } else {
+      break
+    }
+    if (tried.indicator.i == 100) {
+      stop("GenerateMapDetailOnepairClusters has no way to generate different column names that are not in the original data!")
+    }
+  }
+  this.act.conv.pairs[, tmp.tried.indicator.colname] <- "conv"
+  this.act.rev.pairs[, tmp.tried.indicator.colname] <- "rev"
   #
   this.act.all.pairs <- rbind(this.act.conv.pairs, this.act.rev.pairs)
   this.act.put.pairs <- this.act.all.pairs[which(!is.na(this.act.all.pairs[, "mode"])), ]
@@ -192,14 +204,15 @@ GenerateMapDetailOnepairClusters <- function(
   #
   prog.bar.gmoc <- progress::progress_bar$new(total = length(this.put.sc.ind.list))
   prog.bar.gmoc$tick(0)
-  this.put.act.detailed <- lapply(this.put.sc.ind.list, tmp.prog = prog.bar.gmoc, this.put.pairs = this.put.pairs, 
+  this.put.act.detailed <- lapply(this.put.sc.ind.list, 
+    tmp.prog = prog.bar.gmoc, this.put.pairs = this.put.pairs, put.colnames = tmp.tried.indicator.colname, 
     function(x, tmp.prog, this.put.pairs) {
       tmp.put.pairs <- this.put.pairs[x, ]
       tmp.put.act.infos <- apply(tmp.put.pairs, MARGIN = 1,
         act.A.genename = tmp.put.pairs[1, "inter.GeneName.A"],
         act.B.genename = tmp.put.pairs[1, "inter.GeneName.B"],
         function(x, act.A.genename, act.B.genename) {
-          Inside.CollectActionMapping(x, act.A.genename, act.B.genename)
+          Inside.CollectActionMapping(x, act.A.genename, act.B.genename, put.colnames)
           })
       tmp.put.act.infos <- t(tmp.put.act.infos)
       ## data trimming
@@ -209,7 +222,8 @@ GenerateMapDetailOnepairClusters <- function(
         actionid = as.integer(tmp.put.act.infos[, 2]),
         stringsAsFactors = FALSE
       )
-      inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)  # to examine if more specific mode has been recorded
+      # to examine if more specific mode has been recorded, that is the same mode but more detailed action type
+      inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)
       inds.rest <- which(tmp.put.act.infos.df$actionid != 1)
       logic.del.1 <- tmp.put.act.infos.df[inds.del.1, "mode"] %in% tmp.put.act.infos.df[inds.rest, "mode"]
       tmp.put.act.infos.df.exm <- rbind(tmp.put.act.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
