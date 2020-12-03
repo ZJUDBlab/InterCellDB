@@ -1,42 +1,6 @@
 
 
 
-#' generate gene pairs from VEinfos in standard format
-#' 
-#' @description
-#' This function generates gene pairs in standard format(in data frame), 
-#' and gets these pairs easier to be compared with others.
-#'
-#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
-#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
-#'
-#' @details
-#' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 
-#' participated in each gene pair are recorded in columns named "inter.GeneName.A" and "inter.GeneName.B".
-#'
-#'
-#'
-#' @export
-#'
-Tool.GenStdGenePairs <- function(
-  VEinfos
-) {
-  vertices.infos <- VEinfos$vertices.infos
-  edges.infos <- VEinfos$edges.infos
-  #
-  inds.e.from.match <- match(edges.infos$from, vertices.infos$UID)
-  inds.e.to.match <- match(edges.infos$to, vertices.infos$UID)
-  # from to data.frame
-  std.df <- data.frame("inter.GeneName.A" = vertices.infos$GeneName[inds.e.from.match], 
-    "inter.GeneName.B" = vertices.infos$GeneName[inds.e.to.match], stringsAsFactors = FALSE)
-  std.df <- DoPartUnique(std.df, 1:2)
-  return(std.df)
-}
-
-
-
-
-
 #' Add user-defined dataset
 #' 
 #' @description
@@ -80,6 +44,41 @@ Tool.AddUserRestrictDB <- function(
 	user.def.db  # GeneID Gene.name user.type *1 *2 *3 ...
 }
 
+
+
+
+
+#' generate gene pairs in standard format from VEinfos
+#' 
+#' @description
+#' This function generates gene pairs in standard format(in data frame), 
+#' and gets these pairs easier to be compared with others.
+#'
+#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
+#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
+#'
+#' @details
+#' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 
+#' participated in each gene pair are recorded in columns named "inter.GeneName.A" and "inter.GeneName.B".
+#'
+#'
+#'
+#' @export
+#'
+Tool.GenStdGenePairs.from.VEinfos <- function(
+  VEinfos
+) {
+  vertices.infos <- VEinfos$vertices.infos
+  edges.infos <- VEinfos$edges.infos
+  #
+  inds.e.from.match <- match(edges.infos$from, vertices.infos$UID)
+  inds.e.to.match <- match(edges.infos$to, vertices.infos$UID)
+  # from to data.frame
+  std.df <- data.frame("inter.GeneName.A" = vertices.infos$GeneName[inds.e.from.match], 
+    "inter.GeneName.B" = vertices.infos$GeneName[inds.e.to.match], stringsAsFactors = FALSE)
+  std.df <- DoPartUnique(std.df, 1:2)
+  return(std.df)
+}
 
 
 

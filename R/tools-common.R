@@ -73,6 +73,56 @@ Tool.WriteTables <- function(
 
 
 
+#' split character to be data.frame
+#' 
+#' @description
+#' This function generates n-column data frame by spliting character by some specific letters or phrases.
+#'
+#' @param to.splits.string [TODO]
+#'
+#'
+#'
+#' @export
+#'
+Tool.SplitToGenDataFrame <- function(
+  to.splits.string, 
+  to.split.by, 
+  res.colnames
+) {
+	tmp.splits <- strsplit(to.splits.string, split = to.split.by, fixed = TRUE)
+	tmp.len.splits <- as.integer(unlist(lapply(tmp.splits, FUN = length)))
+	tmp.len.splits <- unique(tmp.len.splits)
+	if (length(tmp.len.splits) != 1) {
+		stop("Given data cannot be uniformly splited, with different splits: ", 
+			paste0(tmp.len.splits, collapse = ", "), ".")
+	}
+	tmp.merge.elems <- as.character(unlist(tmp.splits))
+	tmp.merge.base.index <- 1:(length(tmp.merge.elems) / tmp.len.splits)
+	res.prep.list <- list()
+	for (i in 1:tmp.len.splits) {
+		tmp.indices <- tmp.merge.base.index * tmp.len.splits - (tmp.len.splits - i)
+		res.prep.list <- c(res.prep.list, list(tmp.merge.elems[tmp.indices]))
+	}
+	res.df <- data.frame(res.prep.list, stringsAsFactors = FALSE)
+	if (length(res.colnames) == ncol(res.df)) {
+		colnames(res.df) <- res.colnames
+	} else {
+		warning("Given colnames are not matched with the result columns, and unexpected errors may happen!")
+		if (length(res.colnames) > ncol(res.df)) {
+			colnames(res.df) <- res.colnames[1:ncol(res.df)]
+		} else {
+			if (length(res.colnames) > 0) {
+				colnames(res.df)[1:length(res.colnames)] <- res.colnames
+			}
+		}
+	}
+	return(res.df)
+}
+
+
+
+
+
 # [inside usage]
 # get from ?toupper, .simpleCap
 Tc.Cap.simple <- function(x) {
