@@ -45,7 +45,7 @@ which is formatted data about target interaction pairs.}
 
 \item{hide.cnt.label}{Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.}
 
-\item{nodes.size}{[TODO]}
+\item{nodes.size}{Numeric. It specifies the size of the nodes in the graph.}
 
 \item{nodes.colour.seq}{Character. Given colours will be used to generate colour gradient for plotting.}
 

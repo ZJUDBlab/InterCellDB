@@ -17,7 +17,7 @@ This package provides databases and tools for scRNA-seq data analysis.
 Authors:
 \itemize{
   \item Shi Ligen Developer \email{slg0904@163.com} [reviewer]
-  \item Zhang Xiaotao Developer \email{notknown@tmp.com} [data contributor]
+  \item Zhang Xiaotao Developer \email{zhangxiaotao@zju.edu.cn} [data contributor]
 }
 
 }

@@ -6,76 +6,45 @@
 \usage{
 FindSpecialGenesInOnepairCluster(
   interact.pairs.acted,
-  clusters.onepair.select,
-  evaluation.method = "special-score",
-  merge.confidence.on.diff = 0.8,
-  merge.confidence.on.shared = 0.8,
-  twist.fold.change.mul = 1,
-  top.ignored.genes.sender = character(),
-  top.ignored.genes.receiver = character(),
-  top.n.col.positive = 10,
-  top.n.col.negative = 10,
-  option.calc.score = 0,
-  ...
+  target.gene.pairs.df,
+  involved.clusters.pair,
+  to.cmp.clusters.pairs = character(),
+  to.cmp.clusters.pairs.sel.strategy = "inter-cross",
+  merge.cnt.quantile = 0.5,
+  merge.cnt.decreasing = TRUE,
+  merge.cnt.topn.shown = 20,
+  plot.fill = c("red", "green"),
+  sep.inside.gene.pair = "->"
 )
 }
 \arguments{
 \item{interact.pairs.acted}{List. The return value of \code{\link{AnalyzeClustersInteracts}}.}
 
-\item{clusters.onepair.select}{List. Return value of \code{\link{ExtractTargetOnepairClusters}}.}
+\item{target.gene.pairs.df}{[TODO]}
 
-\item{evaluation.method}{[TODO]}
+\item{involved.clusters.pair}{[TODO]}
 
-\item{merge.confidence.on.diff}{Numeric. Range (0,1) is available. One gene pair is special when it is unique
-all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" unique.}
+\item{to.cmp.clusters.pairs}{[TODO]}
 
-\item{merge.confidence.on.shared}{Numeric. Range (0,1) is available. When one gene pair is not unqiue to single 
-interacting cluster, it could be evaluated as special when the overall expression level changes is different to 
-all or part of other pairs of interacting clusters. This param gives the percentage number for the "part of" different.}
+\item{to.cmp.clusters.pairs.sel.strategy}{[TODO]}
 
-\item{twist.fold.change.mul}{Numeric. It defines the lower and upper bound of acceptable difference of expression level.
-Gene pairs that are out of this bound will be seen as special gene pairs.}
+\item{merge.cnt.quantile}{[TODO]}
 
-\item{top.ignored.genes.sender}{Character. It is used to remove some uncared genes from analysis, and is applied on the 
-former one in a interacting cluster.}
+\item{merge.cnt.decreasing}{[TODO]}
 
-\item{top.ignored.genes.receiver}{Character. Like \code{top.ignored.genes.sender}, but it is for the latter one 
-in a interacting cluster.}
+\item{merge.cnt.topn.shown}{[TODO]}
 
-\item{top.n.col.positive}{Numeric. [TODO] It specifies the count of top positive scores.}
+\item{plot.fill}{[TODO]}
 
-\item{top.n.col.negative}{Numeric. [TODO] It specifies the count of top negative scores.}
-
-\item{option.calc.score}{Integer. Defining the method use in calculating score. The default settings is: 
-use \code{sum(all)}. In other cases, If it is 1, use \code{sum(abs(all))}.}
+\item{sep.inside.gene.pair}{[TODO]}
 }
 \value{
-List.
-\itemize{
-  \item plot: plot top ranked special genes.
-  \item tables: a list of 2 data.frames.
-        \itemize{
-          \item part.C: it records all significant special genes and their scores for the "sender" part.
-          \item part.D: it records all significant special genes and their scores for the "reciever" part.
-	   }
-  \item genes.top.on.col: a list of 2 list of genes.
-        \itemize{
-          \item part.C: it gives the specified number of top ranked special genes for the "sender" part.
-          \item part.D: it gives the specified number of top ranked special genes for the "reciever" part.
-        }
-  \item special.pairs.df: this table records all special gene pairs for this pair of interacting cluters.
-}
+List. [TODO]
 }
 \description{
-[TODO] as different strategy used, params description needs to be changed.
 This function is used to find special genes in one pair of interacting clusters. Genes are special
 if it passes some limitations when comparing to other pairs of interacting clusters.
 }
 \details{
-If the pair of interacting clusters is C -> D, then the C will be called sender, 
-and D will be called reciever.
-
-To be noted, as this function is based on interact.pairs.acted, if limits have been
-put upon the clusters in x-axis or y-axis, the interacting pairs compared will be limited 
-corresponding to the limits put upon clusters.
+[TODO]
 }

@@ -4,11 +4,22 @@
 \alias{TrimVEinfos}
 \title{Trim the vertices and edges infos}
 \usage{
-TrimVEinfos(VEinfos, sel.mode.val = NULL, sel.action.effect.val = NULL)
+TrimVEinfos(
+  VEinfos,
+  sel.some.gene.pairs.df = NULL,
+  sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"),
+  sel.mode.val = NULL,
+  sel.action.effect.val = NULL
+)
 }
 \arguments{
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
 \code{GenerateVEinfos()}.}
+
+\item{sel.some.gene.pairs.df}{Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
+one of the participated genes.}
+
+\item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.}
 
 \item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
 please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.}
