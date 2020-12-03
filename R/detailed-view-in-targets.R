@@ -194,6 +194,9 @@ GenerateVEinfos <- function(
 #'
 #' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
 #' \code{GenerateVEinfos()}.
+#' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
+#' one of the participated genes.
+#' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
 #' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
@@ -207,10 +210,14 @@ GenerateVEinfos <- function(
 #'
 #'
 #'
+#' @importFrom dplyr left_join 
+#'
 #' @export
 #'
 TrimVEinfos <- function(
   VEinfos, 
+  sel.some.gene.pairs.df = NULL, 
+  sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
   sel.mode.val = NULL, 
   sel.action.effect.val = NULL
 ) {
@@ -218,15 +225,46 @@ TrimVEinfos <- function(
   afterV.B.clustername <- VEinfos$cluster.name.B
   vertices.all.infos <- VEinfos$vertices.infos
   edges.all.infos <- VEinfos$edges.infos
-  vertices.A.apx.types <- VEinfos$vertices.A.apx.types
-  vertices.B.apx.types <- VEinfos$vertices.B.apx.types
+  vertices.A.apx.types <- VEinfos$vertices.apx.type.A
+  vertices.B.apx.types <- VEinfos$vertices.apx.type.B
+  ### select target edges.part.infos and vertices.part.infos by some gene pairs
+  ## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
+  if (!is.null(sel.some.gene.pairs.df)) {
+    if (class(sel.some.gene.pairs.df) == "data.frame" && nrow(sel.some.gene.pairs.df) > 0 && ncol(sel.some.gene.pairs.df) >= 2) {
+      if ((tmp.x = sum(sel.some.gene.pairs.colnames %in% colnames(sel.some.gene.pairs.df))) && 
+          (tmp.x != length(sel.some.gene.pairs.colnames) || tmp.x != 2)) {
+        stop("Given colnames in `sel.some.gene.pairs.colnames` are unvalid!")
+      }
+      tmp.sel.gp.df <- sel.some.gene.pairs.df[, sel.some.gene.pairs.colnames]
+      tmp.p1.by.vec <- "GeneName"
+      names(tmp.p1.by.vec) <- sel.some.gene.pairs.colnames[1]
+      tmp.p2.by.vec <- "GeneName"
+      names(tmp.p2.by.vec) <- sel.some.gene.pairs.colnames[2]
+      tmp.inds.cluster.m1 <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
+      tmp.inds.cluster.m2 <- which(vertices.all.infos$ClusterName == afterV.B.clustername)
+      # join is considering to be cluster-gene perfectly matched
+      tob.res.sel.gp.df <- left_join(sel.some.gene.pairs.df, vertices.all.infos[tmp.inds.cluster.m1, c("UID", "GeneName")], by = tmp.p1.by.vec)
+      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "from.UID"
+      tob.res.sel.gp.df <- left_join(tob.res.sel.gp.df, vertices.all.infos[tmp.inds.cluster.m2, c("UID", "GeneName")], by = tmp.p2.by.vec)
+      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "to.UID"
+      # get subset, using short-inter-pair to match
+      tob.res.short.interacts <- paste(tob.res.sel.gp.df[, "from.UID"], tob.res.sel.gp.df[, "to.UID"], sep = "->")
+      tmp.edges.short.interacts <- paste(edges.all.infos[, "from"], edges.all.infos[, "to"], sep = "->")
+      edges.sel1.infos <- edges.all.infos[which(tmp.edges.short.interacts %in% tob.res.short.interacts), ]
+    } else {
+      stop("Given parameter `sel.some.gene.pairs.df` should be data.frame that has 2 columns.")      
+    }
+  } else {
+    edges.sel1.infos <- edges.all.infos
+  }
+
   # as it plot either directed or undirected graphs, new definition of action effects are given as below
   # for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
   # for "A-->B" or "A<--B",   given type: "positive"  --- kaction.id.mapped[c(2,3)]
   # for "A--|B" or "A|--B",   given type: "negative"  --- kaction.id.mapped[c(4,5)]
   # for "A--oB" or "Ao--B",   given type: "unspecified" --- kaction.id.mapped[c(6,7)]
   #
-  ### select target edges.part.infos and vertices.part.infos
+  ### select target edges.part.infos and vertices.part.infos by mode & action.effect
   ## check if valid, sel.mode.val, sel.action.effect.val
   predefined.mode.list <- kpred.mode
   predefined.action.effect.list <- kpred.action.effect
@@ -236,10 +274,10 @@ TrimVEinfos <- function(
      is.null(sel.action.effect.val))) {
     # --- mode ---
     if (is.null(sel.mode.val)) {
-      edges.part.infos <- edges.all.infos
+      edges.part.infos <- edges.sel1.infos
     } else {
-      inds.part.select <- match(edges.all.infos[, "mode"], sel.mode.val)
-      edges.part.infos <- edges.all.infos[which(!is.na(inds.part.select)), ]
+      inds.part.select <- match(edges.sel1.infos[, "mode"], sel.mode.val)
+      edges.part.infos <- edges.sel1.infos[which(!is.na(inds.part.select)), ]
     }
     # --- action.effect ---
     if (!is.null(sel.action.effect.val)) {
@@ -278,6 +316,7 @@ TrimVEinfos <- function(
     vertices.apx.type.A = vertices.A.apx.types,
     vertices.apx.type.B = vertices.B.apx.types
     )
+  return(VEinfos)
 }
 
 
