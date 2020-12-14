@@ -8,6 +8,10 @@ Tool.SplitToGenDataFrame(to.splits.string, to.split.by, res.colnames)
 }
 \arguments{
 \item{to.splits.string}{[TODO]}
+
+\item{to.split.by}{[TODO]}
+
+\item{res.colnames}{[TODO]}
 }
 \description{
 This function generates n-column data frame by spliting character by some specific letters or phrases.

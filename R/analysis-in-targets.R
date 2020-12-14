@@ -206,7 +206,7 @@ GenerateMapDetailOnepairClusters <- function(
   prog.bar.gmoc$tick(0)
   this.put.act.detailed <- lapply(this.put.sc.ind.list, 
     tmp.prog = prog.bar.gmoc, this.put.pairs = this.put.pairs, put.colnames = tmp.tried.indicator.colname, 
-    function(x, tmp.prog, this.put.pairs) {
+    function(x, tmp.prog, this.put.pairs, put.colnames) {
       tmp.put.pairs <- this.put.pairs[x, ]
       tmp.put.act.infos <- apply(tmp.put.pairs, MARGIN = 1,
         act.A.genename = tmp.put.pairs[1, "inter.GeneName.A"],
@@ -243,8 +243,11 @@ GenerateMapDetailOnepairClusters <- function(
   })
 
   # further pack up upon [pv pairs]
+  prog.bar.sub.pv <- progress::progress_bar$new(total = nrow(this.pv.pairs))
+  prog.bar.sub.pv$tick(0)
   this.pv.act.detailed <- lapply(1:nrow(this.pv.pairs), this.pv.pairs = this.pv.pairs, 
     function(x, this.pv.pairs) {
+    prog.bar.sub.pv$tick()
     list(act.A.genename = this.pv.pairs[x, "inter.GeneName.A"],
          act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
          act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
@@ -262,371 +265,321 @@ GenerateMapDetailOnepairClusters <- function(
 
 
 
-#' TODO
-#' 
-#' @description
-#' TODO
+#' Generate data about vertices and edges
 #'
-#' @param onepair.gmoc List. Return value of GenerateMapDetailOnepairClusters().
-#' 
+#' @description
+#' This function uses detailed informations about one interaction pair(return value of 
+#' \code{GenerateMapDetailOnepairClusters()}), to generate data for drawing relation plot.
+#'
+#' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
+#' @inheritParams Inside.DummyFgenes 
+#' @param is.directional Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
+#' otherwise bi-directional VEinfos will be generated.
+#' @param if.ignore.annos Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+#' be treated as the same, and only one row information will be reserved.
+#'
 #' @details
-#' This function is to collect hierachical information inside the raw data.
+#' This function uses actions that are recorded in STRING act database, but only a small part of 
+#' actions are thoroughly difined in the database.
+#' This function is used to generate formatted data structure(with vertices and edges).
 #'
-#' @return
-#' TODO
+#' In vertices, all gene informations are well recorded, and every gene is given one unique ID.
+#'
+#' In edges, it uses unique vertices IDs to contruct the linkes, and records mode and action.effect for every link.
+#' 
+#'
+#' @return A list.
+#' \itemize{
+#'   \item {\code{cluster.name.A}&\code{cluster.name.B}:} {cluster names involved.}
+#'   \item edges.infos: data.frame that records the edges(the interaction pairs).
+#'   \item vertices.infos: data.frame that records the vertices(the genes).
+#'   \item vertices.apx.type.A: data.frame that records the types(molecular functions) of A in gene pairs formatted as A-B.
+#'   \item vertices.apx.type.B: data.frame that records the types(molecular functions) of B in gene pairs formatted as A-B.
+#' }
+#'
+#'
+#'
+#' @importFrom dplyr left_join bind_rows
 #'
 #' @export
 #'
-CollectHierachyOnepairClusters <- function(
-  onepair.gmoc
+GenerateVEinfos <- function(
+  onepair.gmoc,
+  fgenes.remapped.all,
+  is.directional = TRUE,
+  if.ignore.annos = FALSE
 ) {
-  if (length(onepair.gmoc$actions.detailed) <= 0) {
-    stop("No specific interaction pairs with detailed action effects recorded. Please recheck input!")
+  ### generate vertices list and edges list
+  list.interact.pairs <- onepair.gmoc$actions.detailed
+  anno.infos <- onepair.gmoc$anno.infos
+  act.A.clustername <- onepair.gmoc$clusters.name[1]  #
+  act.B.clustername <- onepair.gmoc$clusters.name[2]  # 
+  if (length(list.interact.pairs) == 0) {  # if no actions.detailed exists, RETURN here
+    stop(paste0("Given pair: ", act.A.clustername, "---", act.B.clustername, ", has no explicit actions defined in current settings!"))
   }
-  # predefining grouping rules
-  group.proto.action.effects <- list(
-    "A---B" = data.frame(),  # "A---B"  #1
-    "A-->B" = data.frame(),  # "A-->B"  #2
-    "A<--B" = data.frame(),  # "A<--B"  #3
-    "A--|B" = data.frame(),  # "A--|B"  #4
-    "A|--B" = data.frame(),  # "A|--B"  #5
-    "A--oB" = data.frame(),  # "A--oB"  #6
-    "Ao--B" = data.frame()   # "Ao--B"  #7
-  )
-  op.clustername <- onepair.gmoc$clusters.name[1]
-  rv.clustername <- onepair.gmoc$clusters.name[2]
-  group.proto.exprs.variations <- list(
-    clusters.name = list(cluster.C = op.clustername, cluster.D = rv.clustername),
-    Cup.Dup = group.proto.action.effects,  # group.proto.action.effects, and the same for all below g.C*.D*
-    Cup.Ddn = group.proto.action.effects, 
-    Cdn.Dup = group.proto.action.effects,
-    Cdn.Ddn = group.proto.action.effects
-  )
-  # process
-  group.act.res <- group.proto.exprs.variations
-  prog.bar.dgsa <- progress::progress_bar$new(total = length(onepair.gmoc$actions.detailed))
-  prog.bar.dgsa$tick(0)
-  tmp.group.act.runout <- lapply(onepair.gmoc$actions.detailed, prog.bar.dgsa = prog.bar.dgsa,
-    function(x, prog.bar.dgsa) {
-      this.pair.info <- x
-      this.pair.actions <- this.pair.info$action.infos
-      # other identity infos
-      this.A.genename <- this.pair.info$act.A.genename
-      this.B.genename <- this.pair.info$act.B.genename
-      this.A.logfc  <- this.pair.info$act.A.logfc
-      this.B.logfc  <- this.pair.info$act.B.logfc
-      # do grouping upon gene.A & gene.B expression changes(logfc)
-      target.AB.in.group <- NULL
-      if (this.A.logfc > 0 && this.B.logfc > 0) {
-        target.AB.in.group <- "Cup.Dup"
-      }
-      if (this.A.logfc > 0 && this.B.logfc < 0) {
-        target.AB.in.group <- "Cup.Ddn"
-      }
-      if (this.A.logfc < 0 && this.B.logfc > 0) {
-        target.AB.in.group <- "Cdn.Dup"
-      }
-      if (this.A.logfc < 0 && this.B.logfc < 0) {
-        target.AB.in.group <- "Cdn.Ddn"
-      }
-      # do grouping upon action effects
-      this.pair.act.ids <- levels(factor(this.pair.actions[, "actionid"]))
-      target.AB.actions <- character()  # set length = 0
-      # A---B
-      if ((tmp.actionid = 1) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "A---B")
-      }
-      # A-->B
-      if ((tmp.actionid = 2) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "A-->B")
-      }
-      # A<--B
-      if ((tmp.actionid = 3) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "A<--B")
-      }
-      # A--|B
-      if ((tmp.actionid = 4) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "A--|B")
-      }
-      # A|--B
-      if ((tmp.actionid = 5) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "A|--B")
-      }
-      # A--oB
-      if ((tmp.actionid = 6) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "A--oB")
-      }
-      # Ao--B
-      if ((tmp.actionid = 7) %in% this.pair.act.ids) {
-        target.AB.actions <- c(target.AB.actions, "Ao--B")
-      }
-      # tick
-      prog.bar.dgsa$tick()
-      # return
-      data.frame(act.C.genename = this.A.genename,
-                 act.D.genename = this.B.genename,
-                 act.C.logfc = this.A.logfc,
-                 act.D.logfc = this.B.logfc,
-                 UPDN.group = target.AB.in.group,
-                 ACT.TYPE = target.AB.actions,
-                 stringsAsFactors = FALSE)
-  })
-  tmp.group.act.df <- bind_rows(tmp.group.act.runout)
-  # re-collection
-  inds.rc.groups <- tapply(1:nrow(tmp.group.act.df), tmp.group.act.df$UPDN.group, function(x) {x})
-  inds.rc.act.types <- tapply(1:nrow(tmp.group.act.df), tmp.group.act.df$ACT.TYPE, function(x) {x})
-  #
-  for (i.group in names(inds.rc.groups)) {
-    for (j in names(inds.rc.act.types)) {
-      tmp.sel.inds <- intersect(inds.rc.groups[[i.group]], inds.rc.act.types[[j]])
-      group.act.res[[i.group]][[j]] <- tmp.group.act.df[tmp.sel.inds, ]
-    }
+
+  ## --- vertices ---
+  vertices.names <- character()
+  vertices.A.names <- character()
+  vertices.B.names <- character()
+  vertices.names <- sapply(list.interact.pairs, function(x) {c(x$act.A.genename, x$act.B.genename)})
+  vertices.names <- t(vertices.names)
+  vertices.A.names <- unique(as.character(vertices.names[, 1]))
+  vertices.B.names <- unique(as.character(vertices.names[, 2]))
+  # pack vA vB to be df
+  vertices.A.pack.df <- data.frame(GeneName = vertices.A.names, ClusterName = c(act.A.clustername), stringsAsFactors = FALSE)
+  vertices.B.pack.df <- data.frame(GeneName = vertices.B.names, ClusterName = c(act.B.clustername), stringsAsFactors = FALSE)
+  ## get other attributes about the vertices
+  # A# type -single
+  vertices.A.apx.types <- anno.infos$type.A[, c("Gene.name", "Keyword.Name")]
+  # A# loc
+  vertices.A.pack.df <- left_join(vertices.A.pack.df, anno.infos$location.A[, c("Gene.name", "GO.Term.target")], by = c("GeneName" = "Gene.name"))
+  #vertices.A.pack.df <- left_join(vertices.A.pack.df, anno.infos$type.A[, c("Gene.name", "Keyword.Name")], by = c("GeneName" = "Gene.name"))
+  # !special rescue rule
+  vertices.A.pack.df[which(is.na(vertices.A.pack.df[, "GO.Term.target"])), "GO.Term.target"] <- "Other"  # [rescue]
+  # A# logfc
+  fgenes.part.A <- fgenes.remapped.all[which(fgenes.remapped.all$cluster == act.A.clustername), ]
+  vertices.A.pack.df <- left_join(vertices.A.pack.df, fgenes.part.A, by = c("GeneName" = "gene"))
+  # B# type -single
+  vertices.B.apx.types <- anno.infos$type.B[, c("Gene.name", "Keyword.Name")]
+  # B# loc
+  vertices.B.pack.df <- left_join(vertices.B.pack.df, anno.infos$location.B[, c("Gene.name", "GO.Term.target")], by = c("GeneName" = "Gene.name"))
+  #vertices.B.pack.df <- left_join(vertices.B.pack.df, anno.infos$type.B[, c("Gene.name", "Keyword.Name")], by = c("GeneName" = "Gene.name"))
+  # !special rescue rule
+  vertices.B.pack.df[which(is.na(vertices.B.pack.df[, "GO.Term.target"])), "GO.Term.target"] <- "Other"  # [rescue] 
+  # B# logfc
+  fgenes.part.B <- fgenes.remapped.all[which(fgenes.remapped.all$cluster == act.B.clustername), ]
+  vertices.B.pack.df <- left_join(vertices.B.pack.df, fgenes.part.B, by = c("GeneName" = "gene"))
+  # !! here, special rules will be applied upon if act.A.clustername == act.B.clustername
+  afterV.A.clustername <- act.A.clustername
+  afterV.B.clustername <- act.B.clustername
+  if (act.A.clustername == act.B.clustername) {
+    afterV.B.clustername <- paste0(act.B.clustername, ".mirror")  # [attention here!]
+    vertices.B.pack.df$ClusterName <- afterV.B.clustername
   }
-  #end# return
-  group.act.res
-}
-
-
-
-
-
-# [inside usage]
-# This function is to draw plot for showing the result that contains different
-# expression level changes and action effects.
-# 
-# @param onepair.dgsa A list. Return value of Inside.CollectHierachyOnepairClusters().
-# @param show.exprs.change SEE GetResult.SummaryOnepairClusters for details.
-# @param show.action.effects SEE GetResult.SummaryOnepairClusters for details.
-# other @param The same as in GetResult.SummaryOnepairClusters. 
-#
-#
-# @import ggplot2
-#
-Inside.PlotShowGrouping <- function(
-  onepair.dgsa,
-  show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
-  show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"),
-  scale.fill.discrete,
-  legend.key.size,
-  legend.title,
-  legend.text,
-  legend.box.margin,
-  caption.label.size,
-  caption.label.x,
-  caption.label.y,
-  caption.label.hjust,
-  caption.label.vjust,
-  ...
-) {
-  # result allocation
-  gsub.result <- vector("list", length = length(show.exprs.change))
-  names(gsub.result) <- as.character(show.exprs.change)
-  # process
-  for (ix in show.exprs.change) {
-    tmp.CD.dgsa <- onepair.dgsa[[ix]]
-    tmp.CD.cnt <- 0  # total interact count
-    for (i.type in show.action.effects) {
-      tmp.CD.cnt <- tmp.CD.cnt + nrow(tmp.CD.dgsa[[i.type]])
-    }
-    gsub.result[[ix]] <- data.frame()
-    for (i.type in show.action.effects) {  # split into their collections
-      gsub.result[[ix]] <- rbind(gsub.result[[ix]],
-        data.frame(dummy.x = ix,
-          interact.cnt = nrow(tmp.CD.dgsa[[i.type]]),
-          percent.cnt = nrow(tmp.CD.dgsa[[i.type]]) / tmp.CD.cnt,
-          genes.action.effects = i.type))
-    }
-    gsub.result[[ix]]$genes.action.effects <- factor(gsub.result[[ix]]$genes.action.effects)
+  vertices.all.infos <- rbind(vertices.A.pack.df, vertices.B.pack.df)
+  # do unique if locations and types are not cared
+  if (if.ignore.annos == TRUE) {
+    vertices.all.infos <- DoPartUnique(vertices.all.infos, cols.select = match(c("GeneName", "ClusterName"), colnames(vertices.all.infos)))
   }
-  inside.PiePlot.shared <- function(data) {
-    gplot.sgp <- ggplot(data, aes(x = dummy.x, y = interact.cnt, fill = genes.action.effects))
-    gplot.sgp <- gplot.sgp + geom_col(position = "stack") +
-      scale.fill.discrete + 
-      coord_polar(theta = "y") + 
-      theme(panel.background = element_blank(), plot.margin = margin(6, 0, 6, 0)) + 
-      scale_x_discrete(breaks = NULL) + 
-      scale_y_continuous(breaks = NULL)
-    # return
-    gplot.sgp
-  }
-  gplot.res.list <- list()
-  for (ix in show.exprs.change) {
-    tmp.gplot <- inside.PiePlot.shared(gsub.result[[ix]])
-    gplot.res.list <- c(gplot.res.list, list(tmp.gplot))
-  }
-  # add unified legend
-  res.legend <- get_legend(gplot.res.list[[1]] + 
-    guides(fill = guide_legend(title = "Action.Effects")) + 
-    theme(legend.position = "right", 
-      legend.key.size = legend.key.size,
-      legend.title = legend.title,
-      legend.text = legend.text,
-      legend.box.margin = legend.box.margin)
+  vertices.all.infos$UID <- 1:nrow(vertices.all.infos)
+  rownames(vertices.all.infos) <- NULL
+  # change colnames in vertices.all
+  tmp.cols.change <- match(c("GO.Term.target", "avg_logFC"), colnames(vertices.all.infos))
+  colnames(vertices.all.infos)[tmp.cols.change] <- c("Location", "LogFC")
+  tmp.cols.first5 <- c("UID", "ClusterName", "GeneName", "Location", "LogFC")
+  vertices.all.infos <- vertices.all.infos[, c(tmp.cols.first5, setdiff(colnames(vertices.all.infos), tmp.cols.first5))]  # rearrange the columns
+  # change colnames in apx.*
+  colnames(vertices.A.apx.types) <- colnames(vertices.B.apx.types) <- c("GeneName", "Type")
+
+  ## --- edges ---
+  # predefined function
+  gen.edges.vei.inside <- function(act.part1.UID, act.part2.UID, action.mode, action.effect) {
+    # this function is to generate all permutation of act.part1.UID ~ act.part2.UID, e.g. A*2 B*3 will get 2*3 results
+    tmp.all.pert <- lapply(act.part1.UID,
+      act.part2.UID = act.part2.UID, action.mode = action.mode, action.effect = action.effect,
+      FUN = function(x, act.part2.UID, action.mode, action.effect) {
+        data.frame(from = x, to = act.part2.UID, action.mode = action.mode, action.effect = action.effect, stringsAsFactors = FALSE)
+      }
     )
-  # add additional plot modification
-  for (ix in show.exprs.change) {
-    ind.sel <- which(show.exprs.change == ix)
-    gplot.res.list[[ind.sel]] <- gplot.res.list[[ind.sel]] + 
-        xlab(NULL) + ylab(ix) + 
-        theme(legend.position = "none")
+    tmp.all.pert  # return
   }
-  gplot.res.list[[1]] <- gplot.res.list[[1]] + 
-          xlab("interact pairs count") +  # add only 1 xlab
-          theme(plot.margin = margin(6, 0, 6, 10))
-  # grid the plots in one row
-  res.plot.no.legend <- plot_grid(plotlist = gplot.res.list, align = "vh", nrow = 1)
-  # result plot
-  relative.width <- 0.3
-  if (length(show.exprs.change) > 2) {
-    relative.width <- 0.2
-  }
-  res.plot <- plot_grid(res.plot.no.legend, res.legend, nrow = 1, rel_widths = c(1, relative.width))
-  # add joint caption
-  caption.label <- paste0("---symbols---\nA,B: genes, C,D: clusters.\nC: ", 
-    onepair.dgsa$clusters.name[["cluster.C"]], ", D: ", onepair.dgsa$clusters.name[["cluster.D"]])
-  caption.plot <- ggdraw() + 
-    draw_label(caption.label, size = caption.label.size, 
-      x = caption.label.x, hjust = caption.label.hjust,
-      y = caption.label.y, vjust = caption.label.vjust) + 
-    theme(plot.margin = margin(0, 0, 0, 0))
-  final.plot <- plot_grid(res.plot, caption.plot, ncol = 1, rel_heights = c(1, 0.2))      
+  # the process
+  tmp.vertices.all.gene.inds <- tapply(1:nrow(vertices.all.infos), vertices.all.infos[, "GeneName"], function(x) {x})
+  tmp.vertices.all.cluster.inds <- tapply(1:nrow(vertices.all.infos), vertices.all.infos[, "ClusterName"], function(x) {x})
+  prog.bar.edge.collect <- progress::progress_bar$new(total = length(list.interact.pairs))
+  prog.bar.edge.collect$tick(0)
+  this.act.result <- lapply(list.interact.pairs, vertices.all.infos =  vertices.all.infos, 
+    afterV.A.clustername = afterV.A.clustername, afterV.B.clustername = afterV.B.clustername, 
+    tmp.gene.inds = tmp.vertices.all.gene.inds, tmp.cluster.inds = tmp.vertices.all.cluster.inds, 
+    prog.bar.edge.collect = prog.bar.edge.collect, 
+    gen.edges.vei.inside = gen.edges.vei.inside,  # function
+    function(x, vertices.all.infos, afterV.A.clustername, afterV.B.clustername, 
+      tmp.gene.inds, tmp.cluster.inds, prog.bar.edge.collect, gen.edges.vei.inside) {
+      this.list <- x
+      act.A.genename <- this.list$act.A.genename
+      act.A.UID <- intersect(tmp.gene.inds[[act.A.genename]], tmp.cluster.inds[[afterV.A.clustername]])
+      act.B.genename <- this.list$act.B.genename
+      act.B.UID <- intersect(tmp.gene.inds[[act.B.genename]], tmp.cluster.inds[[afterV.B.clustername]])
+      act.infos <- this.list$action.infos
+      tmp.act.res <- list()  # for return
+      if (nrow(act.infos) > 0) {
+        for (j in 1:nrow(act.infos)) {
+          this.row <- act.infos[j, ]
+          rownames(this.row) <- NULL
+          if (this.row["actionid"] == 1) {  # for undirected one, give two directed edge and special symbol representing those
+            tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "undirected"))
+            if (!is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "undirected"))
+            }
+          } else {
+            if (this.row["actionid"] < 2 || this.row["actionid"] > 7) {
+              stop(paste0("Undefined actionid from @param onepair.gmoc$actions.detailed[[", i, "]]!"))
+            }
+            if (this.row["actionid"] == 2) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "positive"))
+            } 
+            if (this.row["actionid"] == 3 && !is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "positive"))
+            }
+            if (this.row["actionid"] == 4) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "negative"))
+            }
+            if (this.row["actionid"] == 5 && !is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "negative"))
+            }
+            if (this.row["actionid"] == 6) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "unspecified"))
+            }
+            if (this.row["actionid"] == 7 && !is.directional) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "unspecified"))
+            }
+          }
+        }
+      }
+      prog.bar.edge.collect$tick()
+      bind_rows(tmp.act.res)
+  })
+  edges.all.infos <- bind_rows(this.act.result)
   #end# return
-  final.plot
+  VEinfos <- list(cluster.name.A = afterV.A.clustername, cluster.name.B = afterV.B.clustername,
+    edges.infos = edges.all.infos, 
+    vertices.infos = vertices.all.infos,
+    vertices.apx.type.A = vertices.A.apx.types,
+    vertices.apx.type.B = vertices.B.apx.types
+    )
 }
 
 
 
-
-
-
-#' Get result of analysis on one pair
+#' Trim the vertices and edges infos
 #'
 #' @description
-#' This function focuses on one interaction pair and its detailed information(expression changes, 
-#' gene-gene action effects), and get result from it.
+#' This function uses mode and action.effect as the restrictions when users select part of the result.
 #'
-#' @param onepair.dgsa List. Return value of \code{\link{CollectHierachyOnepairClusters}}.
-#' @param show.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
-#' @param show.action.effects Character. Select some action effects to be put in the result.
-#' @param scale.fill.discrete A ggplot object. It gives the colour strategy for plotting.
-#' @param legend.key.size The size of keys in legend. It should be in unit format, see \code{?unit} for further help.
-#' @param legend.title It sets the attributes of legend title, and should be \code{element_text()}.
-#' @param legend.text It sets the attributes of legend annotation texts, and should be \code{element_text()}.
-#' @param legend.box.margin It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.
-#' @param caption.label.size It sets the size of caption label.
-#' @param caption.label.x It sets the position of caption label in x-axis.
-#' @param caption.label.y It sets the position of caption label in y-axis.
-#' @param caption.label.hjust It sets the alignment type of caption label in horizontal level, see \code{vignette("ggplot2-specs")}
-#' for further help.
-#' @param caption.label.vjust It sets the alignment type of caption label in vertical level, see \code{vignette("ggplot2-specs")}
-#' for further help.
+#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
+#' \code{GenerateVEinfos()}.
+#' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
+#' one of the participated genes.
+#' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.
+#' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
+#' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.
+#' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
+#' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.
 #'
-#' @return A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
-#' \itemize{
-#'   \item plot: the object of \pkg{ggplot2}.
-#'   \item table: a list of \code{data.frame}.
-#' }
-#'
-#' @examples
-#' # select only Cup.Dup
-#' \dontrun{
-#' GetResult.SummaryOnepairClusters(
-#'   onepair.gmoc,
-#'   show.exprs.change = c("Cup.Dup")
-#' )
-#' }
+#' @details
+#' The whole list of mode or action.effect is defined as global variable that is given within the package.
+#' kpred.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
+#' As the action database given now is not completed well, it is recommended to select upon
+#' action.effect, while leaving all different modes preserved.
 #'
 #'
 #'
-#' @import ggplot2
-#' @importFrom cowplot draw_label get_legend ggdraw plot_grid
+#' @importFrom dplyr left_join 
 #'
 #' @export
 #'
-GetResult.SummaryOnepairClusters <- function(
-  onepair.dgsa,
-  show.exprs.change = c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"),
-  show.action.effects = c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"),
-  scale.fill.discrete = scale_fill_brewer(palette = "Set3"),
-  legend.key.size = unit(6, "mm"),
-  legend.title = element_text(size = 12),
-  legend.text = element_text(size = 8),
-  legend.box.margin = margin(0, 0, 0, 6),
-  caption.label.size = 12,
-  caption.label.x = 0.5,
-  caption.label.y = 1,
-  caption.label.hjust = 0.5,
-  caption.label.vjust = 1
+TrimVEinfos <- function(
+  VEinfos, 
+  sel.some.gene.pairs.df = NULL, 
+  sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
+  sel.mode.val = NULL, 
+  sel.action.effect.val = NULL
 ) {
-  # pre-result check
-  notin.exprs.c <- setdiff(show.exprs.change, c("Cup.Dup", "Cup.Ddn", "Cdn.Dup", "Cdn.Ddn"))
-  if (length(notin.exprs.c) > 0) {
-    warning("Given @param show.exprs.change has undefined values: ", 
-      paste0(notin.exprs.c, collapse = ", "), "\n and will be ignored!")
-  }
-  show.exprs.change <- setdiff(show.exprs.change, notin.exprs.c)
-  if (length(show.exprs.change) == 0) {
-    stop("Select available data less than 1!")
-  }
-  # pre-check 2
-  notin.act.effect <- setdiff(show.action.effects, c("A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B"))
-  if (length(notin.act.effect) > 0) {
-    warning("Given @param show.action.effects has undefined values: ",
-      paste0(notin.act.effect, collapse = ", "), "\n and will be ignored!")
-  }
-  show.action.effects <- setdiff(show.action.effects, notin.act.effect)
-  if (length(show.action.effects) == 0) {
-    stop("Select action effects less than 1. Unable to fetch the result!")
-  }
-  ## result plot
-  plot.res <- Inside.PlotShowGrouping(onepair.dgsa, 
-    show.exprs.change = show.exprs.change, 
-    show.action.effects = show.action.effects, 
-    scale.fill.discrete = scale.fill.discrete,
-    legend.key.size = legend.key.size,
-    legend.title = legend.title,
-    legend.text = legend.text,
-    legend.box.margin = legend.box.margin,
-    caption.label.size = caption.label.size,
-    caption.label.x = caption.label.x,
-    caption.label.y = caption.label.y,
-    caption.label.hjust = caption.label.hjust,
-    caption.label.vjust = caption.label.vjust
-    )
-  ## result table
-  res.table.list <- list(
-    Cup.Dup = data.frame(),
-    Cup.Ddn = data.frame(),
-    Cdn.Dup = data.frame(),
-    Cdn.Ddn = data.frame()
-  )
-  this.cluster.C <- onepair.dgsa$clusters.name$cluster.C
-  this.cluster.D <- onepair.dgsa$clusters.name$cluster.D
-  for (i.exc in show.exprs.change) {
-    this.exc <- onepair.dgsa[[i.exc]]
-    for (i.type in show.action.effects) {
-      if (nrow(this.exc[[i.type]]) == 0) {
-        next
+  afterV.A.clustername <- VEinfos$cluster.name.A
+  afterV.B.clustername <- VEinfos$cluster.name.B
+  vertices.all.infos <- VEinfos$vertices.infos
+  edges.all.infos <- VEinfos$edges.infos
+  vertices.A.apx.types <- VEinfos$vertices.apx.type.A
+  vertices.B.apx.types <- VEinfos$vertices.apx.type.B
+  ### select target edges.part.infos and vertices.part.infos by some gene pairs
+  ## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
+  if (!is.null(sel.some.gene.pairs.df)) {
+    if (class(sel.some.gene.pairs.df) == "data.frame" && nrow(sel.some.gene.pairs.df) > 0 && ncol(sel.some.gene.pairs.df) >= 2) {
+      if ((tmp.x = sum(sel.some.gene.pairs.colnames %in% colnames(sel.some.gene.pairs.df))) && 
+          (tmp.x != length(sel.some.gene.pairs.colnames) || tmp.x != 2)) {
+        stop("Given colnames in `sel.some.gene.pairs.colnames` are unvalid!")
       }
-      res.table.list[[i.exc]] <- rbind(res.table.list[[i.exc]],
-        data.frame(cluster.C = this.cluster.C,
-               gene.A = this.exc[[i.type]]$act.C.genename,
-               logfc.A = this.exc[[i.type]]$act.C.logfc,
-               cluster.D = this.cluster.D,
-               gene.B = this.exc[[i.type]]$act.D.genename,
-               logfc.B = this.exc[[i.type]]$act.D.logfc,
-               action.effects = i.type,
-               stringsAsFactors = FALSE
-               )
-        )
+      tmp.sel.gp.df <- sel.some.gene.pairs.df[, sel.some.gene.pairs.colnames]
+      tmp.p1.by.vec <- "GeneName"
+      names(tmp.p1.by.vec) <- sel.some.gene.pairs.colnames[1]
+      tmp.p2.by.vec <- "GeneName"
+      names(tmp.p2.by.vec) <- sel.some.gene.pairs.colnames[2]
+      tmp.inds.cluster.m1 <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
+      tmp.inds.cluster.m2 <- which(vertices.all.infos$ClusterName == afterV.B.clustername)
+      # join is considering to be cluster-gene perfectly matched
+      tob.res.sel.gp.df <- left_join(sel.some.gene.pairs.df, vertices.all.infos[tmp.inds.cluster.m1, c("UID", "GeneName")], by = tmp.p1.by.vec)
+      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "from.UID"
+      tob.res.sel.gp.df <- left_join(tob.res.sel.gp.df, vertices.all.infos[tmp.inds.cluster.m2, c("UID", "GeneName")], by = tmp.p2.by.vec)
+      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "to.UID"
+      # get subset, using short-inter-pair to match
+      tob.res.short.interacts <- paste(tob.res.sel.gp.df[, "from.UID"], tob.res.sel.gp.df[, "to.UID"], sep = "->")
+      tmp.edges.short.interacts <- paste(edges.all.infos[, "from"], edges.all.infos[, "to"], sep = "->")
+      edges.sel1.infos <- edges.all.infos[which(tmp.edges.short.interacts %in% tob.res.short.interacts), ]
+    } else {
+      stop("Given parameter `sel.some.gene.pairs.df` should be data.frame that has 2 columns.")      
     }
+  } else {
+    edges.sel1.infos <- edges.all.infos
   }
-  res.final.table <- list()
-  for (i.res in names(res.table.list)) {
-    if (nrow(res.table.list[[i.res]]) > 0) {
-      res.final.table[[i.res]] <- res.table.list[[i.res]]
+
+  # as it plot either directed or undirected graphs, new definition of action effects are given as below
+  # for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
+  # for "A-->B" or "A<--B",   given type: "positive"  --- kaction.id.mapped[c(2,3)]
+  # for "A--|B" or "A|--B",   given type: "negative"  --- kaction.id.mapped[c(4,5)]
+  # for "A--oB" or "Ao--B",   given type: "unspecified" --- kaction.id.mapped[c(6,7)]
+  #
+  ### select target edges.part.infos and vertices.part.infos by mode & action.effect
+  ## check if valid, sel.mode.val, sel.action.effect.val
+  predefined.mode.list <- kpred.mode
+  predefined.action.effect.list <- kpred.action.effect
+  if ((sum(sel.mode.val %in% predefined.mode.list) == length(sel.mode.val) ||
+     is.null(sel.mode.val)) &&
+    (sum(sel.action.effect.val %in% predefined.action.effect.list) == length(sel.action.effect.val) ||
+     is.null(sel.action.effect.val))) {
+    # --- mode ---
+    if (is.null(sel.mode.val)) {
+      edges.part.infos <- edges.sel1.infos
+    } else {
+      inds.part.select <- match(edges.sel1.infos[, "mode"], sel.mode.val)
+      edges.part.infos <- edges.sel1.infos[which(!is.na(inds.part.select)), ]
     }
+    # --- action.effect ---
+    if (!is.null(sel.action.effect.val)) {
+      inds.part.select.ex <- match(edges.part.infos[, "action.effect"], sel.action.effect.val)
+      edges.part.infos <- edges.part.infos[which(!is.na(inds.part.select.ex)), ]
+    }
+    # recheck if nrow() > 0
+    if (nrow(edges.part.infos) == 0) {
+      stop("No given subset of interactions between cluster: ", act.A.clustername, " and cluster: ", act.B.clustername, "!")  # afterV.B.clustername is not used for displaying warnings
+    }
+    part.select.vertices <- unique(c(levels(factor(edges.part.infos[, "from"])), levels(factor(edges.part.infos[, "to"]))))
+    vertices.part.infos <- vertices.all.infos[match(part.select.vertices, vertices.all.infos[, "UID"]), ]
+    # remapping UIDs
+    vertices.part.infos$UID <- 1:nrow(vertices.part.infos)  # as target vertices may be less than total vertices, so remapping the UID
+    inds.part.new.id.from <- match(edges.part.infos[, "from"], rownames(vertices.part.infos))
+    inds.part.new.id.to   <- match(edges.part.infos[, "to"], rownames(vertices.part.infos))
+    edges.part.infos[, "from"] <- vertices.part.infos$UID[inds.part.new.id.from]
+    edges.part.infos[, "to"] <- vertices.part.infos$UID[inds.part.new.id.to]
+    rownames(vertices.part.infos) <- NULL  # make rownames be equal to UID
+    # set the apx* vars
+    inds.part.A.vx <- which(vertices.A.apx.types[, "GeneName"] %in% vertices.part.infos[which(vertices.part.infos$ClusterName == afterV.A.clustername), "GeneName"])
+    vertices.A.apx.types <- vertices.A.apx.types[inds.part.A.vx, ]
+    inds.part.B.vx <- which(vertices.B.apx.types[, "GeneName"] %in% vertices.part.infos[which(vertices.part.infos$ClusterName == afterV.B.clustername), "GeneName"])
+    vertices.B.apx.types <- vertices.B.apx.types[inds.part.B.vx, ]
+  } else {
+    not.inlist.mode <- sel.mode.val[which(!(sel.mode.val %in% predefined.mode.list))]
+    not.inlist.action.effect <- sel.action.effect.val[which(!(sel.action.effect.val %in% predefined.action.effect.list))]
+    stop(paste0("Error in given @param, with mode not in list: ", paste0(not.inlist.mode, collapse = ", "), 
+      ", with action.effect not in list: ", paste0(not.inlist.action.effect, collapse = ", "),
+      ", please recheck these given above!"))
   }
   #end# return
-  list(plot = plot.res, table = res.final.table)
+  VEinfos <- list(cluster.name.A = afterV.A.clustername, cluster.name.B = afterV.B.clustername,
+    edges.infos = edges.part.infos, 
+    vertices.infos = vertices.part.infos,
+    vertices.apx.type.A = vertices.A.apx.types,
+    vertices.apx.type.B = vertices.B.apx.types
+    )
+  return(VEinfos)
 }

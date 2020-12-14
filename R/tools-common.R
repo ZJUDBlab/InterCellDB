@@ -79,6 +79,8 @@ Tool.WriteTables <- function(
 #' This function generates n-column data frame by spliting character by some specific letters or phrases.
 #'
 #' @param to.splits.string [TODO]
+#' @param to.split.by [TODO]
+#' @param res.colnames [TODO]
 #'
 #'
 #'
