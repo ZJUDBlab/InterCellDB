@@ -26,7 +26,7 @@
 #' Annotation database for subcellular location of human genes
 #'
 #' @description
-#' A dataset contains 79373 rows of subcellular locations, which covers 17736 human genes.
+#' A dataset contains 79628 rows of subcellular locations, which covers 17646 human genes.
 #'
 #' @source <https://compartments.jensenlab.org>, and download the knowledge channel of human databases.
 #'
@@ -46,9 +46,8 @@
 #' Experiments database of interaction pairs of human genes
 #'
 #' @description
-#' A dataset contains the experiments-based interaction pairs of human genes, 
-#' and is extracted from STRING database. It is further matched by Ligand/Receptor/ECM databases
-#' in this package, and as a result, it has 214368 rows of pairs in total.
+#' A dataset contains the all-from-STRING interaction pairs of human genes.
+#' In this package, it has 5758309 unique pairs in total.
 #'
 #' @format Data.frame.
 #' \itemize{
@@ -58,57 +57,22 @@
 #'    \item inter.Database.Score: score by curated database, which is the <database> score in STRING database.
 #'    \item inter.Predicted.Score: score by prediction, which is the columns other than <experiments> and <database.>, 
 #'          e.g. gene fusion, gene neighbor, etc.
+#'    \item inter.Combined.Score: score combing all above scores.
 #' }
 #'
 #' @details
-#' The subset of STRING data used are <taxonomy = Homo Sapiens>, <score[experiments] > 0>.
+#' The subset of STRING data used are <taxonomy = Homo Sapiens>.
 #'
-#' @source STRING <https://string-db.org>, HGNC <https://www.genenames.org>, GeneCards <https://www.genecards.org>, etc.
+#' @source STRING <https://string-db.org>.
 #'
-"pairs.human.experiments.db"
-
-
-#' Knowledge database of interaction pairs of human genes
-#'
-#' @description
-#' A dataset contains the curated-database-based interaction pairs of human genes, 
-#' and is extracted from STRING database. It is further matched by Ligand/Receptor/ECM databases
-#' in this package, and as a result, it has 264689 rows of pairs in total.
-#'
-#' @format See @format in \code{?pairs.human.experiments.db}.
-#'
-#' @details
-#' The subset of STRING data used are <taxonomy = Homo Sapiens>, <score[combined_score] > 699>, 
-#' <score[experiments] = 0>, <score[database] > 699>.
-#'
-#' @source STRING <https://string-db.org>, HGNC <https://www.genenames.org>, GeneCards <https://www.genecards.org>, etc.
-#'
-"pairs.human.knowledge.db"
-
-
-#' Prediction database of interaction pairs of human genes
-#'
-#' @description
-#' A dataset contains the prediction-based interaction pairs of human genes, 
-#' and is extracted from STRING database. It is further matched by Ligand/Receptor/ECM databases
-#' in this package, and as a result, it has 73379 rows of pairs in total.
-#'
-#' @format See @format in \code{?pairs.human.experiments.db}.
-#'
-#' @details
-#' The subset of STRING data used are <taxonomy = Homo Sapiens>, <score[combined_score] > 699>, 
-#' <score[experiments] = 0>, <score[database] < 700>.
-#'
-#' @source STRING <https://string-db.org>, HGNC <https://www.genenames.org>, GeneCards <https://www.genecards.org>, etc.
-#'
-"pairs.human.prediction.db"
+"pairs.human.db"
 
 
 #' Actions database for human
 #'
 #' @description
 #' A dataset collects detailed action informations about gene-gene pairs. It is extracted from
-#' STRING database, and has 3273046 in total.
+#' STRING database, and has 3409770 in total.
 #'
 #' @source STRING <https://string-db.org>
 #'
@@ -119,7 +83,7 @@
 #'
 #' @description
 #' A dataset collects human genes and their GO annotations. It is extracted from
-#' GO annotations of mixed species, and has 323030 rows in total.
+#' GO annotations of mixed species, and has 322873 rows in total covering 19606 genes.
 #'
 #' @source <ftp://ftp.ncbi.nih.gov/gene/>, and file path is /DATA/gene2go.gz.
 #'
@@ -151,7 +115,7 @@
 #' Annotation database for subcellular location of mouse genes
 #'
 #' @description
-#' A dataset contains 66719 rows of subcellular locations, which covers 15605 mouse genes.
+#' A dataset contains 66569 rows of subcellular locations, which covers 15566 mouse genes.
 #'
 #' @source <https://compartments.jensenlab.org>, and download the knowledge channel of mouse databases.
 #'
@@ -168,72 +132,36 @@
 "anno.type.mouse.ref.db"
 
 
-#' Experiments database of interaction pairs of mouse genes
+#' Database of interaction pairs of mouse genes
 #'
 #' @description
-#' A dataset contains the experiments-based interaction pairs of mouse genes, 
-#' and is extracted from STRING database. It is further matched by Ligand/Receptor/ECM databases
-#' in this package, and as a result, it has 2344 rows of pairs in total.
+#' A dataset contains the all-from-STRING interaction pairs of mouse genes.
+#' In this package, it has 5882115 unique pairs in total.
 #'
 #' @format Data.frame.
 #' \itemize{
-#'   \item inter.GeneID.*: the unique geneID for every gene in NCBI gene database.
+#'    \item inter.GeneID.*: the unique geneID for every gene in NCBI gene database.
 #'    \item inter.GeneName.*: the authorized name for every gene in NCBI gene database.
 #'    \item inter.Experiments.Score: score by experiments, which is the <experiments> score in STRING database.
 #'    \item inter.Database.Score: score by curated database, which is the <database> score in STRING database.
 #'    \item inter.Predicted.Score: score by prediction, which is the columns other than <experiments> and <database.>, 
 #'          e.g. gene fusion, gene neighbor, etc.
+#'    \item inter.Combined.Score: score combing all above scores.
 #' }
 #'
 #' @details
-#' The subset of STRING data used are <taxonomy = Mus Musculus>, <score[experiments] > 0>.
+#' The subset of STRING data used are <taxonomy = Mus Musculus>.
 #'
-#' @source STRING <https://string-db.org>, HGNC <https://www.genenames.org>, GeneCards <https://www.genecards.org>, etc.
+#' @source STRING <https://string-db.org>.
 #'
-"pairs.mouse.experiments.db"
-
-
-#' Knowledge database of interaction pairs of mouse genes
-#'
-#' @description
-#' A dataset contains the curated-database-based interaction pairs of mouse genes, 
-#' and is extracted from STRING database. It is further matched by Ligand/Receptor/ECM databases
-#' in this package, and as a result, it has 42146 rows of pairs in total.
-#'
-#' @format See @format in \code{?pairs.mouse.experiments.db}.
-#'
-#' @details
-#' The subset of STRING data used are <taxonomy = Mus Musculus>, <score[combined_score] > 699>, 
-#' <score[experiments] = 0>, <score[database] > 699>.
-#'
-#' @source STRING <https://string-db.org>, HGNC <https://www.genenames.org>, GeneCards <https://www.genecards.org>, etc.
-#'
-"pairs.mouse.knowledge.db"
-
-
-#' Prediction database of interaction pairs of mouse genes
-#'
-#' @description
-#' A dataset contains the prediction-based interaction pairs of mouse genes, 
-#' and is extracted from STRING database. It is further matched by Ligand/Receptor/ECM databases
-#' in this package, and as a result, it has 7557 rows of pairs in total.
-#'
-#' @format See @format in \code{?pairs.mouse.experiments.db}.
-#'
-#' @details
-#' The subset of STRING data used are <taxonomy = Mus Musculus>, <score[combined_score] > 699>, 
-#' <score[experiments] = 0>, <score[database] < 700>.
-#'
-#' @source STRING <https://string-db.org>, HGNC <https://www.genenames.org>, GeneCards <https://www.genecards.org>, etc.
-#'
-"pairs.mouse.prediction.db"
+"pairs.mouse.db"
 
 
 #' Actions database for mouse
 #'
 #' @description
 #' A dataset collects detailed action informations about gene-gene pairs. It is extracted from
-#' STRING database, and has 496206 in total.
+#' STRING database, and has 4763978 in total.
 #'
 #' @source STRING <https://string-db.org>
 #'
@@ -244,7 +172,7 @@
 #'
 #' @description
 #' A dataset collects mouse genes and their GO annotations. It is extracted from
-#' GO annotations of mixed species, and has 367376 rows in total.
+#' GO annotations of mixed species, and has 367110 rows in total covering 24193 genes.
 #'
 #' @source <ftp://ftp.ncbi.nih.gov/gene/>, and file path is /DATA/gene2go.gz.
 #'

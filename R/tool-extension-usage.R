@@ -132,7 +132,7 @@ Tool.FindGenesFromGO <- function(
 			warning("The following GO_IDs are not found: \n ", paste0(go.ID.given.nonexist, collapse = ", "), ".")
 		}
 	}
-  res.go.id.match.list <- go.ref.db[which(go.ref.db$GO_ID %in% go.ID.given.exist), "GeneName"]
+  res.go.id.match.list <- go.ref.db[which(go.ref.db$GO_ID %in% go.ID.given.exist), "Gene.name"]
 	# term matching
 	go.term.given.nonexist <- character()
 	go.term.given.exist <- character()
@@ -144,7 +144,7 @@ Tool.FindGenesFromGO <- function(
 			warning("The following GO_terms are not found: \n ", paste0(go.term.given.nonexist, collapse = ", "), ".")
 		}
 	}
-  res.go.term.match.list <- go.ref.db[which(go.ref.db$GO_term %in% go.term.given.exist), "GeneName"]
+  res.go.term.match.list <- go.ref.db[which(go.ref.db$GO_term %in% go.term.given.exist), "Gene.name"]
 	# finish transformation
 	res.go.rel.genes <- unique(as.character(c(res.go.id.match.list, res.go.term.match.list)))
 	res.go.rel.genes <- res.go.rel.genes[order(res.go.rel.genes)]
