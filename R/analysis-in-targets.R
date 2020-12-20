@@ -162,7 +162,8 @@ GenerateMapDetailOnepairClusters <- function(
   print(paste0("Generating from ", paste0(clusters.onepair.select$clusters.name, collapse = " and "), "."))
   
   # 
-  this.act.conv.pairs <- left_join(bt.pairs, actions.ref.db[, setdiff(colnames(actions.ref.db), c("inter.GeneID.A", "inter.GeneID.B"))], by = c("inter.GeneName.A", "inter.GeneName.B"))
+  this.act.conv.pairs <- left_join(bt.pairs, actions.ref.db[, setdiff(colnames(actions.ref.db), c("inter.GeneID.A", "inter.GeneID.B"))], 
+    by = c("inter.GeneName.A", "inter.GeneName.B"))
   # use rev actions to join again
   this.act.rev.pairs <- left_join(bt.pairs, actions.ref.db[, setdiff(colnames(actions.ref.db), c("inter.GeneID.A", "inter.GeneID.B"))], 
     by = c("inter.GeneName.A" = "inter.GeneName.B", "inter.GeneName.B" = "inter.GeneName.A"))
@@ -182,25 +183,32 @@ GenerateMapDetailOnepairClusters <- function(
   this.act.rev.pairs[, tmp.tried.indicator.colname] <- "rev"
   #
   this.act.all.pairs <- rbind(this.act.conv.pairs, this.act.rev.pairs)
+  # get those with mode defined collected
   this.act.put.pairs <- this.act.all.pairs[which(!is.na(this.act.all.pairs[, "mode"])), ]
+  # those without mode specified, it will has replicates in conv and rev
   this.act.pv.pairs <- this.act.all.pairs[which(is.na(this.act.all.pairs[, "mode"])), ]
+  this.act.pv.pairs <- DoPartUnique(this.act.pv.pairs, which(colnames(this.act.pv.pairs) %in% c("inter.GeneName.A", "inter.GeneName.B")))
   # rough selected put & preserved pairs
   this.put.pairs <- this.act.put.pairs
   this.pv.pairs <- this.act.pv.pairs
 
   # further selection upon [put pairs] by action_id pattern
-  this.put.short.cut <- paste(this.put.pairs[, "inter.GeneID.A"], this.put.pairs[, "inter.GeneID.B"], sep = ">")
-  this.put.sc.ind.list <- tapply(1:length(this.put.short.cut), this.put.short.cut, function(x) {x})
-  # further selection upon [pv pairs] by overlap with [put pairs]
-  this.pv.short.cut <- paste(this.pv.pairs[, "inter.GeneID.A"], this.pv.pairs[, "inter.GeneID.B"], sep = ">")
-  this.pv.sc.ind.list <- tapply(1:length(this.pv.short.cut), this.pv.short.cut, function(x) {x})
-  # collect overlap ones and further remove these
-  tmp.overlap <- intersect(names(this.put.sc.ind.list), names(this.pv.sc.ind.list))
-  tmp.inds.overlap <- as.integer(unlist(lapply(tmp.overlap, total.list = this.pv.sc.ind.list, function(x, total.list){
-    total.list[[x]]
-    })))
-  this.pv.pairs <- this.pv.pairs[setdiff(1:nrow(this.pv.pairs), tmp.inds.overlap), ]
-
+  this.put.sc.ind.list <- list()
+  this.pv.sc.ind.list <- list()
+  if (nrow(this.put.pairs) > 0 && nrow(this.pv.pairs) > 0) {
+    this.put.short.cut <- paste(this.put.pairs[, "inter.GeneID.A"], this.put.pairs[, "inter.GeneID.B"], sep = ">")
+    this.put.sc.ind.list <- tapply(1:length(this.put.short.cut), this.put.short.cut, function(x) {x})
+    # further selection upon [pv pairs] by overlap with [put pairs]
+    this.pv.short.cut <- paste(this.pv.pairs[, "inter.GeneID.A"], this.pv.pairs[, "inter.GeneID.B"], sep = ">")
+    this.pv.sc.ind.list <- tapply(1:length(this.pv.short.cut), this.pv.short.cut, function(x) {x})
+    # collect overlap ones and further remove these
+    tmp.overlap <- intersect(names(this.put.sc.ind.list), names(this.pv.sc.ind.list))
+    tmp.inds.overlap <- as.integer(unlist(lapply(tmp.overlap, total.list = this.pv.sc.ind.list, function(x, total.list){
+      total.list[[x]]
+      })))
+    this.pv.pairs <- this.pv.pairs[setdiff(1:nrow(this.pv.pairs), tmp.inds.overlap), ]
+  }
+  
   #
   prog.bar.gmoc <- progress::progress_bar$new(total = length(this.put.sc.ind.list))
   prog.bar.gmoc$tick(0)
@@ -211,7 +219,8 @@ GenerateMapDetailOnepairClusters <- function(
       tmp.put.act.infos <- apply(tmp.put.pairs, MARGIN = 1,
         act.A.genename = tmp.put.pairs[1, "inter.GeneName.A"],
         act.B.genename = tmp.put.pairs[1, "inter.GeneName.B"],
-        function(x, act.A.genename, act.B.genename) {
+        put.colnames = put.colnames, 
+        function(x, act.A.genename, act.B.genename, put.colnames) {
           Inside.CollectActionMapping(x, act.A.genename, act.B.genename, put.colnames)
           })
       tmp.put.act.infos <- t(tmp.put.act.infos)
@@ -243,18 +252,21 @@ GenerateMapDetailOnepairClusters <- function(
   })
 
   # further pack up upon [pv pairs]
-  prog.bar.sub.pv <- progress::progress_bar$new(total = nrow(this.pv.pairs))
-  prog.bar.sub.pv$tick(0)
-  this.pv.act.detailed <- lapply(1:nrow(this.pv.pairs), this.pv.pairs = this.pv.pairs, 
-    function(x, this.pv.pairs) {
-    prog.bar.sub.pv$tick()
-    list(act.A.genename = this.pv.pairs[x, "inter.GeneName.A"],
-         act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
-         act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
-         act.B.logfc = this.pv.pairs[x, "inter.LogFC.B"],
-         action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
-        )
-    })
+  this.pv.act.detailed <- list()
+  if (nrow(this.pv.pairs) > 0) {
+    prog.bar.sub.pv <- progress::progress_bar$new(total = nrow(this.pv.pairs))
+    prog.bar.sub.pv$tick(0)
+    this.pv.act.detailed <- lapply(1:nrow(this.pv.pairs), this.pv.pairs = this.pv.pairs, 
+      function(x, this.pv.pairs) {
+      prog.bar.sub.pv$tick()
+      list(act.A.genename = this.pv.pairs[x, "inter.GeneName.A"],
+           act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
+           act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
+           act.B.logfc = this.pv.pairs[x, "inter.LogFC.B"],
+           action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
+          )
+      })  
+  }
 
   bt.pairs.result$actions.detailed <- c(this.put.act.detailed, this.pv.act.detailed)
   #end# return
@@ -273,7 +285,7 @@ GenerateMapDetailOnepairClusters <- function(
 #'
 #' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
 #' @inheritParams Inside.DummyFgenes 
-#' @param is.directional Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
+#' @param is.directional Logic. If TRUE, it only generates gene pairs with defined action direction from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 #' otherwise bi-directional VEinfos will be generated.
 #' @param if.ignore.annos Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
@@ -306,7 +318,7 @@ GenerateMapDetailOnepairClusters <- function(
 GenerateVEinfos <- function(
   onepair.gmoc,
   fgenes.remapped.all,
-  is.directional = TRUE,
+  is.directional = FALSE,
   if.ignore.annos = FALSE
 ) {
   ### generate vertices list and edges list

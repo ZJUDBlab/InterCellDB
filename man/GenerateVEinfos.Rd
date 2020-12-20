@@ -7,7 +7,7 @@
 GenerateVEinfos(
   onepair.gmoc,
   fgenes.remapped.all,
-  is.directional = TRUE,
+  is.directional = FALSE,
   if.ignore.annos = FALSE
 )
 }
@@ -17,7 +17,7 @@ GenerateVEinfos(
 \item{fgenes.remapped.all}{Data.frame. Informations about feature genes(markers), prefer using return value of 
 \code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.}
 
-\item{is.directional}{Logic. If TRUE, it only generates VEinfos from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
+\item{is.directional}{Logic. If TRUE, it only generates gene pairs with defined action direction from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 otherwise bi-directional VEinfos will be generated.}
 
 \item{if.ignore.annos}{Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
