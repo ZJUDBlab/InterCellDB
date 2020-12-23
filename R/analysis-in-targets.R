@@ -195,9 +195,11 @@ GenerateMapDetailOnepairClusters <- function(
   # further selection upon [put pairs] by action_id pattern
   this.put.sc.ind.list <- list()
   this.pv.sc.ind.list <- list()
-  if (nrow(this.put.pairs) > 0 && nrow(this.pv.pairs) > 0) {
+  if (nrow(this.put.pairs) > 0) {
     this.put.short.cut <- paste(this.put.pairs[, "inter.GeneID.A"], this.put.pairs[, "inter.GeneID.B"], sep = ">")
     this.put.sc.ind.list <- tapply(1:length(this.put.short.cut), this.put.short.cut, function(x) {x})
+  }
+  if (nrow(this.pv.pairs) > 0) {
     # further selection upon [pv pairs] by overlap with [put pairs]
     this.pv.short.cut <- paste(this.pv.pairs[, "inter.GeneID.A"], this.pv.pairs[, "inter.GeneID.B"], sep = ">")
     this.pv.sc.ind.list <- tapply(1:length(this.pv.short.cut), this.pv.short.cut, function(x) {x})
