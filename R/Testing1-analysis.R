@@ -205,9 +205,7 @@ Testing.FindSpecialGenesInOnepairCluster <- function(
 			tmp.p.x.diff.inds <- match(setdiff(this.pair.tgs[, "interacts.name"], p.x.pairs.tgs[, "interacts.name"]), this.pair.tgs[, "interacts.name"])
 			# get shared pairs
 			tmp.p.x.shared.inds <- integer()
-			if (nrow(this.pair.tgs) > 0) {
-				tmp.p.x.shared.inds <- setdiff(1:nrow(this.pair.tgs), tmp.p.x.diff.inds)
-			}
+			tmp.p.x.shared.inds <- setdiff(seq_len(nrow(this.pair.tgs)), tmp.p.x.diff.inds)
 			tmp.shared.pairs <- this.pair.tgs[tmp.p.x.shared.inds, ]
 			colnames(tmp.shared.pairs)[which(colnames(tmp.shared.pairs) == "interacts.mul.fc")] <- "this.mul.fc"
 			tmp.shared.pairs <- left_join(tmp.shared.pairs[, c("interacts.name", "this.mul.fc")], p.x.pairs.tgs[, c("interacts.name", "interacts.mul.fc")], by = c("interacts.name"))

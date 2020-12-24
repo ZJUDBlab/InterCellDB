@@ -195,21 +195,18 @@ GenerateMapDetailOnepairClusters <- function(
   # further selection upon [put pairs] by action_id pattern
   this.put.sc.ind.list <- list()
   this.pv.sc.ind.list <- list()
-  if (nrow(this.put.pairs) > 0) {
-    this.put.short.cut <- paste(this.put.pairs[, "inter.GeneID.A"], this.put.pairs[, "inter.GeneID.B"], sep = ">")
-    this.put.sc.ind.list <- tapply(1:length(this.put.short.cut), this.put.short.cut, function(x) {x})
-  }
-  if (nrow(this.pv.pairs) > 0) {
-    # further selection upon [pv pairs] by overlap with [put pairs]
-    this.pv.short.cut <- paste(this.pv.pairs[, "inter.GeneID.A"], this.pv.pairs[, "inter.GeneID.B"], sep = ">")
-    this.pv.sc.ind.list <- tapply(1:length(this.pv.short.cut), this.pv.short.cut, function(x) {x})
-    # collect overlap ones and further remove these
-    tmp.overlap <- intersect(names(this.put.sc.ind.list), names(this.pv.sc.ind.list))
-    tmp.inds.overlap <- as.integer(unlist(lapply(tmp.overlap, total.list = this.pv.sc.ind.list, function(x, total.list){
-      total.list[[x]]
-      })))
-    this.pv.pairs <- this.pv.pairs[setdiff(1:nrow(this.pv.pairs), tmp.inds.overlap), ]
-  }
+  this.put.short.cut <- paste(this.put.pairs[, "inter.GeneID.A"], this.put.pairs[, "inter.GeneID.B"], sep = ">")
+  this.put.sc.ind.list <- tapply(seq_len(length(this.put.short.cut)), this.put.short.cut, function(x) {x})
+  # further selection upon [pv pairs] by overlap with [put pairs]
+  this.pv.short.cut <- paste(this.pv.pairs[, "inter.GeneID.A"], this.pv.pairs[, "inter.GeneID.B"], sep = ">")
+  this.pv.sc.ind.list <- tapply(seq_len(length(this.pv.short.cut)), this.pv.short.cut, function(x) {x})
+  # collect overlap ones and further remove these
+  tmp.overlap <- intersect(names(this.put.sc.ind.list), names(this.pv.sc.ind.list))
+  tmp.inds.overlap <- as.integer(unlist(lapply(tmp.overlap, total.list = this.pv.sc.ind.list, function(x, total.list){
+    total.list[[x]]
+    })))
+  this.pv.pairs <- this.pv.pairs[setdiff(1:nrow(this.pv.pairs), tmp.inds.overlap), ]
+
   
   #
   prog.bar.gmoc <- progress::progress_bar$new(total = length(this.put.sc.ind.list))
@@ -255,20 +252,18 @@ GenerateMapDetailOnepairClusters <- function(
 
   # further pack up upon [pv pairs]
   this.pv.act.detailed <- list()
-  if (nrow(this.pv.pairs) > 0) {
-    prog.bar.sub.pv <- progress::progress_bar$new(total = nrow(this.pv.pairs))
-    prog.bar.sub.pv$tick(0)
-    this.pv.act.detailed <- lapply(1:nrow(this.pv.pairs), this.pv.pairs = this.pv.pairs, 
-      function(x, this.pv.pairs) {
-      prog.bar.sub.pv$tick()
-      list(act.A.genename = this.pv.pairs[x, "inter.GeneName.A"],
-           act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
-           act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
-           act.B.logfc = this.pv.pairs[x, "inter.LogFC.B"],
-           action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
-          )
-      })  
-  }
+  prog.bar.sub.pv <- progress::progress_bar$new(total = nrow(this.pv.pairs))
+  prog.bar.sub.pv$tick(0)
+  this.pv.act.detailed <- lapply(seq_len(nrow(this.pv.pairs)), this.pv.pairs = this.pv.pairs, 
+    function(x, this.pv.pairs) {
+    prog.bar.sub.pv$tick()
+    list(act.A.genename = this.pv.pairs[x, "inter.GeneName.A"],
+         act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
+         act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
+         act.B.logfc = this.pv.pairs[x, "inter.LogFC.B"],
+         action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
+        )
+    })  
 
   bt.pairs.result$actions.detailed <- c(this.put.act.detailed, this.pv.act.detailed)
   #end# return
@@ -565,7 +560,7 @@ TrimVEinfos <- function(
     }
     # recheck if nrow() > 0
     if (nrow(edges.part.infos) == 0) {
-      stop("No given subset of interactions between cluster: ", act.A.clustername, " and cluster: ", act.B.clustername, "!")  # afterV.B.clustername is not used for displaying warnings
+      stop("No given subset of interactions between cluster: ", afterV.A.clustername, " and cluster: ", afterV.B.clustername, "!")  # afterV.B.clustername is not used for displaying warnings
     }
     part.select.vertices <- unique(c(levels(factor(edges.part.infos[, "from"])), levels(factor(edges.part.infos[, "to"]))))
     vertices.part.infos <- vertices.all.infos[match(part.select.vertices, vertices.all.infos[, "UID"]), ]
