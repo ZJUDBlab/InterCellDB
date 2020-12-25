@@ -226,37 +226,32 @@ Testing.FindSpecialGenesInOnepairCluster <- function(
 	if (evaluation.method == "special-score") {
 		# get speical genes in diff ones
 		p.C.diff.tgs.pnames <- p.D.diff.tgs.pnames <- character()
-		if (length(p.C.collect.pairs$diff) > 0) {
-			# for diff pairs, it is special if it only appears in restricted number of interacting clusters
-			p.C.collect.diff.dups <- tapply(1:length(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
-			# collect names of gene pairs in diff pairs
-			p.C.diff.tgs.pnames <- names(p.C.collect.diff.dups[which(p.C.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.C)))])
-		} 
-		if (length(p.D.collect.pairs$diff) > 0) {
-			p.D.collect.diff.dups <- tapply(1:length(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
-			p.D.diff.tgs.pnames <- names(p.D.collect.diff.dups[which(p.D.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.D)))])
-		}
+
+		# for diff pairs, it is special if it only appears in restricted number of interacting clusters
+		p.C.collect.diff.dups <- tapply(seq_along(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
+		# collect names of gene pairs in diff pairs
+		p.C.diff.tgs.pnames <- names(p.C.collect.diff.dups[which(p.C.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.C)))])
+		p.D.collect.diff.dups <- tapply(seq_along(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
+		p.D.diff.tgs.pnames <- names(p.D.collect.diff.dups[which(p.D.collect.diff.dups >= floor(merge.confidence.on.diff * length(other.pairs.names.D)))])
+		
 		# get speical genes in shared ones
 		p.C.shared.tgs.pnames <- p.D.shared.tgs.pnames <- character()
-		if (length(p.C.collect.pairs$shared) > 0) {
-			# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
-			p.C.collect.shared.dups <- tapply(1:length(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
-			p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
-			# get the shared orig collection
-			p.C.collect.shared.orig <- tapply(1:length(p.C.collect.pairs$shared.orig), p.C.collect.pairs$shared.orig, length)
-			p.C.collect.shared.orig <- p.C.collect.shared.orig[which(names(p.C.collect.shared.orig) %in% names(p.C.collect.shared.dups))]
-			p.C.collect.shared.orig <- p.C.collect.shared.orig[order(names(p.C.collect.shared.orig))]
-			# collect names of gene pairs in shared pairs
-			p.C.shared.tgs.pnames <- names(p.C.collect.shared.dups[which(p.C.collect.shared.dups >= floor(merge.confidence.on.shared * p.C.collect.shared.orig))])
-		}
-		if (length(p.D.collect.pairs$shared) > 0) {
-			p.D.collect.shared.dups <- tapply(1:length(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
-			p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
-			p.D.collect.shared.orig <- tapply(1:length(p.D.collect.pairs$shared.orig), p.D.collect.pairs$shared.orig, length)
-			p.D.collect.shared.orig <- p.D.collect.shared.orig[which(names(p.D.collect.shared.orig) %in% names(p.D.collect.shared.dups))]
-			p.D.collect.shared.orig <- p.D.collect.shared.orig[order(names(p.D.collect.shared.orig))]
-			p.D.shared.tgs.pnames <- names(p.D.collect.shared.dups[which(p.D.collect.shared.dups >= floor(merge.confidence.on.shared * p.D.collect.shared.orig))])
-		}
+		# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
+		p.C.collect.shared.dups <- tapply(seq_along(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
+		p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
+		# get the shared orig collection
+		p.C.collect.shared.orig <- tapply(seq_along(p.C.collect.pairs$shared.orig), p.C.collect.pairs$shared.orig, length)
+		p.C.collect.shared.orig <- p.C.collect.shared.orig[which(names(p.C.collect.shared.orig) %in% names(p.C.collect.shared.dups))]
+		p.C.collect.shared.orig <- p.C.collect.shared.orig[order(names(p.C.collect.shared.orig))]
+		# collect names of gene pairs in shared pairs
+		p.C.shared.tgs.pnames <- names(p.C.collect.shared.dups[which(p.C.collect.shared.dups >= floor(merge.confidence.on.shared * p.C.collect.shared.orig))])
+		p.D.collect.shared.dups <- tapply(seq_along(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
+		p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
+		p.D.collect.shared.orig <- tapply(seq_along(p.D.collect.pairs$shared.orig), p.D.collect.pairs$shared.orig, length)
+		p.D.collect.shared.orig <- p.D.collect.shared.orig[which(names(p.D.collect.shared.orig) %in% names(p.D.collect.shared.dups))]
+		p.D.collect.shared.orig <- p.D.collect.shared.orig[order(names(p.D.collect.shared.orig))]
+		p.D.shared.tgs.pnames <- names(p.D.collect.shared.dups[which(p.D.collect.shared.dups >= floor(merge.confidence.on.shared * p.D.collect.shared.orig))])
+		
 		# merge result
 		p.C.tgs.pnames <- c(p.C.diff.tgs.pnames, p.C.shared.tgs.pnames)
 		p.D.tgs.pnames <- c(p.D.diff.tgs.pnames, p.D.shared.tgs.pnames)
@@ -272,23 +267,17 @@ Testing.FindSpecialGenesInOnepairCluster <- function(
 	} else {
 		if (evaluation.method == "special-index") {
 			# get diff index (how diff it is among those interacting pairs)
-			if (length(p.C.collect.pairs$diff) > 0) {
 				# for diff pairs, it is special if it only appears in restricted number of interacting clusters
-				p.C.collect.diff.dups <- tapply(1:length(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
-			} 
-			if (length(p.D.collect.pairs$diff) > 0) {
-				p.D.collect.diff.dups <- tapply(1:length(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
-			}
+			p.C.collect.diff.dups <- tapply(seq_along(p.C.collect.pairs$diff), p.C.collect.pairs$diff, length)
+			p.D.collect.diff.dups <- tapply(seq_along(p.D.collect.pairs$diff), p.D.collect.pairs$diff, length)
+			
 			# get speical genes in shared ones
-			if (length(p.C.collect.pairs$shared) > 0) {
-				# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
-				p.C.collect.shared.dups <- tapply(1:length(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
-				p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
-			}
-			if (length(p.D.collect.pairs$shared) > 0) {
-				p.D.collect.shared.dups <- tapply(1:length(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
-				p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
-			}
+			# for shared pairs, it is special if it is differently expressed against some percentage of interacting clusters that it appears
+			p.C.collect.shared.dups <- tapply(seq_along(p.C.collect.pairs$shared), p.C.collect.pairs$shared, length)
+			p.C.collect.shared.dups <- p.C.collect.shared.dups[order(names(p.C.collect.shared.dups))]
+			p.D.collect.shared.dups <- tapply(seq_along(p.D.collect.pairs$shared), p.D.collect.pairs$shared, length)
+			p.D.collect.shared.dups <- p.D.collect.shared.dups[order(names(p.D.collect.shared.dups))]
+			
 			# merge result
 			p.CD.merge.dups <- c(p.C.collect.diff.dups, p.D.collect.diff.dups, p.C.collect.shared.dups, p.D.collect.shared.dups)
 			p.CD.tgs <- tapply(p.CD.merge.dups, names(p.CD.merge.dups), sum)

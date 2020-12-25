@@ -113,13 +113,8 @@ Tool.FindGenesFromGO <- function(
 	# 2. auto transform of all go.todolist to be GO_ID
 	# 3. get spliting
 	inds.ID.given <- grep("^GO:", go.todolist)
-	if (length(inds.ID.given) > 0) {
-		go.ID.given.list <- go.todolist[inds.ID.given]
-		go.term.given.list <- go.todolist[-inds.ID.given]
-	} else {
-		go.ID.given.list <- NULL
-		go.term.given.list <- go.todolist
-	}
+	go.ID.given.list <- go.todolist[inds.ID.given]
+	go.term.given.list <- go.todolist[setdiff(seq_along(go.todolist), inds.ID.given)]
 	## Giving error report
 	# ID matching
 	go.ID.given.nonexist <- character()

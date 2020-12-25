@@ -86,12 +86,9 @@ FindSpecialGenesInOnepairCluster <- function(
 		function(x, all.pairs.interacts, tmp.sep) {
 			tmp.pairs.df <- all.pairs.interacts[[x]]
 			tmp.pairs.interacts <- inside.c.short.interacts(tmp.pairs.df, tmp.sep)
-			if (length(tmp.pairs.interacts) > 0) {
-				res.df <- data.frame(gp.name = tmp.pairs.interacts, gp.belongs = x, stringsAsFactors = FALSE)
-			} else {
-				res.df <- data.frame(gp.name = "", gp.belongs = "", stringsAsFactors = FALSE)
-				res.df <- res.df[-1, ]
-			}
+			res.df <- data.frame(gp.name = tmp.pairs.interacts, 
+				gp.belongs = rep(x, times = length(tmp.pairs.interacts)), 
+				stringsAsFactors = FALSE)
 			res.df
 		})
 	other.gene.pairs.packed <- bind_rows(other.gene.pairs.df.list)

@@ -25,13 +25,8 @@ DataPrep.RemapClustersMarkers <- function(
   dup.synonyms.ref <- genes.ref.db$gene.dup.synonyms.db$Synonym.each  # character
   # check if some genes are already authorized symbols
   inds.raw.match <- which(markers.all.from.Seurat$gene %in% entrez.db$Symbol_from_nomenclature_authority)
-  if (length(inds.raw.match) > 0) {
-    markers.raw.match   <- markers.all.from.Seurat[inds.raw.match, ]
-    markers.raw.unmatch <- markers.all.from.Seurat[-inds.raw.match, ]
-  } else {  # if all are not matched, which is of rare condition.
-    markers.raw.match   <- NULL
-    markers.raw.unmatch <- markers.all.from.Seurat
-  }
+  markers.raw.match   <- markers.all.from.Seurat[inds.raw.match, ]
+  markers.raw.unmatch <- markers.all.from.Seurat[setdiff(seq_len(nrow(markers.all.from.Seurat)), inds.raw.match), ]
   if (nrow(markers.raw.unmatch) > 0) {  # some unmatches exist
     inds.map.match <- match(markers.raw.unmatch$gene, map.synonyms.db$Synonym.each)
     print(paste0("In unmatched ", nrow(markers.raw.unmatch), " genes, ", length(which(!is.na(inds.map.match))), " are remapped from synonyms!"))
