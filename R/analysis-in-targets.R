@@ -475,6 +475,8 @@ GenerateVEinfos <- function(
 #' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
 #' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.
+#' @param sel.mode.action.merge.option [TODO]
+#'
 #'
 #' @details
 #' The whole list of mode or action.effect is defined as global variable that is given within the package.
@@ -493,7 +495,8 @@ TrimVEinfos <- function(
   sel.some.gene.pairs.df = NULL, 
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
   sel.mode.val = NULL, 
-  sel.action.effect.val = NULL
+  sel.action.effect.val = NULL,
+  sel.mode.action.merge.option = "intersect"
 ) {
   afterV.A.clustername <- VEinfos$cluster.name.A
   afterV.B.clustername <- VEinfos$cluster.name.B
@@ -546,18 +549,31 @@ TrimVEinfos <- function(
      is.null(sel.mode.val)) &&
     (sum(sel.action.effect.val %in% predefined.action.effect.list) == length(sel.action.effect.val) ||
      is.null(sel.action.effect.val))) {
+    inds.full.a1 <- seq_len(nrow(edges.sel1.infos))
     # --- mode ---
     if (is.null(sel.mode.val)) {
-      edges.part.infos <- edges.sel1.infos
+      inds.mode.sel <- inds.full.a1
     } else {
-      inds.part.select <- match(edges.sel1.infos[, "mode"], sel.mode.val)
-      edges.part.infos <- edges.sel1.infos[which(!is.na(inds.part.select)), ]
+      inds.mode.sel <- which(edges.sel1.infos[, "mode"] %in% sel.mode.val)
     }
     # --- action.effect ---
-    if (!is.null(sel.action.effect.val)) {
-      inds.part.select.ex <- match(edges.part.infos[, "action.effect"], sel.action.effect.val)
-      edges.part.infos <- edges.part.infos[which(!is.na(inds.part.select.ex)), ]
+    if (is.null(sel.action.effect.val)) {
+      inds.actf.sel <- inds.full.a1
+    } else {
+      inds.actf.sel <- which(edges.sel1.infos[, "action.effect"] %in% sel.action.effect.val)
     }
+    # --- merge option ---
+    if (sel.mode.action.merge.option == "union") {
+      inds.mode.actf.sel <- union(inds.mode.sel, inds.actf.sel)
+    } else {
+      if (sel.mode.action.merge.option == "intersect") {
+        inds.mode.actf.sel <- intersect(inds.mode.sel, inds.actf.sel)
+      } else {
+        stop("Mode-ActionEffect merge option error: undefined merge options!")
+      }
+    }
+    edges.part.infos <- edges.sel1.infos[inds.mode.actf.sel, ]
+
     # recheck if nrow() > 0
     if (nrow(edges.part.infos) == 0) {
       stop("No given subset of interactions between cluster: ", afterV.A.clustername, " and cluster: ", afterV.B.clustername, "!")  # afterV.B.clustername is not used for displaying warnings

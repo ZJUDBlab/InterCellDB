@@ -7,7 +7,7 @@
 #'
 #' @details
 #' When representing a interaction pair, the names of both clusters involved are put together,
-#' and kClustersSplit is the only char used to split them.
+#' and kClustersSplit is the character used to split them.
 #' Please make sure that kClustersSplit does not appear in any name of clusters, or you can 
 #' modify this by hand.
 #'
@@ -16,6 +16,25 @@
 #' @export
 #'
 kClustersSplit <- "~"
+
+
+
+#' Genes split character in one gene pair (global).
+#' 
+#' @description
+#' This is the character used to split gene names in gene pairs, e.g EGF>EGFR.
+#'
+#' @details
+#' When representing a gene pair, the names of both genes participated are put together,
+#' and kGenesSplit is the character used to split them.
+#' Please make sure that kGenesSplit does not appear in any name of genes, or you can 
+#' modify this by hand.
+#'
+#'
+#'
+#' @export
+#'
+kGenesSplit <- "->"  # [TODO] change it to be ">"
 
 
 

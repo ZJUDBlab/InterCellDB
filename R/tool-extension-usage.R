@@ -48,6 +48,74 @@ Tool.AddUserRestrictDB <- function(
 
 
 
+#' Formula on calculating LogFC
+#'
+#' @description
+#' This is the default formula on calculating LogFC values, and is 
+#' belong to \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}.
+#'
+#' @param data.f vector. The operated data.
+#' @param data.b vector. The operated data with its length the same as the 1st parameter.
+#'
+#' @details
+#' This is the default formula for calculation. Users can define their own formula,
+#' as well as define their own evalution parameter besides LogFC(by changing the 
+#' param - \code{colnames.to.cmp} of \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}).
+#'
+#'
+#'
+#' @export
+#'
+Tool.formula.onLogFC.default <- function(
+  data.f, 
+  data.b
+) {
+  if (length(data.f) != length(data.b)) {
+    stop("Unexpected non-identical length data input!")
+  }
+  return(data.f + data.b)
+}
+
+
+
+#' Formula on calculating p_val_adj
+#'
+#' @description
+#' This is the default formula on calculating p_val_adj values, and is 
+#' belong to \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}.
+#'
+#' @param data.f vector. The operated data.
+#' @param data.b vector. The operated data with its length the same as the 1st parameter.
+#'
+#' @details
+#' This is the default formula for calculation. Users can define their own formula,
+#' as well as define their own evalution parameter besides p_val_adj(by changing the 
+#' param - \code{colnames.to.cmp} of \code{GetResult.PlotOnepairClusters.GeneCrosstalk()}).
+#'
+#'
+#'
+#' @export
+#'
+Tool.formula.onPValAdj.default <- function(
+  data.f, 
+  data.b
+) {
+  if (length(data.f) != length(data.b)) {
+    stop("Unexpected non-identical length data input!")
+  }
+  tmp.f <- abs(log10(data.f))
+  tmp.b <- abs(log10(data.b))
+  max.f <- max(tmp.f[which(is.finite(tmp.f))])
+  max.b <- max(tmp.b[which(is.finite(tmp.b))])
+  tmp.f[which(is.infinite(tmp.f))] <- 10 * max.f
+  tmp.b[which(is.infinite(tmp.b))] <- 10 * max.b
+  return(log10(tmp.f * tmp.b + 1))
+}
+
+
+
+
+
 #' generate gene pairs in standard format from VEinfos
 #' 
 #' @description
@@ -66,16 +134,29 @@ Tool.AddUserRestrictDB <- function(
 #' @export
 #'
 Tool.GenStdGenePairs.from.VEinfos <- function(
-  VEinfos
+  VEinfos,
+  is.directional = TRUE
 ) {
   vertices.infos <- VEinfos$vertices.infos
   edges.infos <- VEinfos$edges.infos
   #
-  inds.e.from.match <- match(edges.infos$from, vertices.infos$UID)
-  inds.e.to.match <- match(edges.infos$to, vertices.infos$UID)
+  tg.A <- tg.B <- vertices.infos$UID
+  if (is.directional == TRUE) {
+  	tg.A <- vertices.infos[which(vertices.infos$ClusterName == VEinfos$cluster.name.A), "UID"]
+  	tg.B <- vertices.infos[which(vertices.infos$ClusterName == VEinfos$cluster.name.B), "UID"]
+  }
+  inds.e.from.match <- tg.A[match(edges.infos$from, tg.A)]  # as UID = row indices
+  inds.e.to.match <- tg.B[match(edges.infos$to, tg.B)]
   # from to data.frame
   std.df <- data.frame("inter.GeneName.A" = vertices.infos$GeneName[inds.e.from.match], 
-    "inter.GeneName.B" = vertices.infos$GeneName[inds.e.to.match], stringsAsFactors = FALSE)
+    "inter.GeneName.B" = vertices.infos$GeneName[inds.e.to.match],
+    "inter.LogFC.A" = vertices.infos$LogFC[inds.e.from.match], 
+    "inter.LogFC.B" = vertices.infos$LogFC[inds.e.to.match],
+    stringsAsFactors = FALSE)
+  # remove NAs
+  std.df <- std.df[which(!is.na(std.df$inter.GeneName.A)), ]
+  std.df <- std.df[which(!is.na(std.df$inter.GeneName.B)), ]
+  # unique result
   std.df <- DoPartUnique(std.df, 1:2)
   return(std.df)
 }
