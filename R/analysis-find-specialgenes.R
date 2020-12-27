@@ -8,7 +8,7 @@
 #' if it passes some limitations when comparing to other pairs of interacting clusters. 
 #'
 #' @param interact.pairs.acted List. The return value of \code{\link{AnalyzeClustersInteracts}}.
-#' @param target.gene.pairs.df [TODO]
+#' @param target.gene.pairs.df [TODO] (1) get from VEinfos (2) self-specify "Ccl2>Ccr5" and use Tool.SplitToGenDataFrame
 #' @param involved.clusters.pair [TODO]
 #' @param to.cmp.clusters.pairs [TODO]
 #' @param to.cmp.clusters.pairs.sel.strategy [TODO]
@@ -33,24 +33,36 @@
 #' @export
 #'
 FindSpecialGenesInOnepairCluster <- function(
+	VEinfos,
 	interact.pairs.acted,
-	target.gene.pairs.df,  # get from VEinfos 
-	involved.clusters.pair, # = paste("cluster.C", "cluster.D", sep = kClustersSplit),
-	to.cmp.clusters.pairs = character(),
+	to.cmp.clusters.pairs = character(),  # should be a subset of interact.pairs.acted$name.allpairs
 	to.cmp.clusters.pairs.sel.strategy = "inter-cross",
-	merge.cnt.quantile = 0.5,  # median
-	merge.cnt.decreasing = TRUE,
-	merge.cnt.topn.shown = 20,
-	plot.fill = c("red", "green"),
-	sep.inside.gene.pair = "->"
+	uq.cnt.range = c(1:2),  # [TODO] GetResult.* futher select once more. 100 clusters as desired maximum
+	formula.to.use.onLogFC = Tool.formula.onLogFC.default
 ) {
-	this.gp.sep <- sep.inside.gene.pair
+	# pre-check
+	if (class(formula.to.use.onLogFC) != "function") {
+		stop("Please provide usable function in parameter formula.to.use.onLogFC!")
+	}
+	# pre-params
+	this.gp.sep <- kGenesSplit
+	involved.clusters.pair <- paste(VEinfos$cluster.name.A, VEinfos$cluster.name.B, sep = kClustersSplit)
+	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
+
 	# calculate the multiply of fold change of interacting genes
 	inside.c.short.interacts <- function(
 		tmp.pairs,
 		tmp.sep
 	) {
 		paste(tmp.pairs[, "inter.GeneName.A"], tmp.pairs[, "inter.GeneName.B"], sep = tmp.sep)
+	}
+	# calculate the logfc
+	inside.calc.upon.gp.logfc <- function(
+		tmp.pairs,
+		tmp.formula,
+		tmp.colnames = c("inter.LogFC.A", "inter.LogFC.B")
+	) {
+		tmp.formula(tmp.pairs[, tmp.colnames[1]], tmp.pairs[, tmp.colnames[2]])
 	}
 
 	# all pairs
@@ -63,7 +75,12 @@ FindSpecialGenesInOnepairCluster <- function(
 	}
 	this.clusters.separate <- strsplit(this.pair.name, split = kClustersSplit, fixed = TRUE)[[1]]
 	this.pair.interacts <- inside.c.short.interacts(target.gene.pairs.df, this.gp.sep)
-	this.gene.pairs <- data.frame(gp.name = this.pair.interacts, gp.belongs = this.pair.name, stringsAsFactors = FALSE)
+	# this.pair.logfc.mul <- inside.calc.upon.gp.logfc(target.gene.pairs.df, formula.to.use.onLogFC)
+	this.gene.pairs <- data.frame(gp.name = this.pair.interacts, 
+		gp.belongs = rep(this.pair.name, times = length(this.pair.interacts)), 
+		gp.logfc.A = target.gene.pairs.df[, "inter.LogFC.A"], 
+		gp.logfc.B = target.gene.pairs.df[, "inter.LogFC.B"], 
+		stringsAsFactors = FALSE)
 
 	# to compare pairs
 	if (length(to.cmp.clusters.pairs) == 0) {  # only if no list is given then use the pre-defined strategy
@@ -80,96 +97,295 @@ FindSpecialGenesInOnepairCluster <- function(
 		}
 	}  # else use the directly specified clusters
 
+	# set the uq.cnt range
+	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(to.cmp.clusters.pairs, split = kClustersSplit, fixed = TRUE))))
+	uq.cnt.range <- uq.cnt.range[which(uq.cnt.range %in% seq_along(tmp.all.uq.clusters))]
+	if (length(uq.cnt.range) == 0) {
+		stop("Please specify available uq.cnt.range to continue the analysis!\nThe allowed values are ", 
+			paste0(seq_along(tmp.all.uq.clusters), collapse = ", "), ".")
+	}
+
 	# generate gene pairs to compare
+	  # only those pairs occurs in target cluster group will be further analyzed
 	other.gene.pairs.df.list <- lapply(to.cmp.clusters.pairs, 
-		all.pairs.interacts = all.pairs.interacts, tmp.sep = this.gp.sep, 
-		function(x, all.pairs.interacts, tmp.sep) {
+		all.pairs.interacts = all.pairs.interacts, tg.pairs = this.pair.interacts,
+		tmp.sep = this.gp.sep, formula.to.use.onLogFC = formula.to.use.onLogFC, 
+		function(x, all.pairs.interacts, tg.pairs, tmp.sep, formula.to.use.onLogFC) {
 			tmp.pairs.df <- all.pairs.interacts[[x]]
 			tmp.pairs.interacts <- inside.c.short.interacts(tmp.pairs.df, tmp.sep)
-			res.df <- data.frame(gp.name = tmp.pairs.interacts, 
-				gp.belongs = rep(x, times = length(tmp.pairs.interacts)), 
+			tmp.inds.tg <- which(tmp.pairs.interacts %in% tg.pairs)
+			res.df <- data.frame(gp.name = tmp.pairs.interacts[tmp.inds.tg], 
+				gp.belongs = rep(x, times = length(tmp.inds.tg)), 
+				gp.logfc.A = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.A"], 
+				gp.logfc.B = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.B"], 
 				stringsAsFactors = FALSE)
 			res.df
 		})
 	other.gene.pairs.packed <- bind_rows(other.gene.pairs.df.list)
 	
-	# get diff pairs counts
-	tmp.all.gp.packed <- rbind(this.gene.pairs, other.gene.pairs.packed)
-	tmp.diff.cnts <- tapply(tmp.all.gp.packed$gp.belongs, tmp.all.gp.packed$gp.name, length)
-	tmp.diff.indexs <- tapply(1:nrow(tmp.all.gp.packed), tmp.all.gp.packed$gp.name, function(x) { x	})
+	# get unique counts result
+	this.all.gp.packed <- rbind(this.gene.pairs, other.gene.pairs.packed)
+	this.uq.cnts <- tapply(this.all.gp.packed$gp.belongs, this.all.gp.packed$gp.name, length)
+	this.uq.indices <- tapply(seq_len(nrow(this.all.gp.packed)), this.all.gp.packed$gp.name, function(x) { x })
+	# select 
 
-	tmp.diff.res.mat <- sapply(this.pair.interacts, all.gp = tmp.all.gp.packed, 
-		diff.cnts = tmp.diff.cnts, diff.indexs = tmp.diff.indexs, 
-		function(x, all.gp, diff.cnts, diff.indexs) {
-			tmp.i <- which(names(diff.cnts) == x)  # must be the same as it is in diff.indexs
+	## select diff.cnt subset
+	# uq.cnt
+	tmp.inds.uq.valid <- this.uq.cnts %in% uq.cnt.range
+	this.uq.cnts <- this.uq.cnts[tmp.inds.uq.valid]
+	this.uq.indices <- this.uq.indices[tmp.inds.uq.valid]
+	# [TODO] further subset options
+
+	# collect by gene pairs each
+	tmp.diff.res.mat <- vector(mode = "list", length = length(this.uq.indices))
+	prog.bar.use.plot.collect <- progress::progress_bar$new(total = length(this.uq.indices))
+	prog.bar.use.plot.collect$tick(0)
+	tmp.diff.res.mat <- lapply(names(this.uq.indices), all.gp = this.all.gp.packed, 
+	diff.cnts = this.uq.cnts, diff.indices = this.uq.indices, formula.to.use = formula.to.use.onLogFC, 
+		function(x, all.gp, diff.cnts, diff.indices, formula.to.use) {
+			tmp.i <- which(names(diff.cnts) == x)  # must be the same as it is in diff.indices
 			tmp.cnt <- diff.cnts[tmp.i]
-			tmp.indexs <- diff.indexs[[tmp.i]]
-			tmp.involved.cps <- all.gp$gp.belongs[tmp.indexs]
-			tmp.involved.cps <- tmp.involved.cps[order(tmp.involved.cps)]
-			tmp.takein.cps <- paste0(tmp.involved.cps, collapse = " ")
-			c(x, tmp.takein.cps, as.character(tmp.cnt))
+			names(tmp.cnt) <- NULL  # remove the name
+			tmp.indices <- diff.indices[[tmp.i]]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B")]
+			tmp.properties$gp.logfc.calc <- inside.calc.upon.gp.logfc(tmp.properties, formula.to.use, tmp.colnames = c("gp.logfc.A", "gp.logfc.B"))
+			tmp.properties <- tmp.properties[order(tmp.properties$gp.logfc.calc, decreasing = TRUE), ]
+			prog.bar.use.plot.collect$tick()  # tick
+			# return
+			list(uq.cnt = tmp.cnt, uq.details = tmp.properties)
 		})
-	tmp.diff.res.mat <- t(tmp.diff.res.mat)
-	this.diff.res.df <- data.frame(gp.name = tmp.diff.res.mat[, 1], gp.takein.cp = tmp.diff.res.mat[, 2], 
-		gp.uq.cnt = as.integer(tmp.diff.res.mat[, 3]), stringsAsFactors = FALSE)
+	names(tmp.diff.res.mat) <- names(this.uq.indices)
 
-	# plot preparation
-	# plot the median or quantile of the participated genes
-	tmp.gp.splits <- as.character(unlist(strsplit(this.diff.res.df$gp.name, split = this.gp.sep, fixed = TRUE)))
-	tmp.gp.cnts.match <- rep(this.diff.res.df$gp.uq.cnt, each = 2)
-	# sender part
-	tmp.seq.sender <- 1:(length(tmp.gp.splits) / 2) * 2 - 1
-	tmp.sender.gpq.df <- data.frame(gp.gene.name = tmp.gp.splits[tmp.seq.sender], 
-		gp.gene.cnt = tmp.gp.cnts.match[tmp.seq.sender], stringsAsFactors = FALSE)
-	this.sender.gpq.collect <- tapply(X = tmp.sender.gpq.df$gp.gene.cnt, INDEX = tmp.sender.gpq.df$gp.gene.name, 
-		cnt.base = tmp.sender.gpq.df$gp.gene.cnt, quantile.it = merge.cnt.quantile, 
-		FUN = function(x, cnt.base, quantile.it) {
-			quantile(cnt.base[x], probs = quantile.it)
+	# collect gene pairs in one data.frame
+	tmp.diff.df.list <- vector(mode = "list", length = length(this.uq.indices))
+	prog.bar.for.res.collect <- progress::progress_bar$new(total = length(this.uq.indices))
+	prog.bar.for.res.collect$tick(0)
+	tmp.diff.df.list <- lapply(names(this.uq.indices), all.gp = this.all.gp.packed, diff.indices = this.uq.indices, 
+		function(x, all.gp, diff.indices) {
+			tmp.i <- which(names(diff.indices) == x)  # must be the same as it is in diff.indices
+			tmp.indices <- diff.indices[[tmp.i]]
+			tmp.genepair <- names(diff.indices[tmp.i])  # get the gene pair name
+			tmp.gene.part <- strsplit(tmp.genepair, split = kGenesSplit, fixed = TRUE)[[1]]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B")]
+			tmp.clusters.prop.df <- Tool.SplitToGenDataFrame(tmp.properties[, "gp.belongs"], to.split.by = kClustersSplit, 
+				res.colnames = c("Cluster.A", "Cluster.B"))
+			tmp.res.df <- cbind(data.frame(gp.name = rep(tmp.genepair, times = nrow(tmp.properties)), 
+					inter.GeneName.A = rep(tmp.gene.part[1], times = nrow(tmp.properties)),
+					inter.GeneName.B = rep(tmp.gene.part[2], times = nrow(tmp.properties)),
+					stringsAsFactors = FALSE), 
+				tmp.properties$gp.belongs, tmp.clusters.prop.df, tmp.properties[, c("gp.logfc.A", "gp.logfc.B")], stringsAsFactors = FALSE)
+			prog.bar.for.res.collect$tick()
+			# result
+			tmp.res.df
 		})
-	this.sender.gpq.collect <- this.sender.gpq.collect[order(this.sender.gpq.collect, decreasing = merge.cnt.decreasing)]
-	# select top n
-	tmp.sender.topn <- ifelse(length(this.sender.gpq.collect) > merge.cnt.topn.shown, merge.cnt.topn.shown, length(this.sender.gpq.collect))
-	this.sender.gpq.collect <- this.sender.gpq.collect[1:tmp.sender.topn]
-	this.sender.gpq.res <- data.frame(gp.gene.name = names(this.sender.gpq.collect), gp.cnt.ql = this.sender.gpq.collect, stringsAsFactors = FALSE)
+	tmp.diff.df.res <- bind_rows(tmp.diff.df.list)
 
-	# receiver part
-	tmp.seq.receiver <- 1:(length(tmp.gp.splits) / 2) * 2
-	tmp.receiver.gpq.df <- data.frame(gp.gene.name = tmp.gp.splits[tmp.seq.receiver], 
-		gp.gene.cnt = tmp.gp.cnts.match[tmp.seq.receiver], stringsAsFactors = FALSE)
-	this.receiver.gpq.collect <- tapply(X = tmp.receiver.gpq.df$gp.gene.cnt, INDEX = tmp.receiver.gpq.df$gp.gene.name, 
-		cnt.base = tmp.receiver.gpq.df$gp.gene.cnt, quantile.it = merge.cnt.quantile, 
-		FUN = function(x, cnt.base, quantile.it) {
-			quantile(cnt.base[x], probs = quantile.it)
-		})
-	this.receiver.gpq.collect <- this.receiver.gpq.collect[order(this.receiver.gpq.collect, decreasing = merge.cnt.decreasing)]
-	# select top n
-	tmp.receiver.topn <- ifelse(length(this.receiver.gpq.collect) > merge.cnt.topn.shown, merge.cnt.topn.shown, length(this.receiver.gpq.collect))
-	this.receiver.gpq.collect <- this.receiver.gpq.collect[1:tmp.receiver.topn]
-	this.receiver.gpq.res <- data.frame(gp.gene.name = names(this.receiver.gpq.collect), gp.cnt.ql = this.receiver.gpq.collect, stringsAsFactors = FALSE)
-
-	# draw plots
-	this.plot.sender <- ggplot(this.sender.gpq.res, aes(x = gp.gene.name, y = gp.cnt.ql))
-	this.plot.sender <- this.plot.sender + 
-			geom_col(fill = plot.fill[1], colour = "black") + 
-			scale_x_discrete(breaks = this.sender.gpq.res$gp.gene.name, limits = this.sender.gpq.res$gp.gene.name) + 
-			coord_flip() + 
-			labs(title = this.clusters.separate[1], y = "Gene Name", x = "Count Quantile")
-
-
-	this.plot.receiver <- ggplot(this.receiver.gpq.res, aes(x = gp.gene.name, y = gp.cnt.ql))
-	this.plot.receiver <- this.plot.receiver + 
-			geom_col(fill = plot.fill[2], colour = "black") + 
-			scale_x_discrete(breaks = this.receiver.gpq.res$gp.gene.name, limits = this.receiver.gpq.res$gp.gene.name) + 
-			coord_flip() + 
-			labs(title = this.clusters.separate[2], y = "Gene Name", x = "Count Quantile")
-	#
-	this.m.plot <- plot_grid(this.plot.sender, this.plot.receiver, ncol = 2, align = "vh")
-
-	# before return, generate res table
-	tmp.gpname.splits.df <- Tool.SplitToGenDataFrame(this.diff.res.df[, "gp.name"], to.split.by = this.gp.sep, 
-		res.colnames = c("inter.GeneName.A", "inter.GeneName.B"))
-	this.diff.res.df <- cbind(tmp.gpname.splits.df, this.diff.res.df[, c("gp.name", "gp.takein.cp", "gp.uq.cnt")])
-	
-	return(list(plot = this.m.plot, table = list(special.table = this.diff.res.df)))
+	return(list(res = tmp.diff.df.res, for.plot.use = tmp.diff.res.mat))
 }
+
+
+
+
+
+#
+#
+#
+#
+# import cowplot
+#
+# [TODO] export a table, in compact format, one gene pair per row
+# [TODO] colour palette changed, and use colorBrewer to merge colours to get more than 12 colours
+#
+GetResult.SummarySpecialGenes <- function(
+	onepair.spgenes,
+	VEinfos, 
+	show.uq.cnt.range = c(1), 
+	show.uq.cnt.merged = TRUE,  # merged shows different uq.cnt in one plot, or in several plots
+	select.genepairs = character(), 
+	select.genepairs.method = "random",  # max-calc min-calc , are other 2 options pre-defined
+	select.by.method.pairs.limit = 10, 
+	show.topn.inside.onepair = 2,
+	show.cluster.group.order = character(),  # names put here will be showed in left and order as it is in here 
+	sep.in.compact.res.table = ", "  # [TODO]
+) {
+	this.spgenes <- onepair.spgenes$for.plot.use
+	## pre-check
+	this.property.valid.uq.cnt <- unique(as.integer(unlist(lapply(this.spgenes, function(x) { x$uq.cnt }))))
+	# check valid uq.cnt
+	tmp.inds.valid.uq <- which(show.uq.cnt.range %in% this.property.valid.uq.cnt)
+	if (length(tmp.inds.valid.uq) != length(show.uq.cnt.range)) {
+		warning("Select not-existed uq.cnt: ", paste0(show.uq.cnt.range[setdiff(seq_along(show.uq.cnt.range), tmp.inds.valid.uq)], collapse = ", "), 
+			", which will be ignored!")
+	}
+	show.uq.cnt.range <- show.uq.cnt.range[tmp.inds.valid.uq]
+	# check topn
+	if (show.topn.inside.onepair < 0) {
+		stop("Top N must be larger than 0! Check parameter show.uq.cnt.range!")
+	}
+	# check cluster group given
+	this.property.valid.cluster.group <- unique(as.character(unlist(lapply(this.spgenes, function(x) { x$uq.details$gp.belongs }))))
+	tmp.inds.valid.cluster.group <- which(show.cluster.group.order %in% this.property.valid.cluster.group)
+	if (length(tmp.inds.valid.cluster.group) != length(show.cluster.group.order)) {
+		warning("Given cluster group order has some items not existed: ",
+			paste0(show.cluster.group.order[setdiff(seq_along(show.cluster.group.order), tmp.inds.valid.cluster.group)]),
+			", which will be automatically removed!")
+	}
+
+	# check select gene pairs
+	if (length(select.genepairs) == 0) {  # then use method
+		if (select.genepairs.method == "random") {
+			tmp.inds.sel <- sample(seq_along(this.spgenes), select.by.method.pairs.limit)
+			select.genepairs <- names(this.spgenes)[tmp.inds.sel]
+		} else {
+			tmp.cluster.A <- VEinfos$cluster.name.A
+			tmp.cluster.B <- VEinfos$cluster.name.B
+			tmp.gp.name <- paste(tmp.cluster.A, tmp.cluster.B, sep = kClustersSplit)
+			tmp.tg.calc <- unlist(lapply(seq_along(this.spgenes), 
+				spgenes = this.spgenes, tg.gp.name = tmp.gp.name, 
+				function(x, spgenes, tg.gp.name) {
+				tmp.df <- spgenes[[x]]$uq.details
+				tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
+				}))
+			if (select.genepairs.method == "max-calc") {
+				tmp.inds.max <- order(tmp.tg.calc, decreasing = TRUE)  # max -> min
+				length(tmp.inds.max) <- select.by.method.pairs.limit
+				tmp.inds.max <- tmp.inds.max[which(!is.na(tmp.inds.max))]
+				select.genepairs <- names(this.spgenes)[tmp.inds.max]
+			} else {
+				if (select.genepairs.method == "min-calc") {
+					tmp.inds.min <- order(tmp.tg.calc, decreasing = FALSE)  # min -> max
+					length(tmp.inds.min) <- select.by.method.pairs.limit
+					tmp.inds.min <- tmp.inds.min[which(!is.na(tmp.inds.min))]
+					select.genepairs <- names(this.spgenes)[tmp.inds.min]
+				} else {
+					stop("Undefined select method, please re-check the given param: select.genepairs.method!")
+				}
+			}
+		}		
+	} else {  # check validity of those select gene pairs
+		tmp.inds.vd.gp <- which(select.genepairs %in% names(this.spgenes))
+		if (length(tmp.inds.vd.gp) != length(select.genepairs)) {
+			warning("Selected gene pairs not exist: ", 
+				paste0(select.genepairs[setdiff(seq_along(select.genepairs), tmp.inds.vd.gp)], collapse = ", "), 
+				", which will be removed from following analysis!")
+		}
+		select.genepairs <- select.genepairs[tmp.inds.vd.gp]
+	}
+
+	# template function for dealing every valid uq.cnt
+	inside.collect.uq.cnt.each <- function(
+		all.spgenes,
+		uq.cnt.it,  # target uq.cnt
+		topn.it
+	) {
+		tmp.inds <- unlist(lapply(all.spgenes, uq.cnt.it = uq.cnt.it, function(x, uq.cnt.it) {
+			x$uq.cnt == uq.cnt.it
+		}))
+		tmp.spgenes <- all.spgenes[tmp.inds]
+		tmp.spgenes <- lapply(tmp.spgenes, topn = topn.it, function(x, topn) {
+			tmp.selrows <- ifelse(nrow(x$uq.details) > topn, topn, nrow(x$uq.details))
+			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.logfc.calc")])
+			})
+		# remove those with NO valid uq.cnt 
+		tmp.check.0row <- unlist(lapply(tmp.spgenes, function(x) { nrow(x$uq.details) }))
+		tmp.spgenes <- tmp.spgenes[which(tmp.check.0row > 0)]
+		return(tmp.spgenes)
+	}
+
+	inside.trans.coords.uq <- function(
+		std.spgenes,
+		show.genepairs.order,  # ordered as it is in select.genepairs
+		show.cluster.group.order,
+		std.width.col = 2,  # may be export as param, so as the gap
+		std.width.gap = 3
+	) {
+		#[NOTE]# x-axis coords go from 0 -> +Inf, y-axis use the original value
+		tmp.order.df <- data.frame(orig.ind = seq_along(std.spgenes), 
+			new.ind = match(names(std.spgenes), show.genepairs.order), 
+			stringsAsFactors = FALSE)
+		tmp.order.df <- tmp.order.df[order(tmp.order.df$new.ind, decreasing = FALSE), ]
+		std.spgenes <- std.spgenes[tmp.order.df$orig.ind]
+
+		# calculate the gap - every col width 2, gap width 3
+		tmp.df.list <- lapply(seq_along(std.spgenes), std.spgenes = std.spgenes, 
+			std.width.col = std.width.col, std.width.gap = std.width.gap, 
+			show.cluster.group.order = show.cluster.group.order, 
+			function(x, std.spgenes, std.width.col, std.width.gap, show.cluster.group.order) {
+				tmp.begin <- x * std.width.gap + (x - 1) * std.width.col
+				tmp.n.items <- std.spgenes[[x]]$uq.cnt
+				tmp.coords.seq <- (seq_len(tmp.n.items) - 1) * std.width.col + tmp.begin
+				tmp.ref.rows <- nrow(std.spgenes[[x]]$uq.details)
+				# get cluster group order. Matched ones will be put in front all other.
+				tmp.belongs <- std.spgenes[[x]]$uq.details$gp.belongs
+				tmp.inds.prior <- which(tmp.belongs %in% show.cluster.group.order)
+				tmp.inds.inferior <- setdiff(seq_along(tmp.belongs), tmp.inds.prior)
+				# result
+				data.frame(uq.name = rep(names(std.spgenes)[x], times = tmp.ref.rows), 
+					uq.label = tmp.belongs[c(tmp.inds.prior, tmp.inds.inferior)], 
+					uq.x.axis = tmp.coords.seq[seq_len(tmp.ref.rows)], 
+					uq.y.axis = std.spgenes[[x]]$uq.details$gp.logfc.calc[c(tmp.inds.prior, tmp.inds.inferior)],
+					stringsAsFactors = FALSE)
+				})
+		tmp.df.res <- bind_rows(tmp.df.list)
+		return(tmp.df.res)
+	}
+
+	## process: reconstruct data format of every uq.cnt to fit plotting
+	if (show.uq.cnt.merged == TRUE) {
+		plot.data.uq <- list()
+		for (iuq in show.uq.cnt.range) {
+			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
+			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% select.genepairs)]
+			plot.data.uq <- c(plot.data.uq, tmp.spgenes)
+		}
+		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, select.genepairs, show.cluster.group.order)
+	} else {
+		plot.data.uq.notm.list <- list()
+		for (iuq in show.uq.cnt.range) {
+			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
+			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% select.genepairs)]
+			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, select.genepairs, show.cluster.group.order)
+			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
+		}
+		names(plot.data.uq.notm.list) <- paste("uq.cnt=", as.character(show.uq.cnt.range), sep = ".")
+	}
+
+	inside.uq.single.plot <- function(
+		plot.data,
+		show.cluster.group.order
+	) {
+		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.y.axis))
+		this.plot <- this.plot + 
+			geom_col(aes(fill = uq.label)) + 
+			facet_grid(cols = vars(uq.name), scales = "free_x", space = "free_x") + 
+			scale_x_discrete(breaks = plot.data$uq.label, 
+				limits = function(x) {
+						tmp.inds.prior <- which(x %in% show.cluster.group.order)
+						tmp.inds.inferior <- setdiff(seq_along(x), tmp.inds.prior)
+						x[c(tmp.inds.prior, tmp.inds.inferior)]
+					}, 
+				labels = plot.data$uq.label) + 
+			scale_fill_brewer(name = "Cluster Group", palette = 3) +   # [TODO]
+			labs(x = "Cluster Groups", y = "LogFC Calc")
+		this.plot <- this.plot + 
+			theme_half_open(12) +  # [TODO] give it out
+			theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+		return(this.plot)
+	}
+
+	## process: draw plots
+	if (show.uq.cnt.merged == TRUE) {
+		this.plot.mg <- inside.uq.single.plot(plot.data.uq.df, show.cluster.group.order)
+		return(list(plot = this.plot.mg, table = plot.data.uq.df))
+	} else {
+		this.notm.plot.list <- list()
+		for (i.item in names(plot.data.uq.notm.list)) {
+			this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.single.plot(plot.data.uq.notm.list[[i.item]], show.cluster.group.order)))
+		}
+		this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, 
+			ncol = 1, align = "vh")
+		return(list(plot = this.notm.plot, table = plot.data.uq.notm.list))
+	}
+}
+
 
