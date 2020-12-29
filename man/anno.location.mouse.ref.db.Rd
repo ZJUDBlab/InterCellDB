@@ -5,7 +5,7 @@
 \alias{anno.location.mouse.ref.db}
 \title{Annotation database for subcellular location of mouse genes}
 \format{
-An object of class \code{data.frame} with 66719 rows and 10 columns.
+An object of class \code{data.frame} with 66569 rows and 10 columns.
 }
 \source{
 <https://compartments.jensenlab.org>, and download the knowledge channel of mouse databases.
@@ -14,6 +14,6 @@ An object of class \code{data.frame} with 66719 rows and 10 columns.
 anno.location.mouse.ref.db
 }
 \description{
-A dataset contains 66719 rows of subcellular locations, which covers 15605 mouse genes.
+A dataset contains 66569 rows of subcellular locations, which covers 15566 mouse genes.
 }
 \keyword{datasets}

@@ -6,7 +6,7 @@
 #' @description
 #' TODO
 #'
-#' @param VEinfos [new way to mininize the replicate process when running it]
+#' @inheritParams Inside.DummyVEinfos
 #' @param limits.exprs.change [TODO]
 #' @param limits.action.effects [TODO]
 #' 
@@ -510,8 +510,7 @@ Inside.TransCoords.Enlarge.Rotate <- function(
 #' This function analyzes the interaction pairs between two target clusters, and gives one vivid two-cell
 #' graph and several result tables in the return values.
 #'
-#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
-#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
+#' @inheritParams Inside.DummyVEinfos
 #' @param area.extend.times Numeric. If a warning given like "Cannot be located inside!" or something else, 
 #' one should change this paramemter to be larger to get all vertices allocated.
 #' @param hide.locations.A Character. It applies extra limitation on the locations of A in gene pairs formatted as A-B.
@@ -974,8 +973,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
 #' This function evaluates the importance of some specific gene pairs of one pair of clusters, 
 #' and the default evaluation params are LogFC and p_val_adj.
 #'
-#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
-#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
+#' @inheritParams Inside.DummyVEinfos
 #' @inheritParams Inside.DummyFgenes
 #' @param direction.A.to.B Logic. If set NULL, use all given gene pairs, and if set TRUE, use only gene pairs with actions
 #' specified as the pattern "A to B"(either positive or negative or unspecified, etc), while if set FALSE, use gene pairs 

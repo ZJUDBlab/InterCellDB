@@ -5,38 +5,27 @@
 \title{Find special genes in one pair of interacting clusters}
 \usage{
 FindSpecialGenesInOnepairCluster(
+  VEinfos,
   interact.pairs.acted,
-  target.gene.pairs.df,
-  involved.clusters.pair,
   to.cmp.clusters.pairs = character(),
   to.cmp.clusters.pairs.sel.strategy = "inter-cross",
-  merge.cnt.quantile = 0.5,
-  merge.cnt.decreasing = TRUE,
-  merge.cnt.topn.shown = 20,
-  plot.fill = c("red", "green"),
-  sep.inside.gene.pair = "->"
+  uq.cnt.range = c(1:2),
+  formula.to.use.onLogFC = Tool.formula.onLogFC.default
 )
 }
 \arguments{
+\item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
+\code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
+
 \item{interact.pairs.acted}{List. The return value of \code{\link{AnalyzeClustersInteracts}}.}
-
-\item{target.gene.pairs.df}{[TODO]}
-
-\item{involved.clusters.pair}{[TODO]}
 
 \item{to.cmp.clusters.pairs}{[TODO]}
 
 \item{to.cmp.clusters.pairs.sel.strategy}{[TODO]}
 
-\item{merge.cnt.quantile}{[TODO]}
+\item{uq.cnt.range}{[TODO]}
 
-\item{merge.cnt.decreasing}{[TODO]}
-
-\item{merge.cnt.topn.shown}{[TODO]}
-
-\item{plot.fill}{[TODO]}
-
-\item{sep.inside.gene.pair}{[TODO]}
+\item{formula.to.use.onLogFC}{[TODO]}
 }
 \value{
 List. [TODO]

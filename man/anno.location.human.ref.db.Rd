@@ -5,7 +5,7 @@
 \alias{anno.location.human.ref.db}
 \title{Annotation database for subcellular location of human genes}
 \format{
-An object of class \code{data.frame} with 79373 rows and 10 columns.
+An object of class \code{data.frame} with 79628 rows and 10 columns.
 }
 \source{
 <https://compartments.jensenlab.org>, and download the knowledge channel of human databases.
@@ -14,6 +14,6 @@ An object of class \code{data.frame} with 79373 rows and 10 columns.
 anno.location.human.ref.db
 }
 \description{
-A dataset contains 79373 rows of subcellular locations, which covers 17736 human genes.
+A dataset contains 79628 rows of subcellular locations, which covers 17646 human genes.
 }
 \keyword{datasets}

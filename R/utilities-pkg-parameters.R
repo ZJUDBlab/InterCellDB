@@ -8,6 +8,24 @@
 
 
 #'
+#' Description of parameter fgenes.remapped.all
+#'
+#' @description
+#' Use to provide the same parameter description for fgenes.remapped.all
+#'
+#' @param fgenes.remapped.all Data.frame. Informations about feature genes(markers), prefer using return value of 
+#' \code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.
+#'
+#'
+Inside.DummyFgenes <- function(
+	fgenes.remapped.all
+) {
+	NULL
+}
+
+
+
+#'
 #' Description of parameter interact.pairs.acted
 #'
 #' @description
@@ -21,6 +39,24 @@ Inside.DummyInteractPairsActed <- function(
   interact.pairs.acted
 ) {
   NULL
+}
+
+
+
+#'
+#' Description of parameter VEinfos
+#'
+#' @description
+#' Use to provide the same parameter description for VEinfos
+#'
+#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
+#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
+#'
+#'
+Inside.DummyVEinfos <- function(
+	VEinfos
+) {
+	NULL
 }
 
 
@@ -63,24 +99,6 @@ Inside.DummyPairsRef <- function(
   pairs.ref
 ) {
   NULL
-}
-
-
-
-#'
-#' Description of parameter fgenes.remapped.all
-#'
-#' @description
-#' Use to provide the same parameter description for fgenes.remapped.all
-#'
-#' @param fgenes.remapped.all Data.frame. Informations about feature genes(markers), prefer using return value of 
-#' \code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.
-#'
-#'
-Inside.DummyFgenes <- function(
-	fgenes.remapped.all
-) {
-	NULL
 }
 
 

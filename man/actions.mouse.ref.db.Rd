@@ -5,7 +5,7 @@
 \alias{actions.mouse.ref.db}
 \title{Actions database for mouse}
 \format{
-An object of class \code{data.frame} with 4397576 rows and 9 columns.
+An object of class \code{data.frame} with 4763978 rows and 9 columns.
 }
 \source{
 STRING <https://string-db.org>
@@ -15,6 +15,6 @@ actions.mouse.ref.db
 }
 \description{
 A dataset collects detailed action informations about gene-gene pairs. It is extracted from
-STRING database, and has 496206 in total.
+STRING database, and has 4763978 in total.
 }
 \keyword{datasets}

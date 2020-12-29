@@ -12,7 +12,8 @@ CollectHierachyOnepairClusters(
 )
 }
 \arguments{
-\item{VEinfos}{[new way to mininize the replicate process when running it]}
+\item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
+\code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
 
 \item{limits.exprs.change}{[TODO]}
 

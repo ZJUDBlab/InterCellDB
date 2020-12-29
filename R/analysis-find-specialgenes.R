@@ -9,15 +9,10 @@
 #'
 #' @inheritParams Inside.DummyVEinfos
 #' @param interact.pairs.acted List. The return value of \code{\link{AnalyzeClustersInteracts}}.
-#' @param target.gene.pairs.df [TODO] (1) get from VEinfos (2) self-specify "Ccl2>Ccr5" and use Tool.SplitToGenDataFrame
-#' @param involved.clusters.pair [TODO]
 #' @param to.cmp.clusters.pairs [TODO]
 #' @param to.cmp.clusters.pairs.sel.strategy [TODO]
-#' @param merge.cnt.quantile [TODO]
-#' @param merge.cnt.decreasing [TODO]
-#' @param merge.cnt.topn.shown [TODO]
-#' @param plot.fill [TODO]
-#' @param sep.inside.gene.pair [TODO]
+#' @param uq.cnt.range [TODO]
+#' @param formula.to.use.onLogFC [TODO]
 #'
 #' @details
 #' [TODO]
@@ -188,18 +183,44 @@ FindSpecialGenesInOnepairCluster <- function(
 
 
 
-#
-#
-#
-#
-# 
-#
-# [TODO] export a table, in compact format, one gene pair per row
-# [TODO] colour palette changed, and use colorBrewer to merge colours to get more than 12 colours
-# @import RColorBrewer
-# @import ggplot2
-# @import cowplot
-#
+#' Summary special genes in cluster groups
+#'
+#' @description
+#' [TODO]
+#'
+#' @param onepair.spgenes [TODO]
+#' @inheritParams Inside.DummyVEinfos
+#' @param show.uq.cnt.range [TODO]
+#' @param show.uq.cnt.merged [TODO]
+#' @param select.genepairs [TODO]
+#' @param select.genepairs.method [TODO]
+#' @param select.by.method.pairs.limit [TODO]
+#' @param show.topn.inside.onepair [TODO]
+#' @param show.cluster.group.order [TODO]
+#' @param plot.font.size.base [TODO]
+#' @param facet.scales [TODO]
+#' @param facet.space [TODO]
+#' @param facet.text.x [TODO]
+#' @param facet.background [TODO]
+#' @param bar.colour [TODO]
+#' @param bar.width [TODO]
+#' @param axis.text.x.pattern [TODO]
+#'
+#' @details
+#' [TODO]
+#'
+#'
+#' @return List. [TODO]
+#'
+#'
+#' @import dplyr
+#' @import RColorBrewer
+#' @import ggplot2
+#' @import cowplot
+#'
+#' 
+#' @export
+#'
 GetResult.SummarySpecialGenes <- function(
 	onepair.spgenes,
 	VEinfos, 

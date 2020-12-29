@@ -5,7 +5,7 @@
 \alias{actions.human.ref.db}
 \title{Actions database for human}
 \format{
-An object of class \code{data.frame} with 3273046 rows and 9 columns.
+An object of class \code{data.frame} with 3409770 rows and 9 columns.
 }
 \source{
 STRING <https://string-db.org>
@@ -15,6 +15,6 @@ actions.human.ref.db
 }
 \description{
 A dataset collects detailed action informations about gene-gene pairs. It is extracted from
-STRING database, and has 3273046 in total.
+STRING database, and has 3409770 in total.
 }
 \keyword{datasets}

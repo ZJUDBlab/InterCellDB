@@ -15,7 +15,7 @@ This is the character used to split clusternames in name of interaction pairs.
 }
 \details{
 When representing a interaction pair, the names of both clusters involved are put together,
-and kClustersSplit is the only char used to split them.
+and kClustersSplit is the character used to split them.
 Please make sure that kClustersSplit does not appear in any name of clusters, or you can 
 modify this by hand.
 }

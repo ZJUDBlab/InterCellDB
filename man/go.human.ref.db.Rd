@@ -5,7 +5,7 @@
 \alias{go.human.ref.db}
 \title{GO reference database for human}
 \format{
-An object of class \code{data.frame} with 323030 rows and 9 columns.
+An object of class \code{data.frame} with 322873 rows and 9 columns.
 }
 \source{
 <ftp://ftp.ncbi.nih.gov/gene/>, and file path is /DATA/gene2go.gz.
@@ -15,6 +15,6 @@ go.human.ref.db
 }
 \description{
 A dataset collects human genes and their GO annotations. It is extracted from
-GO annotations of mixed species, and has 323030 rows in total.
+GO annotations of mixed species, and has 322873 rows in total covering 19606 genes.
 }
 \keyword{datasets}

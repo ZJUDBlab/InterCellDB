@@ -4,7 +4,7 @@
 \alias{Tool.GenStdGenePairs.from.VEinfos}
 \title{generate gene pairs in standard format from VEinfos}
 \usage{
-Tool.GenStdGenePairs.from.VEinfos(VEinfos)
+Tool.GenStdGenePairs.from.VEinfos(VEinfos, is.directional = TRUE)
 }
 \arguments{
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of

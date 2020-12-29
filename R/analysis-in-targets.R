@@ -466,8 +466,7 @@ GenerateVEinfos <- function(
 #' @description
 #' This function uses mode and action.effect as the restrictions when users select part of the result.
 #'
-#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
-#' \code{GenerateVEinfos()}.
+#' @inheritParams Inside.DummyVEinfos
 #' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 #' one of the participated genes.
 #' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.

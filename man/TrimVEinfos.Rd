@@ -9,12 +9,13 @@ TrimVEinfos(
   sel.some.gene.pairs.df = NULL,
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"),
   sel.mode.val = NULL,
-  sel.action.effect.val = NULL
+  sel.action.effect.val = NULL,
+  sel.mode.action.merge.option = "intersect"
 )
 }
 \arguments{
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
-\code{GenerateVEinfos()}.}
+\code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
 
 \item{sel.some.gene.pairs.df}{Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 one of the participated genes.}
@@ -26,6 +27,8 @@ please specify detailed and accurate values in subset of \code{CellTalkDB::kpred
 
 \item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
 please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.}
+
+\item{sel.mode.action.merge.option}{[TODO]}
 }
 \description{
 This function uses mode and action.effect as the restrictions when users select part of the result.
