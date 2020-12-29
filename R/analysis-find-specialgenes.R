@@ -7,6 +7,7 @@
 #' This function is used to find special genes in one pair of interacting clusters. Genes are special
 #' if it passes some limitations when comparing to other pairs of interacting clusters. 
 #'
+#' @inheritParams Inside.DummyVEinfos
 #' @param interact.pairs.acted List. The return value of \code{\link{AnalyzeClustersInteracts}}.
 #' @param target.gene.pairs.df [TODO] (1) get from VEinfos (2) self-specify "Ccl2>Ccr5" and use Tool.SplitToGenDataFrame
 #' @param involved.clusters.pair [TODO]
@@ -37,7 +38,7 @@ FindSpecialGenesInOnepairCluster <- function(
 	interact.pairs.acted,
 	to.cmp.clusters.pairs = character(),  # should be a subset of interact.pairs.acted$name.allpairs
 	to.cmp.clusters.pairs.sel.strategy = "inter-cross",
-	uq.cnt.range = c(1:2),  # [TODO] GetResult.* futher select once more. 100 clusters as desired maximum
+	uq.cnt.range = c(1:2),  # [TODO] GetResult.* futher select once more. 100 clusters as desired default maximum
 	formula.to.use.onLogFC = Tool.formula.onLogFC.default
 ) {
 	# pre-check
@@ -168,7 +169,7 @@ FindSpecialGenesInOnepairCluster <- function(
 			tmp.gene.part <- strsplit(tmp.genepair, split = kGenesSplit, fixed = TRUE)[[1]]
 			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B")]
 			tmp.clusters.prop.df <- Tool.SplitToGenDataFrame(tmp.properties[, "gp.belongs"], to.split.by = kClustersSplit, 
-				res.colnames = c("Cluster.A", "Cluster.B"))
+				res.colnames = c("Cluster.G1", "Cluster.G2"))
 			tmp.res.df <- cbind(data.frame(gp.name = rep(tmp.genepair, times = nrow(tmp.properties)), 
 					inter.GeneName.A = rep(tmp.gene.part[1], times = nrow(tmp.properties)),
 					inter.GeneName.B = rep(tmp.gene.part[2], times = nrow(tmp.properties)),
@@ -191,10 +192,13 @@ FindSpecialGenesInOnepairCluster <- function(
 #
 #
 #
-# import cowplot
+# 
 #
 # [TODO] export a table, in compact format, one gene pair per row
 # [TODO] colour palette changed, and use colorBrewer to merge colours to get more than 12 colours
+# @import RColorBrewer
+# @import ggplot2
+# @import cowplot
 #
 GetResult.SummarySpecialGenes <- function(
 	onepair.spgenes,
@@ -206,7 +210,15 @@ GetResult.SummarySpecialGenes <- function(
 	select.by.method.pairs.limit = 10, 
 	show.topn.inside.onepair = 2,
 	show.cluster.group.order = character(),  # names put here will be showed in left and order as it is in here 
-	sep.in.compact.res.table = ", "  # [TODO]
+	# plotting param
+	plot.font.size.base = 12, 
+	facet.scales = "free_x", 
+	facet.space  = "free_x", 
+	facet.text.x = element_text(size = 8, colour = "black"), 
+	facet.background = element_rect(fill = "lightgrey", colour = "white"), 
+	bar.colour = character(), 
+	bar.width = 0.8, 
+	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1)
 ) {
 	this.spgenes <- onepair.spgenes$for.plot.use
 	## pre-check
@@ -322,6 +334,7 @@ GetResult.SummarySpecialGenes <- function(
 				# result
 				data.frame(uq.name = rep(names(std.spgenes)[x], times = tmp.ref.rows), 
 					uq.label = tmp.belongs[c(tmp.inds.prior, tmp.inds.inferior)], 
+					uq.cnt = rep(tmp.n.items, times = tmp.ref.rows), 
 					uq.x.axis = tmp.coords.seq[seq_len(tmp.ref.rows)], 
 					uq.y.axis = std.spgenes[[x]]$uq.details$gp.logfc.calc[c(tmp.inds.prior, tmp.inds.inferior)],
 					stringsAsFactors = FALSE)
@@ -341,50 +354,105 @@ GetResult.SummarySpecialGenes <- function(
 		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, select.genepairs, show.cluster.group.order)
 	} else {
 		plot.data.uq.notm.list <- list()
+		tmp.uq.cnt.valid.list <- integer()
 		for (iuq in show.uq.cnt.range) {
 			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
 			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% select.genepairs)]
+			if (length(tmp.spgenes) == 0) {
+				next  # not added to the result list
+			}
 			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, select.genepairs, show.cluster.group.order)
 			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
+			tmp.uq.cnt.valid.list <- c(tmp.uq.cnt.valid.list, iuq)
 		}
-		names(plot.data.uq.notm.list) <- paste("uq.cnt=", as.character(show.uq.cnt.range), sep = ".")
+		names(plot.data.uq.notm.list) <- paste("uq.cnt=", as.character(tmp.uq.cnt.valid.list), sep = ".")
 	}
 
 	inside.uq.single.plot <- function(
 		plot.data,
-		show.cluster.group.order
+		show.cluster.group.order,
+		bar.colour
 	) {
+		# generate template 20 colours to fit most circumstances
+		colours.group <- brewer.pal.info[brewer.pal.info$category == 'seq', ]
+		colour.sel.author.prefer <- unlist(mapply(brewer.pal, colours.group$maxcolors, rownames(colours.group)))
+		colour.sel.author.prefer <- colour.sel.author.prefer[c(9:3, 39:45, 23:26, 51, 53)]  # selected by author's well
+		# colour align with the show.cluster.group.order
+		tiny.cg.prior <- function(x) {
+			tmp.inds.prior <- which(x %in% show.cluster.group.order)
+			tmp.inds.inferior <- setdiff(seq_along(x), tmp.inds.prior)
+			x[c(tmp.inds.prior, tmp.inds.inferior)]
+		}
+		colour.sel.cor.breaks <- tiny.cg.prior(levels(factor(plot.data$uq.label)))
+		if (is.null(bar.colour) || length(bar.colour) == 0) {
+			colour.sel.it <- colour.sel.author.prefer
+		} else {  # use user defined colours
+			colour.sel.it <- bar.colour
+			if (length(bar.colour) < length(colour.sel.cor.breaks)) {
+				warning("Given kinds of colours are not enough to cover all cluster groups! The program automatically fills some colours.")
+				for (try.i in 1:100) {  # try several times to fill needed number of colours
+					colour.sel.it <- c(colour.sel.it, colour.sel.author.prefer)
+					if (length(colour.sel.it) >= length(colour.sel.cor.breaks)) {
+						break
+					}
+				}
+			}
+		}
+		colour.sel.it <- colour.sel.it[seq_along(colour.sel.cor.breaks)]
+		names(colour.sel.it) <- colour.sel.cor.breaks
+		# the plot
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.y.axis))
 		this.plot <- this.plot + 
-			geom_col(aes(fill = uq.label)) + 
-			facet_grid(cols = vars(uq.name), scales = "free_x", space = "free_x") + 
+			geom_col(aes(fill = uq.label), width = bar.width) + 
+			facet_grid(cols = vars(uq.name), scales = facet.scales, space = facet.space) + 
 			scale_x_discrete(breaks = plot.data$uq.label, 
-				limits = function(x) {
-						tmp.inds.prior <- which(x %in% show.cluster.group.order)
-						tmp.inds.inferior <- setdiff(seq_along(x), tmp.inds.prior)
-						x[c(tmp.inds.prior, tmp.inds.inferior)]
-					}, 
+				limits = tiny.cg.prior,   # function to change the limit
 				labels = plot.data$uq.label) + 
-			scale_fill_brewer(name = "Cluster Group", palette = 3) +   # [TODO]
+			scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +  # keep the default 5% in y top
+			scale_fill_manual(name = "Cluster Group", 
+				values = colour.sel.it, 
+				breaks = colour.sel.cor.breaks) + 
 			labs(x = "Cluster Groups", y = "LogFC Calc")
 		this.plot <- this.plot + 
-			theme_half_open(12) +  # [TODO] give it out
-			theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+			theme_half_open(font_size = plot.font.size.base) +  # [TODO] give it out
+			theme(axis.text.x = axis.text.x.pattern,
+				strip.text.x = facet.text.x,
+				strip.background = facet.background)
 		return(this.plot)
+	}
+
+	inside.gen.ret.table <- function(
+		ret.data
+	) {
+		ret.res <- ret.data[, c("uq.name", "uq.label", "uq.cnt", "uq.y.axis")]
+		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.logfc.calc")
+		ret1.genepairs.df <- Tool.SplitToGenDataFrame(ret.res[, "gene.pairs"], 
+			to.split.by = kGenesSplit, 
+			res.colnames = c("inter.GeneName.A", "inter.GeneName.B"))
+		ret2.clustergroup.df <- Tool.SplitToGenDataFrame(ret.res[, "cluster.groups"],
+			to.split.by = kClustersSplit, 
+			res.colnames = c("Cluster.G1", "Cluster.G2"))
+		ret.res <- cbind(ret.res[, "gene.pairs", drop = FALSE], 
+			ret1.genepairs.df, ret.res[, "cluster.groups", drop = FALSE], 
+			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.logfc.calc")],
+			stringsAsFactors = FALSE)
+		return(ret.res)
 	}
 
 	## process: draw plots
 	if (show.uq.cnt.merged == TRUE) {
-		this.plot.mg <- inside.uq.single.plot(plot.data.uq.df, show.cluster.group.order)
-		return(list(plot = this.plot.mg, table = plot.data.uq.df))
+		this.plot.mg <- inside.uq.single.plot(plot.data.uq.df, show.cluster.group.order, bar.colour)
+		return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 	} else {
 		this.notm.plot.list <- list()
+		this.notm.ret.table.list <- list()
 		for (i.item in names(plot.data.uq.notm.list)) {
-			this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.single.plot(plot.data.uq.notm.list[[i.item]], show.cluster.group.order)))
+			this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.single.plot(plot.data.uq.notm.list[[i.item]], show.cluster.group.order, bar.colour)))
+			this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 		}
-		this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, 
-			ncol = 1, align = "vh")
-		return(list(plot = this.notm.plot, table = plot.data.uq.notm.list))
+		this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = 1)
+
+		return(list(plot = this.notm.plot, table = this.notm.ret.table.list))
 	}
 }
 
