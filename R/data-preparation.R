@@ -48,7 +48,9 @@ DataPrep.RemapClustersMarkers <- function(
         paste0(paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~"), collapse = ",  "), "."
       )
   }
-  rbind(markers.raw.match, markers.raw.unmatch)
+  return(list(result = rbind(markers.raw.match, markers.raw.unmatch), 
+    unmatched = markers.raw.unmatch$gene[which(is.na(inds.map.match))],
+    synonyms.dup = paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~")))
 }
 
 
