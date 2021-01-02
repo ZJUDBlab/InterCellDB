@@ -63,6 +63,7 @@ DataPrep.RemapClustersMarkers <- function(
 #' @param markers.all.from.Seurat Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.
 #' @param cluster.names.current Vector. It specifies the names of clusters used currently.
 #' @param cluster.names.replace Vector. It gives the replaced names of clusters.
+#' @param colnames.cluster Character. [TODO]
 #'
 #' @details
 #' The replace process can be applied on part of clusters, which means the length of parameters 
@@ -84,13 +85,27 @@ DataPrep.RemapClustersMarkers <- function(
 DataPrep.AddClusterName <- function(  # [TODO] change this function
   markers.all.from.Seurat,
   cluster.names.current,
-  cluster.names.replace
+  cluster.names.replace,
+  colnames.cluster = "cluster"
 ) {
+  if ((colnames.cluster %in% colnames(markers.all.from.Seurat)) == FALSE) {
+    stop("Selected column name defining clusters is not in the given data!")
+  }
   if (length(cluster.names.current) != length(cluster.names.replace)) {
     stop("The replaced names are of different length of the current used ones.")
   }
-  markers.all.from.Seurat[, "cluster.old"] <- markers.all.from.Seurat[, "cluster"]
-  tmp.fac <- factor(markers.all.from.Seurat[, "cluster"])
+  reserve.oldnames.col <- reserve.oldnames.col.proto <- paste(colnames.cluster, "oldv", sep = ".")
+  for (try.i in 1:100) {
+    reserve.oldnames.col <- paste(reserve.oldnames.col.proto, as.character(try.i), sep = ".")
+    if ((reserve.oldnames.col %in% colnames(markers.all.from.Seurat)) == FALSE) {
+      break
+    }
+    if (try.i == 100) {
+      stop("Cannot allocate proper colnames for old cluster names, program failed! Please check given data!")
+    }
+  }
+  markers.all.from.Seurat[, reserve.oldnames.col] <- markers.all.from.Seurat[, colnames.cluster]
+  tmp.fac <- factor(markers.all.from.Seurat[, colnames.cluster])
   lvl.tmp.fac <- levels(tmp.fac)
   inds.match <- match(cluster.names.current, lvl.tmp.fac)
   if (length(which(is.na(inds.match))) != 0) {
@@ -100,7 +115,7 @@ DataPrep.AddClusterName <- function(  # [TODO] change this function
   }
   lvl.tmp.fac[inds.match] <- cluster.names.replace
   levels(tmp.fac) <- lvl.tmp.fac
-  markers.all.from.Seurat[, "cluster"] <- as.character(tmp.fac)
+  markers.all.from.Seurat[, colnames.cluster] <- as.character(tmp.fac)
   # return
   markers.all.from.Seurat
 }

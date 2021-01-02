@@ -416,6 +416,9 @@ GetResult.SummarySpecialGenes <- function(
 					if (length(colour.sel.it) >= length(colour.sel.cor.breaks)) {
 						break
 					}
+					if (try.i == 100) {
+						stop("Cannot give as many colours as needed, program failed!")
+					}
 				}
 			}
 		}
