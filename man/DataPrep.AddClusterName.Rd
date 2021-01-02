@@ -7,7 +7,8 @@
 DataPrep.AddClusterName(
   markers.all.from.Seurat,
   cluster.names.current,
-  cluster.names.replace
+  cluster.names.replace,
+  colnames.cluster = "cluster"
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ DataPrep.AddClusterName(
 \item{cluster.names.current}{Vector. It specifies the names of clusters used currently.}
 
 \item{cluster.names.replace}{Vector. It gives the replaced names of clusters.}
+
+\item{colnames.cluster}{Character. [TODO]}
 }
 \description{
 It replaces the old cluster names of feature genes that are in integer generated automatically by \pkg{Seurat} algorithm.
