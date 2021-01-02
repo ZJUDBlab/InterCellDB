@@ -109,7 +109,7 @@ Tool.formula.onPValAdj.default <- function(
   max.b <- max(tmp.b[which(is.finite(tmp.b))])
   tmp.f[which(is.infinite(tmp.f))] <- 10 * max.f
   tmp.b[which(is.infinite(tmp.b))] <- 10 * max.b
-  return(log10(tmp.f * tmp.b + 1))
+  return(tmp.f * tmp.b)
 }
 
 

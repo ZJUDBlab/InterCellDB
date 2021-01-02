@@ -81,7 +81,7 @@ DataPrep.RemapClustersMarkers <- function(
 #'
 #' @export
 #'
-DataPrep.AddClusterName <- function(
+DataPrep.AddClusterName <- function(  # [TODO] change this function
   markers.all.from.Seurat,
   cluster.names.current,
   cluster.names.replace
