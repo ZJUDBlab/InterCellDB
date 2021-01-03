@@ -4,7 +4,13 @@
 \alias{Tool.FindGenesFromGO}
 \title{Find genes annotated in specific GO terms}
 \usage{
-Tool.FindGenesFromGO(go.todolist, genes.ref.db, go.ref.db)
+Tool.FindGenesFromGO(
+  go.todolist,
+  genes.ref.db,
+  go.ref.db,
+  go.use.relative = TRUE,
+  go.relative.option = "offspring"
+)
 }
 \arguments{
 \item{go.todolist}{Character. Several GO_terms or GO_IDs or mixed, which will 
@@ -21,6 +27,12 @@ when match target synonym back to its authorized genename.}
   \item For human: \code{go.human.ref.db}
   \item For mouse: \code{go.mouse.ref.db}
 }}
+
+\item{go.use.relative}{Character. If set TRUE, GO IDs or Terms will be explored by its relatives of GO term tree. 
+This is useful as the lite version of GO database will only records the gene and its most accurate GO terms.}
+
+\item{go.relative.option}{Character. 4 options: ancestor, parents, offspring, children. 
+With each corresponding to one group of database listed in \pkg{GO.db}.}
 }
 \value{
 Character. A gene list of given GO IDs or terms.

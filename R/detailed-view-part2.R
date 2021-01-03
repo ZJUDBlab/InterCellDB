@@ -266,6 +266,11 @@ GetResult.SummarySpecialGenes <- function(
 
 	# check select gene pairs
 	if (length(select.genepairs) == 0) {  # then use method
+		# check maximum pairs limit
+		if (select.by.method.pairs.limit > length(this.spgenes)) {
+			warning("Maximum gene pairs are:", length(this.spgenes), ", and given limit is automatically shrinked to that value.")
+			select.by.method.pairs.limit <- length(this.spgenes)
+		}
 		if (select.genepairs.method == "random") {
 			tmp.inds.sel <- sample(seq_along(this.spgenes), select.by.method.pairs.limit)
 			select.genepairs <- names(this.spgenes)[tmp.inds.sel]
@@ -304,6 +309,8 @@ GetResult.SummarySpecialGenes <- function(
 		}
 		select.genepairs <- select.genepairs[tmp.inds.vd.gp]
 	}
+	# unique on gene pairs
+	select.genepairs <- unique(select.genepairs)
 
 	# template function for dealing every valid uq.cnt
 	inside.collect.uq.cnt.each <- function(

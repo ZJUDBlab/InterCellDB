@@ -78,9 +78,12 @@ Tool.WriteTables <- function(
 #' @description
 #' This function generates n-column data frame by spliting character by some specific letters or phrases.
 #'
-#' @param to.splits.string [TODO]
-#' @param to.split.by [TODO]
-#' @param res.colnames [TODO]
+#' @param to.splits.string Character. The string to be splited. 
+#' @param to.split.by Character(1). The string will be splited by this parameter, and it will be directly 
+#' passed to parameter \code{split} of function \code{strsplit}. 
+#' @param res.colnames Character(2). It gives 2 column names in the result table.
+#' The splited string gets to have 2 parts of equal length, and 
+#' they will be reconstructed to form a table so that 2 column names are needed. 
 #'
 #'
 #'

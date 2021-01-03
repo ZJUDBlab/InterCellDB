@@ -175,17 +175,27 @@ Tool.GenStdGenePairs.from.VEinfos <- function(
 #' be used to get subsets of feature genes. 
 #' @inheritParams Inside.DummyGenesRefDB
 #' @inheritParams Inside.DummyGORefDB
+#' @param go.use.relative Character. If set TRUE, GO IDs or Terms will be explored by its relatives of GO term tree. 
+#' This is useful as the lite version of GO database will only records the gene and its most accurate GO terms.
+#' @param go.relative.option Character. 4 options: ancestor, parents, offspring, children. 
+#' With each corresponding to one group of database listed in \pkg{GO.db}.
 #' 
 #' @return Character. A gene list of given GO IDs or terms.
 #'
 #'
+#'
+#' @importFrom GO.db GOCCANCESTOR GOCCPARENTS GOCCOFFSPRING GOCCCHILDREN 
+#' @importFrom GO.db GOMFANCESTOR GOMFPARENTS GOMFOFFSPRING GOMFCHILDREN 
+#' @importFrom GO.db GOBPANCESTOR GOBPPARENTS GOBPOFFSPRING GOBPCHILDREN
 #'
 #' @export
 #'
 Tool.FindGenesFromGO <- function(
 	go.todolist,
 	genes.ref.db,
-	go.ref.db
+	go.ref.db,
+	go.use.relative = TRUE, 
+	go.relative.option = "offspring"
 ) {
 	# pre-process
 	entrez.ref.db <- genes.ref.db$gene.ncbi.db
@@ -197,9 +207,23 @@ Tool.FindGenesFromGO <- function(
 	go.ID.given.list <- go.todolist[inds.ID.given]
 	go.term.given.list <- go.todolist[setdiff(seq_along(go.todolist), inds.ID.given)]
 	## Giving error report
-	# ID matching
-	go.ID.given.nonexist <- character()
-	go.ID.given.exist <- character()
+	# term matching
+	go.term.transID <- go.term.given.exist <- go.term.given.nonexist <- character()
+	if (length(go.term.given.list) > 0) {
+		inds.mTerm.s <- match(go.term.given.list, go.ref.db$GO_term)
+		go.term.given.nonexist <- go.term.given.list[which(is.na(inds.mTerm.s))]
+		go.term.given.exist <- go.term.given.list[which(!is.na(inds.mTerm.s))]
+		if (length(go.term.given.nonexist) > 0) {
+			warning("The following GO_terms are not found: \n ", paste0(go.term.given.nonexist, collapse = ", "), ".")
+		}
+		# trans the terms to be IDs
+		go.term.transID <- go.ref.db[inds.mTerm.s, "GO_ID"]
+	}
+
+	# merge the result to go.ID.given.list
+	go.ID.given.list <- c(go.ID.given.list, go.term.transID)
+	# then ID matching
+	go.ID.given.exist <- go.ID.given.nonexist <- character()
 	if (length(go.ID.given.list) > 0) {
 		inds.mID.s <- match(go.ID.given.list, go.ref.db$GO_ID)
 		go.ID.given.nonexist <- go.ID.given.list[which(is.na(inds.mID.s))]
@@ -207,25 +231,59 @@ Tool.FindGenesFromGO <- function(
 		if (length(go.ID.given.nonexist) > 0) {
 			warning("The following GO_IDs are not found: \n ", paste0(go.ID.given.nonexist, collapse = ", "), ".")
 		}
+	} 
+	
+	# check if use relative and the option
+	if (go.use.relative == TRUE) {
+		go.relative.db <- switch(go.relative.option,
+			"ancestor"  = list("Component" = as.list(GO.db::GOCCANCESTOR), "Function" = as.list(GO.db::GOMFANCESTOR), "Process" = as.list(GO.db::GOBPANCESTOR)), 
+			"parents"   = list("Component" = as.list(GO.db::GOCCPARENTS), "Function" = as.list(GO.db::GOMFPARENTS), "Process" = as.list(GO.db::GOBPPARENTS)), 
+			"offspring" = list("Component" = as.list(GO.db::GOCCOFFSPRING), "Function" = as.list(GO.db::GOMFOFFSPRING), "Process" = as.list(GO.db::GOBPOFFSPRING)), 
+			"children"  = list("Component" = as.list(GO.db::GOCCCHILDREN), "Function" = as.list(GO.db::GOMFCHILDREN), "Process" = as.list(GO.db::GOBPCHILDREN)), 
+			stop("Undefined options! Please recheck the given parameter!")
+		)
+
+		# extract the genes
+		go.rel.list <- lapply(go.ID.given.exist, go.ref.db = go.ref.db, go.relative.db = go.relative.db, 
+			function(x, go.ref.db, go.relative.db) {
+				# take the category
+				tmp.template <- match(x, go.ref.db$GO_ID)
+				this.category <- go.ref.db[tmp.template, "Category"]
+				tmp.rel.db <- go.relative.db[[which(names(go.relative.db) == this.category)]]
+				tmp.rel.inds <- which(names(tmp.rel.db) == x)
+				if (length(tmp.rel.inds) == 0) {
+					tmp.res <- character(0)
+				} else {
+					tmp.rel.go.s <- tmp.rel.db[[tmp.rel.inds]]
+					tmp.res <- unique(go.ref.db[which(go.ref.db$GO_ID %in% tmp.rel.go.s), "Gene.name"])
+				}
+				return(tmp.res)
+			})	
+	} else {
+		# use the plain GO IDs or Terms
+		go.rel.list <- lapply(go.ID.given.exist, go.ref.db = go.ref.db,
+			function(x, go.ref.db) {
+				unique(go.ref.db[which(go.ref.db$GO_ID %in% x), "Gene.name"])
+			})
 	}
-  res.go.id.match.list <- go.ref.db[which(go.ref.db$GO_ID %in% go.ID.given.exist), "Gene.name"]
-	# term matching
-	go.term.given.nonexist <- character()
-	go.term.given.exist <- character()
-	if (length(go.term.given.list) > 0) { 
-		inds.mTerm.s <- match(go.term.given.list, go.ref.db$GO_term)
-		go.term.given.nonexist <- go.term.given.list[which(is.na(inds.mTerm.s))]
-		go.term.given.exist <- go.term.given.list[which(!is.na(inds.mTerm.s))]
-		if (length(go.term.given.nonexist) > 0) {
-			warning("The following GO_terms are not found: \n ", paste0(go.term.given.nonexist, collapse = ", "), ".")
-		}
-	}
-  res.go.term.match.list <- go.ref.db[which(go.ref.db$GO_term %in% go.term.given.exist), "Gene.name"]
-	# finish transformation
-	res.go.rel.genes <- unique(as.character(c(res.go.id.match.list, res.go.term.match.list)))
-	res.go.rel.genes <- res.go.rel.genes[order(res.go.rel.genes)]
-  # return
-	res.go.rel.genes
+
+	# ID matching ones
+	go.matched.res.byID <- go.rel.list
+	names(go.matched.res.byID) <- go.ID.given.exist
+	go.matched.res.byID <- go.matched.res.byID[which(names(go.matched.res.byID) %in% go.ID.given.exist)]
+	# Term matching ones
+	go.matched.res.byTerm <- go.rel.list
+	names(go.matched.res.byTerm) <- go.ref.db[match(go.ID.given.exist, go.ref.db$GO_ID), "GO_term"]
+	go.matched.res.byTerm <- go.matched.res.byTerm[which(names(go.matched.res.byTerm) %in% go.term.given.exist)]
+	# merge the result
+	go.matched.res.all <- c(go.matched.res.byID, go.matched.res.byTerm)
+	tmp.res.inds <- match(names(go.matched.res.all), go.todolist)
+	#
+	this.all.res <- vector(mode = "list", length = length(go.todolist))
+	this.all.res[tmp.res.inds] <- go.matched.res.all
+	names(this.all.res) <- as.character(go.todolist)
+
+	return(this.all.res)
 }
 
 

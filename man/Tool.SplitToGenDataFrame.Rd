@@ -7,11 +7,14 @@
 Tool.SplitToGenDataFrame(to.splits.string, to.split.by, res.colnames)
 }
 \arguments{
-\item{to.splits.string}{[TODO]}
+\item{to.splits.string}{Character. The string to be splited.}
 
-\item{to.split.by}{[TODO]}
+\item{to.split.by}{Character(1). The string will be splited by this parameter, and it will be directly 
+passed to parameter \code{split} of function \code{strsplit}.}
 
-\item{res.colnames}{[TODO]}
+\item{res.colnames}{Character(2). It gives 2 column names in the result table.
+The splited string gets to have 2 parts of equal length, and 
+they will be reconstructed to form a table so that 2 column names are needed.}
 }
 \description{
 This function generates n-column data frame by spliting character by some specific letters or phrases.
