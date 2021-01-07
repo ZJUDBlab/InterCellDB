@@ -267,23 +267,26 @@ Tool.FindGenesFromGO <- function(
 			})
 	}
 
-	# ID matching ones
-	go.matched.res.byID <- go.rel.list
-	names(go.matched.res.byID) <- go.ID.given.exist
-	go.matched.res.byID <- go.matched.res.byID[which(names(go.matched.res.byID) %in% go.ID.given.exist)]
-	# Term matching ones
-	go.matched.res.byTerm <- go.rel.list
-	names(go.matched.res.byTerm) <- go.ref.db[match(go.ID.given.exist, go.ref.db$GO_ID), "GO_term"]
-	go.matched.res.byTerm <- go.matched.res.byTerm[which(names(go.matched.res.byTerm) %in% go.term.given.exist)]
-	# merge the result
-	go.matched.res.all <- c(go.matched.res.byID, go.matched.res.byTerm)
-	tmp.res.inds <- match(names(go.matched.res.all), go.todolist)
-	#
-	this.all.res <- vector(mode = "list", length = length(go.todolist))
-	this.all.res[tmp.res.inds] <- go.matched.res.all
-	names(this.all.res) <- as.character(go.todolist)
+	## re-align with the given order in parameter go.todolist
+	# reload raw parameter segment
+	inds.ID.given <- grep("^GO:", go.todolist)
+	go.ID.given.list <- go.todolist[inds.ID.given]
+	go.term.given.list <- go.todolist[setdiff(seq_along(go.todolist), inds.ID.given)]
+	# those IDs
+	tmp.valid.IDs <- match(go.ID.given.list, go.ID.given.exist)
+	tmp.valid.IDs <- tmp.valid.IDs[which(!is.na(tmp.valid.IDs))]
+	# thoes Terms
+	go.trans.ID.Term.exist <- go.ref.db[match(go.ID.given.exist, go.ref.db$GO_ID), "GO_term"]
+	tmp.valid.Terms <- match(go.term.given.list, go.trans.ID.Term.exist)
+	tmp.valid.Terms <- tmp.valid.Terms[which(!is.na(tmp.valid.Terms))]
+	# collect result and reorder by their given order
+	tmp.names <- c(go.ID.given.exist[tmp.valid.IDs], go.trans.ID.Term.exist[tmp.valid.Terms])
+	go.res.final <- go.rel.list[c(tmp.valid.IDs, tmp.valid.Terms)]
+	names(go.res.final) <- tmp.names
+	tmp.reorder.inds <- match(go.todolist, tmp.names)
+	go.res.final <- go.res.final[tmp.reorder.inds[which(!is.na(tmp.reorder.inds))]]
 
-	return(this.all.res)
+	return(go.res.final)
 }
 
 

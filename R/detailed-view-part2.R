@@ -196,7 +196,7 @@ FindSpecialGenesInOnepairCluster <- function(
 #' @param select.genepairs.method [TODO]
 #' @param select.by.method.pairs.limit [TODO]
 #' @param show.topn.inside.onepair [TODO]
-#' @param show.cluster.group.order [TODO]
+#' @param prioritize.cluster.groups [TODO]
 #' @param plot.font.size.base [TODO]
 #' @param facet.scales [TODO]
 #' @param facet.space [TODO]
@@ -230,7 +230,8 @@ GetResult.SummarySpecialGenes <- function(
 	select.genepairs.method = "random",  # max-calc min-calc , are other 2 options pre-defined
 	select.by.method.pairs.limit = 10, 
 	show.topn.inside.onepair = 2,
-	show.cluster.group.order = character(),  # names put here will be showed in left and order as it is in here 
+	prioritize.cluster.groups = character(),  # names put here will be showed in left and order as it is in here 
+	# [TODO] add one more parameter 
 	# plotting param
 	plot.font.size.base = 12, 
 	facet.scales = "free_x", 
@@ -257,10 +258,10 @@ GetResult.SummarySpecialGenes <- function(
 	}
 	# check cluster group given
 	this.property.valid.cluster.group <- unique(as.character(unlist(lapply(this.spgenes, function(x) { x$uq.details$gp.belongs }))))
-	tmp.inds.valid.cluster.group <- which(show.cluster.group.order %in% this.property.valid.cluster.group)
-	if (length(tmp.inds.valid.cluster.group) != length(show.cluster.group.order)) {
+	tmp.inds.valid.cluster.group <- which(prioritize.cluster.groups %in% this.property.valid.cluster.group)
+	if (length(tmp.inds.valid.cluster.group) != length(prioritize.cluster.groups)) {
 		warning("Given cluster group order has some items not existed: ",
-			paste0(show.cluster.group.order[setdiff(seq_along(show.cluster.group.order), tmp.inds.valid.cluster.group)]),
+			paste0(prioritize.cluster.groups[setdiff(seq_along(prioritize.cluster.groups), tmp.inds.valid.cluster.group)]),
 			", which will be automatically removed!")
 	}
 
@@ -335,7 +336,7 @@ GetResult.SummarySpecialGenes <- function(
 	inside.trans.coords.uq <- function(
 		std.spgenes,
 		show.genepairs.order,  # ordered as it is in select.genepairs
-		show.cluster.group.order,
+		prioritize.cluster.groups,
 		std.width.col = 2,  # may be export as param, so as the gap
 		std.width.gap = 3
 	) {
@@ -349,15 +350,15 @@ GetResult.SummarySpecialGenes <- function(
 		# calculate the gap - every col width 2, gap width 3
 		tmp.df.list <- lapply(seq_along(std.spgenes), std.spgenes = std.spgenes, 
 			std.width.col = std.width.col, std.width.gap = std.width.gap, 
-			show.cluster.group.order = show.cluster.group.order, 
-			function(x, std.spgenes, std.width.col, std.width.gap, show.cluster.group.order) {
+			prioritize.cluster.groups = prioritize.cluster.groups, 
+			function(x, std.spgenes, std.width.col, std.width.gap, prioritize.cluster.groups) {
 				tmp.begin <- x * std.width.gap + (x - 1) * std.width.col
 				tmp.n.items <- std.spgenes[[x]]$uq.cnt
 				tmp.coords.seq <- (seq_len(tmp.n.items) - 1) * std.width.col + tmp.begin
 				tmp.ref.rows <- nrow(std.spgenes[[x]]$uq.details)
 				# get cluster group order. Matched ones will be put in front all other.
 				tmp.belongs <- std.spgenes[[x]]$uq.details$gp.belongs
-				tmp.inds.prior <- which(tmp.belongs %in% show.cluster.group.order)
+				tmp.inds.prior <- which(tmp.belongs %in% prioritize.cluster.groups)
 				tmp.inds.inferior <- setdiff(seq_along(tmp.belongs), tmp.inds.prior)
 				# result
 				data.frame(uq.name = rep(names(std.spgenes)[x], times = tmp.ref.rows), 
@@ -379,7 +380,7 @@ GetResult.SummarySpecialGenes <- function(
 			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% select.genepairs)]
 			plot.data.uq <- c(plot.data.uq, tmp.spgenes)
 		}
-		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, select.genepairs, show.cluster.group.order)
+		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, select.genepairs, prioritize.cluster.groups)
 	} else {
 		plot.data.uq.notm.list <- list()
 		tmp.uq.cnt.valid.list <- integer()
@@ -389,7 +390,7 @@ GetResult.SummarySpecialGenes <- function(
 			if (length(tmp.spgenes) == 0) {
 				next  # not added to the result list
 			}
-			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, select.genepairs, show.cluster.group.order)
+			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, select.genepairs, prioritize.cluster.groups)
 			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
 			tmp.uq.cnt.valid.list <- c(tmp.uq.cnt.valid.list, iuq)
 		}
@@ -398,16 +399,16 @@ GetResult.SummarySpecialGenes <- function(
 
 	inside.uq.single.plot <- function(
 		plot.data,
-		show.cluster.group.order,
+		prioritize.cluster.groups,
 		bar.colour
 	) {
 		# generate template 20 colours to fit most circumstances
 		colours.group <- brewer.pal.info[brewer.pal.info$category == 'seq', ]
 		colour.sel.author.prefer <- unlist(mapply(brewer.pal, colours.group$maxcolors, rownames(colours.group)))
 		colour.sel.author.prefer <- colour.sel.author.prefer[c(9:3, 39:45, 23:26, 51, 53)]  # selected by author's well
-		# colour align with the show.cluster.group.order
+		# colour align with the prioritize.cluster.groups
 		tiny.cg.prior <- function(x) {
-			tmp.inds.prior <- which(x %in% show.cluster.group.order)
+			tmp.inds.prior <- which(x %in% prioritize.cluster.groups)
 			tmp.inds.inferior <- setdiff(seq_along(x), tmp.inds.prior)
 			x[c(tmp.inds.prior, tmp.inds.inferior)]
 		}
@@ -431,6 +432,9 @@ GetResult.SummarySpecialGenes <- function(
 		}
 		colour.sel.it <- colour.sel.it[seq_along(colour.sel.cor.breaks)]
 		names(colour.sel.it) <- colour.sel.cor.breaks
+		# before plot, get facet levels correctly arranged
+		plot.data$uq.name <- factor(plot.data$uq.name)
+		levels(plot.data$uq.name) <- unique(plot.data$uq.name)
 		# the plot
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.y.axis))
 		this.plot <- this.plot + 
@@ -445,7 +449,7 @@ GetResult.SummarySpecialGenes <- function(
 				breaks = colour.sel.cor.breaks) + 
 			labs(x = "Cluster Groups", y = "LogFC Calc")
 		this.plot <- this.plot + 
-			theme_half_open(font_size = plot.font.size.base) +  # [TODO] give it out
+			theme_half_open(font_size = plot.font.size.base) + 
 			theme(axis.text.x = axis.text.x.pattern,
 				strip.text.x = facet.text.x,
 				strip.background = facet.background)
@@ -472,13 +476,13 @@ GetResult.SummarySpecialGenes <- function(
 
 	## process: draw plots
 	if (show.uq.cnt.merged == TRUE) {
-		this.plot.mg <- inside.uq.single.plot(plot.data.uq.df, show.cluster.group.order, bar.colour)
+		this.plot.mg <- inside.uq.single.plot(plot.data.uq.df, prioritize.cluster.groups, bar.colour)
 		return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 	} else {
 		this.notm.plot.list <- list()
 		this.notm.ret.table.list <- list()
 		for (i.item in names(plot.data.uq.notm.list)) {
-			this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.single.plot(plot.data.uq.notm.list[[i.item]], show.cluster.group.order, bar.colour)))
+			this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.single.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, bar.colour)))
 			this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 		}
 		this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = 1)

@@ -22,11 +22,11 @@ one of the participated genes.}
 
 \item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.}
 
-\item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
-please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.}
+\item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
+please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.}
 
-\item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
-please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.}
+\item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
+please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.}
 
 \item{sel.mode.action.merge.option}{[TODO]}
 }

@@ -34,7 +34,7 @@ GetResult.PlotOnepairClusters.CellPlot(
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
 \code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
 
-\item{area.extend.times}{Numeric. If a warning given like "Cannot be located inside!" or something else, 
+\item{area.extend.times}{Numeric. Its default value is 10 which can handle most cases. If a warning given like "Cannot be located inside!" or something else, 
 one should change this paramemter to be larger to get all vertices allocated.}
 
 \item{hide.locations.A}{Character. It applies extra limitation on the locations of A in gene pairs formatted as A-B.}
@@ -47,11 +47,13 @@ one should change this paramemter to be larger to get all vertices allocated.}
 
 \item{hide.sole.vertices}{Character. It hides sole vertices which have no available edges.}
 
-\item{expand.gap.radius.list}{[TODO]}
+\item{expand.gap.radius.list}{Numeric. It defines the minimum distance in coordinates for each plotting area.}
 
-\item{expand.gap.degree.list}{[TODO]}
+\item{expand.gap.degree.list}{Numeric. It defines the way that points(genes) arrange. If it is set 180, then points will be aligned in vertical line. 
+If it is set 90, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.}
 
-\item{expand.center.density.list}{[TODO]}
+\item{expand.center.density.list}{Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
+the center of the area, and lower value means more sparse.}
 
 \item{nodes.size}{Numeric. Size of nodes.}
 
@@ -70,7 +72,7 @@ See \pkg{ggplot2} for details}
 
 \item{link.size}{Numeric. Size of link width.}
 
-\item{link.colour}{Character. Colour of links, the length should be same as \code{CellTalkDB::kpred.action.effect}.}
+\item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.effect}.}
 
 \item{link.alpha}{Numeric. Alpha of link.}
 

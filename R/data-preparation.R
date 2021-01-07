@@ -69,7 +69,7 @@ DataPrep.RemapClustersMarkers <- function(
 #' @param markers.all.from.Seurat Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.
 #' @param cluster.names.current Vector. It specifies the names of clusters used currently.
 #' @param cluster.names.replace Vector. It gives the replaced names of clusters.
-#' @param colnames.cluster Character. [TODO]
+#' @param colnames.cluster Character. The name of the column that defining the cluster.
 #'
 #' @details
 #' The replace process can be applied on part of clusters, which means the length of parameters 
@@ -88,7 +88,7 @@ DataPrep.RemapClustersMarkers <- function(
 #'
 #' @export
 #'
-DataPrep.AddClusterName <- function(  # [TODO] change this function
+DataPrep.AddClusterName <- function(
   markers.all.from.Seurat,
   cluster.names.current,
   cluster.names.replace,

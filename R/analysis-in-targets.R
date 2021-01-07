@@ -470,11 +470,12 @@ GenerateVEinfos <- function(
 #' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 #' one of the participated genes.
 #' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.
-#' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.mode}, or
-#' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.mode}.
-#' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{CellTalkDB::kpred.action.effect}, or
-#' please specify detailed and accurate values in subset of \code{CellTalkDB::kpred.action.effect}.
-#' @param sel.mode.action.merge.option [TODO]
+#' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
+#' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.
+#' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
+#' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.
+#' @param sel.mode.action.merge.option Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by mode 
+#' and subset selected by action.effect. The default way is to intersect the subsets, and the other option is union.
 #'
 #'
 #' @details
