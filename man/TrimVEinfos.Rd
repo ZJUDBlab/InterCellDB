@@ -8,6 +8,7 @@ TrimVEinfos(
   VEinfos,
   sel.some.gene.pairs.df = NULL,
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"),
+  sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
   sel.mode.val = NULL,
   sel.action.effect.val = NULL,
   sel.mode.action.merge.option = "intersect"
@@ -20,7 +21,10 @@ TrimVEinfos(
 \item{sel.some.gene.pairs.df}{Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 one of the participated genes.}
 
-\item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.}
+\item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
+and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.}
+
+\item{sel.exprs.change}{[TODO]}
 
 \item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
 please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.}
@@ -28,7 +32,8 @@ please specify detailed and accurate values in subset of \code{InterCellDB::kpre
 \item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
 please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.}
 
-\item{sel.mode.action.merge.option}{[TODO]}
+\item{sel.mode.action.merge.option}{Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by mode 
+and subset selected by action.effect. The default way is to intersect the subsets, and the other option is union.}
 }
 \description{
 This function uses mode and action.effect as the restrictions when users select part of the result.

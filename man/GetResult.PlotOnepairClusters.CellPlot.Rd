@@ -13,6 +13,7 @@ GetResult.PlotOnepairClusters.CellPlot(
   hide.types.B = NULL,
   hide.sole.vertices = TRUE,
   expand.gap.radius.list = list(ECM = 2, PM = 3, CTP = 2, OTHER = 2),
+  expand.shift.degree.list = list(ECM = 0, PM = 90, CTP = 0, OTHER = 0),
   expand.gap.degree.list = list(ECM = 60, PM = 180, CTP = 60, OTHER = 60),
   expand.center.density.list = list(ECM = 0.25, PM = 0.25, CTP = 0.25, OTHER = 0.25),
   nodes.size = 3,
@@ -48,6 +49,8 @@ one should change this paramemter to be larger to get all vertices allocated.}
 \item{hide.sole.vertices}{Character. It hides sole vertices which have no available edges.}
 
 \item{expand.gap.radius.list}{Numeric. It defines the minimum distance in coordinates for each plotting area.}
+
+\item{expand.shift.degree.list}{[TODO]}
 
 \item{expand.gap.degree.list}{Numeric. It defines the way that points(genes) arrange. If it is set 180, then points will be aligned in vertical line. 
 If it is set 90, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.}

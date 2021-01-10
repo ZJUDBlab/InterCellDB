@@ -82,7 +82,7 @@ Inside.CollectActionMapping <- function(
 ) {
   res.mode <- onerow.info["mode"]
   res.actionid <- 1
-  ifisdir <- if (onerow.info["is_directional"] == 't') TRUE else FALSE
+  ifisdir <- ifelse(onerow.info["is_directional"] == 't', TRUE, FALSE)
   if (!ifisdir) {
     if (onerow.info["a_is_acting"] == 't') {
       stop("Exception: database is broken by mannually modification, as is_directional is f but a_is_acting is t!")
@@ -109,7 +109,7 @@ Inside.CollectActionMapping <- function(
     }
   }
   #end# return
-  c(as.character(res.mode), as.character(res.actionid))
+  c(as.character(res.mode), as.character(res.actionid), as.character(onerow.info["score"]))
 }
 
 
@@ -228,16 +228,18 @@ GenerateMapDetailOnepairClusters <- function(
       tmp.put.act.infos.df <- data.frame(
         mode = as.character(tmp.put.act.infos[, 1]), 
         actionid = as.integer(tmp.put.act.infos[, 2]),
+        score = as.integer(tmp.put.act.infos[, 3]), 
         stringsAsFactors = FALSE
       )
+      ## NOT del.1, anymore.
       # to examine if more specific mode has been recorded, that is the same mode but more detailed action type
-      inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)
-      inds.rest <- which(tmp.put.act.infos.df$actionid != 1)
-      logic.del.1 <- tmp.put.act.infos.df[inds.del.1, "mode"] %in% tmp.put.act.infos.df[inds.rest, "mode"]
-      tmp.put.act.infos.df.exm <- rbind(tmp.put.act.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
-                     tmp.put.act.infos.df[inds.rest, ]
-                   )
-      tmp.put.act.infos.df.exm <- unique(tmp.put.act.infos.df.exm)
+      #inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)
+      #inds.rest <- which(tmp.put.act.infos.df$actionid != 1)
+      #logic.del.1 <- tmp.put.act.infos.df[inds.del.1, "mode"] %in% tmp.put.act.infos.df[inds.rest, "mode"]
+      #tmp.put.act.infos.df.exm <- rbind(tmp.put.act.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
+      #               tmp.put.act.infos.df[inds.rest, ]
+      #             )
+      #tmp.put.act.infos.df.exm <- unique(tmp.put.act.infos.df.exm)
       # tick
       tmp.prog$tick()
       # return
@@ -246,7 +248,7 @@ GenerateMapDetailOnepairClusters <- function(
         act.B.genename = tmp.put.pairs[1, "inter.GeneName.B"],
         act.A.logfc = tmp.put.pairs[1, "inter.LogFC.A"],
         act.B.logfc = tmp.put.pairs[1, "inter.LogFC.B"],
-        action.infos = tmp.put.act.infos.df.exm
+        action.infos = tmp.put.act.infos.df
       )
   })
 
@@ -261,7 +263,7 @@ GenerateMapDetailOnepairClusters <- function(
          act.B.genename = this.pv.pairs[x, "inter.GeneName.B"],
          act.A.logfc = this.pv.pairs[x, "inter.LogFC.A"],
          act.B.logfc = this.pv.pairs[x, "inter.LogFC.B"],
-         action.infos = data.frame(mode = "other", actionid = 1, stringsAsFactors = FALSE)
+         action.infos = data.frame(mode = "other", actionid = 1, score = NA, stringsAsFactors = FALSE)
         )
     })  
 
@@ -282,7 +284,7 @@ GenerateMapDetailOnepairClusters <- function(
 #'
 #' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
 #' @inheritParams Inside.DummyFgenes 
-#' @param is.directional Logic. If TRUE, it only generates gene pairs with defined action direction from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
+#' @param direction.A.to.B  [TODO] modfify this!   Logic. If TRUE, it only generates gene pairs with defined action direction from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
 #' otherwise bi-directional VEinfos will be generated.
 #' @param if.ignore.annos Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
@@ -315,7 +317,7 @@ GenerateMapDetailOnepairClusters <- function(
 GenerateVEinfos <- function(
   onepair.gmoc,
   fgenes.remapped.all,
-  is.directional = FALSE,
+  direction.A.to.B = NULL,
   if.ignore.annos = FALSE
 ) {
   ### generate vertices list and edges list
@@ -383,12 +385,14 @@ GenerateVEinfos <- function(
 
   ## --- edges ---
   # predefined function
-  gen.edges.vei.inside <- function(act.part1.UID, act.part2.UID, action.mode, action.effect) {
+  gen.edges.vei.inside <- function(act.part1.UID, act.part2.UID, action.mode, action.effect, action.score) {
     # this function is to generate all permutation of act.part1.UID ~ act.part2.UID, e.g. A*2 B*3 will get 2*3 results
     tmp.all.pert <- lapply(act.part1.UID,
-      act.part2.UID = act.part2.UID, action.mode = action.mode, action.effect = action.effect,
-      FUN = function(x, act.part2.UID, action.mode, action.effect) {
-        data.frame(from = x, to = act.part2.UID, action.mode = action.mode, action.effect = action.effect, stringsAsFactors = FALSE)
+      act.part2.UID = act.part2.UID, action.mode = action.mode, action.effect = action.effect, action.score = action.score, 
+      FUN = function(x, act.part2.UID, action.mode, action.effect, action.score) {
+        data.frame(from = x, to = act.part2.UID, 
+          action.mode = action.mode, action.effect = action.effect, action.score = action.score, 
+          stringsAsFactors = FALSE)
       }
     )
     tmp.all.pert  # return
@@ -417,31 +421,33 @@ GenerateVEinfos <- function(
           this.row <- act.infos[j, ]
           rownames(this.row) <- NULL
           if (this.row["actionid"] == 1) {  # for undirected one, give two directed edge and special symbol representing those
-            tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "undirected"))
-            if (!is.directional) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "undirected"))
+            if (is.null(direction.A.to.B) || direction.A.to.B == TRUE) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "undirected", this.row["score"]))  
+            }
+            if (is.null(direction.A.to.B) || !direction.A.to.B) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "undirected", this.row["score"]))
             }
           } else {
             if (this.row["actionid"] < 2 || this.row["actionid"] > 7) {
               stop(paste0("Undefined actionid from @param onepair.gmoc$actions.detailed[[", i, "]]!"))
             }
-            if (this.row["actionid"] == 2) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "positive"))
+            if (this.row["actionid"] == 2 && (is.null(direction.A.to.B) || direction.A.to.B == TRUE)) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "positive", this.row["score"]))
             } 
-            if (this.row["actionid"] == 3 && !is.directional) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "positive"))
+            if (this.row["actionid"] == 3 && (is.null(direction.A.to.B) || !direction.A.to.B)) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "positive", this.row["score"]))
             }
-            if (this.row["actionid"] == 4) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "negative"))
+            if (this.row["actionid"] == 4 && (is.null(direction.A.to.B) || direction.A.to.B == TRUE)) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "negative", this.row["score"]))
             }
-            if (this.row["actionid"] == 5 && !is.directional) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "negative"))
+            if (this.row["actionid"] == 5 && (is.null(direction.A.to.B) || !direction.A.to.B)) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "negative", this.row["score"]))
             }
-            if (this.row["actionid"] == 6) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "unspecified"))
+            if (this.row["actionid"] == 6 && (is.null(direction.A.to.B) || direction.A.to.B == TRUE)) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "unspecified", this.row["score"]))
             }
-            if (this.row["actionid"] == 7 && !is.directional) {
-              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "unspecified"))
+            if (this.row["actionid"] == 7 && (is.null(direction.A.to.B) || !direction.A.to.B)) {
+              tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "unspecified", this.row["score"]))
             }
           }
         }
@@ -469,7 +475,9 @@ GenerateVEinfos <- function(
 #' @inheritParams Inside.DummyVEinfos
 #' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 #' one of the participated genes.
-#' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs.
+#' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
+#' and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.
+#' @param sel.exprs.change [TODO]
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
 #' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
@@ -494,6 +502,7 @@ TrimVEinfos <- function(
   VEinfos, 
   sel.some.gene.pairs.df = NULL, 
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
+  sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"), 
   sel.mode.val = NULL, 
   sel.action.effect.val = NULL,
   sel.mode.action.merge.option = "intersect"
@@ -517,23 +526,62 @@ TrimVEinfos <- function(
       names(tmp.p1.by.vec) <- sel.some.gene.pairs.colnames[1]
       tmp.p2.by.vec <- "GeneName"
       names(tmp.p2.by.vec) <- sel.some.gene.pairs.colnames[2]
-      tmp.inds.cluster.m1 <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
-      tmp.inds.cluster.m2 <- which(vertices.all.infos$ClusterName == afterV.B.clustername)
       # join is considering to be cluster-gene perfectly matched
-      tob.res.sel.gp.df <- left_join(sel.some.gene.pairs.df, vertices.all.infos[tmp.inds.cluster.m1, c("UID", "GeneName")], by = tmp.p1.by.vec)
-      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "from.UID"
-      tob.res.sel.gp.df <- left_join(tob.res.sel.gp.df, vertices.all.infos[tmp.inds.cluster.m2, c("UID", "GeneName")], by = tmp.p2.by.vec)
-      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "to.UID"
+      tob.res.sel.gp.df <- left_join(sel.some.gene.pairs.df, vertices.all.infos[, c("UID", "GeneName")], by = tmp.p1.by.vec)
+      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "part1.UID"
+      tob.res.sel.gp.df <- left_join(tob.res.sel.gp.df, vertices.all.infos[, c("UID", "GeneName")], by = tmp.p2.by.vec)
+      colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "part2.UID"
       # get subset, using short-inter-pair to match
-      tob.res.short.interacts <- paste(tob.res.sel.gp.df[, "from.UID"], tob.res.sel.gp.df[, "to.UID"], sep = "->")
+      tob.res.short.interacts.conv <- paste(tob.res.sel.gp.df[, "part1.UID"], tob.res.sel.gp.df[, "part2.UID"], sep = "->")
+      tob.res.short.interacts.rev <- paste(tob.res.sel.gp.df[, "part2.UID"], tob.res.sel.gp.df[, "part1.UID"], sep = "->")
       tmp.edges.short.interacts <- paste(edges.all.infos[, "from"], edges.all.infos[, "to"], sep = "->")
-      edges.sel1.infos <- edges.all.infos[which(tmp.edges.short.interacts %in% tob.res.short.interacts), ]
+      edges.sel1.infos <- edges.all.infos[which(tmp.edges.short.interacts %in% unique(c(tob.res.short.interacts.conv, tob.res.short.interacts.rev))), ]
     } else {
       stop("Given parameter `sel.some.gene.pairs.df` should be data.frame that has 2 columns.")      
     }
   } else {
     edges.sel1.infos <- edges.all.infos
   }
+
+  ### select target edges.part.infos and vertices.part.infos by exprs changes of genes
+  ## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
+  # check if exprs change selection is valid
+  if (sum(sel.exprs.change %in% kpred.exprs.change) != length(sel.exprs.change)) {
+    stop("Given parameter `sel.exprs.change` has some undefined values: ", 
+      paste0(setdiff(sel.exprs.change, kpred.exprs.change), collapse = ", "), "!")
+  }
+  ## select by expression changes
+  # cluster belongs inds
+  tmp.inds.cluster.va <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
+  tmp.inds.cluster.vb <- which(vertices.all.infos$ClusterName == afterV.B.clustername) 
+  # exprs change belongs inds
+  tmp.inds.all.upreg <- which(vertices.all.infos$LogFC > 0)
+  tmp.inds.all.dnreg <- which(vertices.all.infos$LogFC <= 0)
+  # saved exprs change result
+  inds.exprs.va <- integer()
+  inds.exprs.vb <- integer()
+  # up.up
+  if ("Xup.Yup" %in% sel.exprs.change) {
+    inds.exprs.va <- c(inds.exprs.va, intersect(tmp.inds.cluster.va, tmp.inds.all.upreg))
+    inds.exprs.vb <- c(inds.exprs.vb, intersect(tmp.inds.cluster.vb, tmp.inds.all.upreg))
+  }
+  # up.dn
+  if ("Xup.Ydn" %in% sel.exprs.change) {
+    inds.exprs.va <- c(inds.exprs.va, intersect(tmp.inds.cluster.va, tmp.inds.all.upreg))
+    inds.exprs.vb <- c(inds.exprs.vb, intersect(tmp.inds.cluster.vb, tmp.inds.all.dnreg))
+  }
+  # dn.up
+  if ("Xdn.Yup" %in% sel.exprs.change) {
+    inds.exprs.va <- c(inds.exprs.va, intersect(tmp.inds.cluster.va, tmp.inds.all.dnreg))
+    inds.exprs.vb <- c(inds.exprs.vb, intersect(tmp.inds.cluster.vb, tmp.inds.all.upreg))
+  }
+  # dn.dn
+  if ("Xdn.Ydn" %in% sel.exprs.change) {
+    inds.exprs.va <- c(inds.exprs.va, intersect(tmp.inds.cluster.va, tmp.inds.all.dnreg))
+    inds.exprs.vb <- c(inds.exprs.vb, intersect(tmp.inds.cluster.vb, tmp.inds.all.dnreg))
+  }
+  tmp.exprs.valid.UIDs <- vertices.all.infos[unique(c(inds.exprs.va, inds.exprs.vb)), "UID"]
+  edges.sel2.infos <- edges.sel1.infos[intersect(which(edges.sel1.infos$from %in% tmp.exprs.valid.UIDs), which(edges.sel1.infos$to %in% tmp.exprs.valid.UIDs)), ]
 
   # as it plot either directed or undirected graphs, new definition of action effects are given as below
   # for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
@@ -549,18 +597,18 @@ TrimVEinfos <- function(
      is.null(sel.mode.val)) &&
     (sum(sel.action.effect.val %in% predefined.action.effect.list) == length(sel.action.effect.val) ||
      is.null(sel.action.effect.val))) {
-    inds.full.a1 <- seq_len(nrow(edges.sel1.infos))
+    inds.full.a1 <- seq_len(nrow(edges.sel2.infos))
     # --- mode ---
     if (is.null(sel.mode.val)) {
       inds.mode.sel <- inds.full.a1
     } else {
-      inds.mode.sel <- which(edges.sel1.infos[, "mode"] %in% sel.mode.val)
+      inds.mode.sel <- which(edges.sel2.infos[, "mode"] %in% sel.mode.val)
     }
     # --- action.effect ---
     if (is.null(sel.action.effect.val)) {
       inds.actf.sel <- inds.full.a1
     } else {
-      inds.actf.sel <- which(edges.sel1.infos[, "action.effect"] %in% sel.action.effect.val)
+      inds.actf.sel <- which(edges.sel2.infos[, "action.effect"] %in% sel.action.effect.val)
     }
     # --- merge option ---
     if (sel.mode.action.merge.option == "union") {
@@ -572,7 +620,7 @@ TrimVEinfos <- function(
         stop("Mode-ActionEffect merge option error: undefined merge options!")
       }
     }
-    edges.part.infos <- edges.sel1.infos[inds.mode.actf.sel, ]
+    edges.part.infos <- edges.sel2.infos[inds.mode.actf.sel, ]
 
     # recheck if nrow() > 0
     if (nrow(edges.part.infos) == 0) {

@@ -38,6 +38,20 @@ kGenesSplit <- "->"
 
 
 
+#' Predefined expression change selections
+#'
+#' @description
+#' There are 4 status that one gene pairs can have upon expression change, and this package 
+#' defines them in these 4 short expressions. 
+#'
+#'
+#'
+#' @export
+#'
+kpred.exprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
+
+
+
 #' Predefined mode
 #'
 #' @description

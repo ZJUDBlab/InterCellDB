@@ -18,7 +18,7 @@ DataPrep.AddClusterName(
 
 \item{cluster.names.replace}{Vector. It gives the replaced names of clusters.}
 
-\item{colnames.cluster}{Character. [TODO]}
+\item{colnames.cluster}{Character. The name of the column that defining the cluster.}
 }
 \description{
 It replaces the old cluster names of feature genes that are in integer generated automatically by \pkg{Seurat} algorithm.

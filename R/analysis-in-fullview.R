@@ -163,13 +163,13 @@ Inside.AnalyzeClustersInteracts <- function(
       if ("Xup.Yup" %in% subgroup.options$exprs.logfc) {
         pairs.subg.logfc$xup.yup <- pairs.sp.ikab[intersect(ind.A.up, ind.B.up), ]
       }
-      if ("Xup.Ydown" %in% subgroup.options$exprs.logfc) {
+      if ("Xup.Ydn" %in% subgroup.options$exprs.logfc) {
         pairs.subg.logfc$xup.ydn <- pairs.sp.ikab[intersect(ind.A.up, ind.B.dn), ]
       }
-      if ("Xdown.Yup" %in% subgroup.options$exprs.logfc) {
+      if ("Xdn.Yup" %in% subgroup.options$exprs.logfc) {
         pairs.subg.logfc$xdn.yup <- pairs.sp.ikab[intersect(ind.A.dn, ind.B.up), ]
       }
-      if ("Xdown.Ydown" %in% subgroup.options$exprs.logfc) {
+      if ("Xdn.Ydn" %in% subgroup.options$exprs.logfc) {
         pairs.subg.logfc$xdn.ydn <- pairs.sp.ikab[intersect(ind.A.dn, ind.B.dn), ]
       }
       pairs.v1.after.logfc <- rbind(rbind(pairs.subg.logfc$xup.yup, pairs.subg.logfc$xup.ydn), rbind(pairs.subg.logfc$xdn.yup, pairs.subg.logfc$xdn.ydn))
@@ -350,7 +350,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' The given format is explained in the below, see details for help.
 #' @param sub.sel.X.clusters Character. It specifies part of clusters(in X axis) to be put in analysis.
 #' @param sub.sel.Y.clusters Character. It specifies part of clusters(in Y axis) to be put in analysis.
-#' @param sub.sel.exprs.changes Character. Use subset of \code{c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown")}.
+#' @param sub.sel.exprs.changes Character. Use subset of \code{c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")}.
 #' @param sub.sel.X.Location Character. Its value depends on the database used, see details for help.
 #' @param sub.sel.X.Location.score.limit Character or Integer. The one in \code{character()} will be treated as predefined strategy, while
 #' the one in \code{integer()} will be treated as score limit range. See details for help.
@@ -380,7 +380,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #'
 #'         (2) Data.frame with 2 columns, which records the gene pairs in every row.
 #'
-#'   \item \code{sub.sel.exprs.changes}: For interaction pair X-Y, take "Xup.Ydown" for example, and it means the subset that
+#'   \item \code{sub.sel.exprs.changes}: For interaction pair X-Y, take "Xup.Ydn" for example, and it means the subset that
 #'         gene X is up-regulated and gene Y is down-regulated is selected.
 #'   \item \code{sub.sel.X.Location} & \code{sub.sel.Y.Location}: Location of genes, i.e. Extracellular Region, Plasma Membrane, Cytosol, etc. 
 #'         To fetch available values from current used database, \bold{e.g.}
@@ -462,7 +462,7 @@ AnalyzeClustersInteracts <- function(
   restricted.gene.pairs = NULL,
   sub.sel.X.clusters = NULL,
   sub.sel.Y.clusters = NULL,
-  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
+  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
   sub.sel.Y.Location = character(),
@@ -483,7 +483,7 @@ AnalyzeClustersInteracts <- function(
   user.settings <- list(
     X.clusters = this.fac.clusters,
     Y.clusters = this.fac.clusters,
-    exprs.logfc = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
+    exprs.logfc = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
     X.Location.score.limit = sub.sel.X.Location.score.limit,
     Y.Location.score.limit = sub.sel.Y.Location.score.limit)
   ### then the user parameters
@@ -521,15 +521,15 @@ AnalyzeClustersInteracts <- function(
     rather.m.exprs.changes <- character()
     for (i.item in sub.sel.exprs.changes) {
       tmp.sl.i <- strsplit(i.item, split = ".", fixed = TRUE)[[1]]
-      if (length(tmp.sl.i) >= 2) {  # rather matching need (>= 2) splits. So, format "???up.???down" will be correctly recognized.
+      if (length(tmp.sl.i) >= 2) {  # rather matching need (>= 2) splits. So, format "???up.???dn" will be correctly recognized.
         tif.Xup   <- if (length(grep("up", tolower(tmp.sl.i[1]), fixed = TRUE))   > 0) TRUE else FALSE
-        tif.Xdown <- if (length(grep("down", tolower(tmp.sl.i[1]), fixed = TRUE)) > 0) TRUE else FALSE
+        tif.Xdn <- if (length(grep("dn", tolower(tmp.sl.i[1]), fixed = TRUE)) > 0) TRUE else FALSE
         tif.Yup   <- if (length(grep("up", tolower(tmp.sl.i[2]), fixed = TRUE))   > 0) TRUE else FALSE
-        tif.Ydown <- if (length(grep("down", tolower(tmp.sl.i[2]), fixed = TRUE)) > 0) TRUE else FALSE
-        if (tif.Xup && tif.Yup)   rather.m.exprs.changes <- append(rather.m.exprs.changes, "Xup.Yup")
-        if (tif.Xup && tif.Ydown)   rather.m.exprs.changes <- append(rather.m.exprs.changes, "Xup.Ydown")
-        if (tif.Xdown && tif.Yup) rather.m.exprs.changes <- append(rather.m.exprs.changes, "Xdown.Yup")
-        if (tif.Xdown && tif.Ydown) rather.m.exprs.changes <- append(rather.m.exprs.changes, "Xdown.Ydown")
+        tif.Ydn <- if (length(grep("dn", tolower(tmp.sl.i[2]), fixed = TRUE)) > 0) TRUE else FALSE
+        if (tif.Xup && tif.Yup) rather.m.exprs.changes <- c(rather.m.exprs.changes, "Xup.Yup")
+        if (tif.Xup && tif.Ydn) rather.m.exprs.changes <- c(rather.m.exprs.changes, "Xup.Ydn")
+        if (tif.Xdn && tif.Yup) rather.m.exprs.changes <- c(rather.m.exprs.changes, "Xdn.Yup")
+        if (tif.Xdn && tif.Ydn) rather.m.exprs.changes <- c(rather.m.exprs.changes, "Xdn.Ydn")
       }
     }
     user.settings$exprs.logfc <- rather.m.exprs.changes

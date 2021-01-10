@@ -183,6 +183,63 @@ FindSpecialGenesInOnepairCluster <- function(
 
 
 
+# GetResult.SummarySpecialGenes Select Gene Pairs Method: random
+Inside.select.genepairs.method.random.default <- function(
+	this.spgenes, 
+	select.by.method.pairs.limit,
+	...
+) {
+	tmp.inds.sel <- sample(seq_along(this.spgenes), select.by.method.pairs.limit)
+	select.genepairs <- names(this.spgenes)[tmp.inds.sel]
+	return(select.genepairs)
+}
+Inside.select.genepairs.method.random.IT <- Inside.select.genepairs.method.random.default
+
+# GetResult.SummarySpecialGenes Select Gene Pairs Method: LogFC sum(decreasing or increasing)
+Inside.select.genepairs.method.logfc.sum.default <- function(
+	onepair.spgenes, 
+	VEinfos, 
+	select.by.method.pairs.limit, 
+	select.by.method.decreasing = TRUE, 
+	...
+) {
+	tmp.cluster.A <- VEinfos$cluster.name.A
+	tmp.cluster.B <- VEinfos$cluster.name.B
+	tmp.gp.name <- paste(tmp.cluster.A, tmp.cluster.B, sep = kClustersSplit)
+	tmp.tg.calc <- unlist(lapply(seq_along(this.spgenes), 
+		spgenes = this.spgenes, tg.gp.name = tmp.gp.name, 
+		function(x, spgenes, tg.gp.name) {
+		tmp.df <- spgenes[[x]]$uq.details
+		tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
+		}))
+	if (select.by.method.decreasing == TRUE) {
+		tmp.inds.max <- order(tmp.tg.calc, decreasing = TRUE)  # max -> min
+		length(tmp.inds.max) <- select.by.method.pairs.limit
+		tmp.inds.max <- tmp.inds.max[which(!is.na(tmp.inds.max))]
+		select.genepairs <- names(this.spgenes)[tmp.inds.max]
+	} else {
+		tmp.inds.min <- order(tmp.tg.calc, decreasing = FALSE)  # min -> max
+		length(tmp.inds.min) <- select.by.method.pairs.limit
+		tmp.inds.min <- tmp.inds.min[which(!is.na(tmp.inds.min))]
+		select.genepairs <- names(this.spgenes)[tmp.inds.min]
+	}
+	return(select.genepairs)
+}
+Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.logfc.sum.default
+
+Inside.select.genepairs.method.diff.logfc.sum.default <- function(
+	onepair.spgenes, 
+	VEinfos, 
+	select.by.method.pairs.limit, 
+	select.by.method.decreasing = TRUE, 
+	...
+) {
+	# [TODO]
+}
+Inside.select.genepairs.method.diff.logfc.sum.IT <- Inside.select.genepairs.method.diff.logfc.sum.default
+
+
+
 #' Summary special genes in cluster groups
 #'
 #' @description
@@ -227,11 +284,12 @@ GetResult.SummarySpecialGenes <- function(
 	show.uq.cnt.range = c(1), 
 	show.uq.cnt.merged = TRUE,  # merged shows different uq.cnt in one plot, or in several plots
 	select.genepairs = character(), 
-	select.genepairs.method = "random",  # max-calc min-calc , are other 2 options pre-defined
+	select.genepairs.method = "random",  # logfc-sum, diff-logfc-sum, are other 2 options pre-defined
 	select.by.method.pairs.limit = 10, 
+	select.by.method.decreasing = TRUE,     # used in logfc-sum, diff-logfc-sum
+	select.by.method.diff.option = "1-mean",  # only used in diff-logfc-sum, mean-mean, 1-1, 1-mean, mean-1
 	show.topn.inside.onepair = 2,
 	prioritize.cluster.groups = character(),  # names put here will be showed in left and order as it is in here 
-	# [TODO] add one more parameter 
 	# plotting param
 	plot.font.size.base = 12, 
 	facet.scales = "free_x", 
@@ -240,7 +298,8 @@ GetResult.SummarySpecialGenes <- function(
 	facet.background = element_rect(fill = "lightgrey", colour = "white"), 
 	bar.colour = character(), 
 	bar.width = 0.8, 
-	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1)
+	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
+	...
 ) {
 	this.spgenes <- onepair.spgenes$for.plot.use
 	## pre-check
@@ -272,35 +331,11 @@ GetResult.SummarySpecialGenes <- function(
 			warning("Maximum gene pairs are:", length(this.spgenes), ", and given limit is automatically shrinked to that value.")
 			select.by.method.pairs.limit <- length(this.spgenes)
 		}
-		if (select.genepairs.method == "random") {
-			tmp.inds.sel <- sample(seq_along(this.spgenes), select.by.method.pairs.limit)
-			select.genepairs <- names(this.spgenes)[tmp.inds.sel]
-		} else {
-			tmp.cluster.A <- VEinfos$cluster.name.A
-			tmp.cluster.B <- VEinfos$cluster.name.B
-			tmp.gp.name <- paste(tmp.cluster.A, tmp.cluster.B, sep = kClustersSplit)
-			tmp.tg.calc <- unlist(lapply(seq_along(this.spgenes), 
-				spgenes = this.spgenes, tg.gp.name = tmp.gp.name, 
-				function(x, spgenes, tg.gp.name) {
-				tmp.df <- spgenes[[x]]$uq.details
-				tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
-				}))
-			if (select.genepairs.method == "max-calc") {
-				tmp.inds.max <- order(tmp.tg.calc, decreasing = TRUE)  # max -> min
-				length(tmp.inds.max) <- select.by.method.pairs.limit
-				tmp.inds.max <- tmp.inds.max[which(!is.na(tmp.inds.max))]
-				select.genepairs <- names(this.spgenes)[tmp.inds.max]
-			} else {
-				if (select.genepairs.method == "min-calc") {
-					tmp.inds.min <- order(tmp.tg.calc, decreasing = FALSE)  # min -> max
-					length(tmp.inds.min) <- select.by.method.pairs.limit
-					tmp.inds.min <- tmp.inds.min[which(!is.na(tmp.inds.min))]
-					select.genepairs <- names(this.spgenes)[tmp.inds.min]
-				} else {
-					stop("Undefined select method, please re-check the given param: select.genepairs.method!")
-				}
-			}
-		}		
+		select.genepairs <- switch(select.genepairs.method, 
+			"random" = Inside.select.genepairs.method.random.IT(this.spgenes, select.by.method.pairs.limit, ...), 
+			"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(this.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, ...), 
+			stop("Undefined method for selecting gene pairs. Please re-check the given param: select.genepairs.method!!")
+		)
 	} else {  # check validity of those select gene pairs
 		tmp.inds.vd.gp <- which(select.genepairs %in% names(this.spgenes))
 		if (length(tmp.inds.vd.gp) != length(select.genepairs)) {

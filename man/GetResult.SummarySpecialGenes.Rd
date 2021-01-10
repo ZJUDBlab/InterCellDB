@@ -12,8 +12,10 @@ GetResult.SummarySpecialGenes(
   select.genepairs = character(),
   select.genepairs.method = "random",
   select.by.method.pairs.limit = 10,
+  select.by.method.decreasing = TRUE,
+  select.by.method.diff.option = "1-mean",
   show.topn.inside.onepair = 2,
-  show.cluster.group.order = character(),
+  prioritize.cluster.groups = character(),
   plot.font.size.base = 12,
   facet.scales = "free_x",
   facet.space = "free_x",
@@ -21,7 +23,8 @@ GetResult.SummarySpecialGenes(
   facet.background = element_rect(fill = "lightgrey", colour = "white"),
   bar.colour = character(),
   bar.width = 0.8,
-  axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1)
+  axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
+  ...
 )
 }
 \arguments{
@@ -42,7 +45,7 @@ GetResult.SummarySpecialGenes(
 
 \item{show.topn.inside.onepair}{[TODO]}
 
-\item{show.cluster.group.order}{[TODO]}
+\item{prioritize.cluster.groups}{[TODO]}
 
 \item{plot.font.size.base}{[TODO]}
 

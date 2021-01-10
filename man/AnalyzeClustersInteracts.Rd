@@ -14,7 +14,7 @@ AnalyzeClustersInteracts(
   restricted.gene.pairs = NULL,
   sub.sel.X.clusters = NULL,
   sub.sel.Y.clusters = NULL,
-  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown"),
+  sub.sel.exprs.changes = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
   sub.sel.X.Location = character(),
   sub.sel.X.Location.score.limit = c("the most confident"),
   sub.sel.Y.Location = character(),
@@ -64,7 +64,7 @@ The given format is explained in the below, see details for help.}
 
 \item{sub.sel.Y.clusters}{Character. It specifies part of clusters(in Y axis) to be put in analysis.}
 
-\item{sub.sel.exprs.changes}{Character. Use subset of \code{c("Xup.Yup", "Xup.Ydown", "Xdown.Yup", "Xdown.Ydown")}.}
+\item{sub.sel.exprs.changes}{Character. Use subset of \code{c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")}.}
 
 \item{sub.sel.X.Location}{Character. Its value depends on the database used, see details for help.}
 
@@ -127,7 +127,7 @@ This function gives as much as possible freedom for users to choose to analyze a
 
         (2) Data.frame with 2 columns, which records the gene pairs in every row.
 
-  \item \code{sub.sel.exprs.changes}: For interaction pair X-Y, take "Xup.Ydown" for example, and it means the subset that
+  \item \code{sub.sel.exprs.changes}: For interaction pair X-Y, take "Xup.Ydn" for example, and it means the subset that
         gene X is up-regulated and gene Y is down-regulated is selected.
   \item \code{sub.sel.X.Location} & \code{sub.sel.Y.Location}: Location of genes, i.e. Extracellular Region, Plasma Membrane, Cytosol, etc. 
         To fetch available values from current used database, \bold{e.g.}
