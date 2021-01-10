@@ -197,7 +197,7 @@ Inside.select.genepairs.method.random.IT <- Inside.select.genepairs.method.rando
 
 # GetResult.SummarySpecialGenes Select Gene Pairs Method: LogFC sum(decreasing or increasing)
 Inside.select.genepairs.method.logfc.sum.default <- function(
-	onepair.spgenes, 
+	this.spgenes, 
 	VEinfos, 
 	select.by.method.pairs.limit, 
 	select.by.method.decreasing = TRUE, 
@@ -212,23 +212,17 @@ Inside.select.genepairs.method.logfc.sum.default <- function(
 		tmp.df <- spgenes[[x]]$uq.details
 		tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
 		}))
-	if (select.by.method.decreasing == TRUE) {
-		tmp.inds.max <- order(tmp.tg.calc, decreasing = TRUE)  # max -> min
-		length(tmp.inds.max) <- select.by.method.pairs.limit
-		tmp.inds.max <- tmp.inds.max[which(!is.na(tmp.inds.max))]
-		select.genepairs <- names(this.spgenes)[tmp.inds.max]
-	} else {
-		tmp.inds.min <- order(tmp.tg.calc, decreasing = FALSE)  # min -> max
-		length(tmp.inds.min) <- select.by.method.pairs.limit
-		tmp.inds.min <- tmp.inds.min[which(!is.na(tmp.inds.min))]
-		select.genepairs <- names(this.spgenes)[tmp.inds.min]
-	}
+	# max -> min or min -> max
+	tmp.inds.sel <- order(tmp.tg.calc, decreasing = select.by.method.decreasing)
+	length(tmp.inds.sel) <- select.by.method.pairs.limit
+	tmp.inds.sel <- tmp.inds.sel[which(!is.na(tmp.inds.sel))]
+	select.genepairs <- names(this.spgenes)[tmp.inds.sel]
 	return(select.genepairs)
 }
 Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.logfc.sum.default
 
 Inside.select.genepairs.method.diff.logfc.sum.default <- function(
-	onepair.spgenes, 
+	this.spgenes, 
 	VEinfos, 
 	select.by.method.pairs.limit, 
 	select.by.method.decreasing = TRUE, 
@@ -331,6 +325,7 @@ GetResult.SummarySpecialGenes <- function(
 			warning("Maximum gene pairs are:", length(this.spgenes), ", and given limit is automatically shrinked to that value.")
 			select.by.method.pairs.limit <- length(this.spgenes)
 		}
+		# select by methods
 		select.genepairs <- switch(select.genepairs.method, 
 			"random" = Inside.select.genepairs.method.random.IT(this.spgenes, select.by.method.pairs.limit, ...), 
 			"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(this.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, ...), 
