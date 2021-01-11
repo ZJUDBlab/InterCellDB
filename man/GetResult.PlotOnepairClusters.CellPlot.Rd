@@ -50,7 +50,7 @@ one should change this paramemter to be larger to get all vertices allocated.}
 
 \item{expand.gap.radius.list}{Numeric. It defines the minimum distance in coordinates for each plotting area.}
 
-\item{expand.shift.degree.list}{[TODO]}
+\item{expand.shift.degree.list}{Numeric. It defines the begin degree that points(genes) are to be drawn. The degree is calculated counter-clockwise.}
 
 \item{expand.gap.degree.list}{Numeric. It defines the way that points(genes) arrange. If it is set 180, then points will be aligned in vertical line. 
 If it is set 90, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.}

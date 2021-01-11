@@ -7,9 +7,9 @@
 FindSpecialGenesInOnepairCluster(
   VEinfos,
   interact.pairs.acted,
-  to.cmp.clusters.pairs = character(),
-  to.cmp.clusters.pairs.sel.strategy = "inter-cross",
-  uq.cnt.range = c(1:2),
+  to.cmp.cluster.groups = character(),
+  to.cmp.cluster.groups.sel.strategy = "inter-cross",
+  uq.cnt.range = c(1:100),
   formula.to.use.onLogFC = Tool.formula.onLogFC.default
 )
 }
@@ -19,21 +19,23 @@ FindSpecialGenesInOnepairCluster(
 
 \item{interact.pairs.acted}{List. The return value of \code{\link{AnalyzeClustersInteracts}}.}
 
-\item{to.cmp.clusters.pairs}{[TODO]}
+\item{to.cmp.cluster.groups}{Character. It defines the cluster groups to be compared.}
 
-\item{to.cmp.clusters.pairs.sel.strategy}{[TODO]}
+\item{to.cmp.cluster.groups.sel.strategy}{Character. It defines the pre-defined selection method for getting cluster groups, and 
+current strategy options are "inter-cross" and "all-other". It works only when parameter \code{to.cmp.cluster.groups} gets not to 
+specificly set the comparing cluster groups.}
 
-\item{uq.cnt.range}{[TODO]}
+\item{uq.cnt.range}{Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
+to exist in several cluster groups.}
 
-\item{formula.to.use.onLogFC}{[TODO]}
+\item{formula.to.use.onLogFC}{Function. It defines the function that calculate one LogFC of genes in every gene pairs, and the default 
+calculation formula is to sum them up.}
 }
 \value{
-List. [TODO]
+List of length 2. With one named "res" saving all result and the other 
+named "for.plot.use" saving all needed data for plotting by function \code{GetResult.SummarySpecialGenes}.
 }
 \description{
 This function is used to find special genes in one pair of interacting clusters. Genes are special
 if it passes some limitations when comparing to other pairs of interacting clusters.
-}
-\details{
-[TODO]
 }

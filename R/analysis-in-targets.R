@@ -284,8 +284,7 @@ GenerateMapDetailOnepairClusters <- function(
 #'
 #' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
 #' @inheritParams Inside.DummyFgenes 
-#' @param direction.A.to.B  [TODO] modfify this!   Logic. If TRUE, it only generates gene pairs with defined action direction from \code{onepair.gmoc$clusters.name[1]} to \code{onepair.gmoc$clusters.name[2]}, 
-#' otherwise bi-directional VEinfos will be generated.
+#' @inheritParams Inside.DummyDirectionAtoB
 #' @param if.ignore.annos Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
 #'
@@ -477,7 +476,9 @@ GenerateVEinfos <- function(
 #' one of the participated genes.
 #' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
 #' and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.
-#' @param sel.exprs.change [TODO]
+#' @param sel.exprs.change Character. It selects the expression change status that gene pairs can be. It has total 4 options:
+#' "Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn", which are defined in global variables \code{kpred.exprs.change}.
+#' @inheritParams Inside.DummyDirectionAtoB
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
 #' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
@@ -503,6 +504,7 @@ TrimVEinfos <- function(
   sel.some.gene.pairs.df = NULL, 
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
   sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"), 
+  direction.A.to.B = NULL, 
   sel.mode.val = NULL, 
   sel.action.effect.val = NULL,
   sel.mode.action.merge.option = "intersect"
@@ -583,6 +585,22 @@ TrimVEinfos <- function(
   tmp.exprs.valid.UIDs <- vertices.all.infos[unique(c(inds.exprs.va, inds.exprs.vb)), "UID"]
   edges.sel2.infos <- edges.sel1.infos[intersect(which(edges.sel1.infos$from %in% tmp.exprs.valid.UIDs), which(edges.sel1.infos$to %in% tmp.exprs.valid.UIDs)), ]
 
+  ## select by direction
+  # cluster belongs inds
+  tmp.inds.cluster.vA <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
+  tmp.inds.cluster.vB <- which(vertices.all.infos$ClusterName == afterV.B.clustername) 
+  edges.sel3.infos <- edges.sel2.infos
+  if (!is.null(direction.A.to.B) && direction.A.to.B == TRUE) {
+    tmp.from.matches <- which(edges.sel3.infos$from %in% vertices.all.infos[tmp.inds.cluster.vA, "UID"])
+    tmp.to.matches <- which(edges.sel3.infos$to %in% vertices.all.infos[tmp.inds.cluster.vB, "UID"])
+    edges.sel3.infos <- edges.sel3.infos[intersect(tmp.from.matches, tmp.to.matches), ]
+  }
+  if (!is.null(direction.A.to.B) && !direction.A.to.B) {
+    tmp.from.matches <- which(edges.sel3.infos$from %in% vertices.all.infos[tmp.inds.cluster.vB, "UID"])
+    tmp.to.matches <- which(edges.sel3.infos$to %in% vertices.all.infos[tmp.inds.cluster.vA, "UID"])
+    edges.sel3.infos <- edges.sel3.infos[intersect(tmp.from.matches, tmp.to.matches), ]
+  }
+
   # as it plot either directed or undirected graphs, new definition of action effects are given as below
   # for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
   # for "A-->B" or "A<--B",   given type: "positive"  --- kaction.id.mapped[c(2,3)]
@@ -597,18 +615,18 @@ TrimVEinfos <- function(
      is.null(sel.mode.val)) &&
     (sum(sel.action.effect.val %in% predefined.action.effect.list) == length(sel.action.effect.val) ||
      is.null(sel.action.effect.val))) {
-    inds.full.a1 <- seq_len(nrow(edges.sel2.infos))
+    inds.full.a1 <- seq_len(nrow(edges.sel3.infos))
     # --- mode ---
     if (is.null(sel.mode.val)) {
       inds.mode.sel <- inds.full.a1
     } else {
-      inds.mode.sel <- which(edges.sel2.infos[, "mode"] %in% sel.mode.val)
+      inds.mode.sel <- which(edges.sel3.infos[, "mode"] %in% sel.mode.val)
     }
     # --- action.effect ---
     if (is.null(sel.action.effect.val)) {
       inds.actf.sel <- inds.full.a1
     } else {
-      inds.actf.sel <- which(edges.sel2.infos[, "action.effect"] %in% sel.action.effect.val)
+      inds.actf.sel <- which(edges.sel3.infos[, "action.effect"] %in% sel.action.effect.val)
     }
     # --- merge option ---
     if (sel.mode.action.merge.option == "union") {
@@ -620,7 +638,7 @@ TrimVEinfos <- function(
         stop("Mode-ActionEffect merge option error: undefined merge options!")
       }
     }
-    edges.part.infos <- edges.sel2.infos[inds.mode.actf.sel, ]
+    edges.part.infos <- edges.sel3.infos[inds.mode.actf.sel, ]
 
     # recheck if nrow() > 0
     if (nrow(edges.part.infos) == 0) {

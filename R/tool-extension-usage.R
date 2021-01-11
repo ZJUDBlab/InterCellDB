@@ -122,42 +122,33 @@ Tool.formula.onPValAdj.default <- function(
 #' This function generates gene pairs in standard format(in data frame), 
 #' and gets these pairs easier to be compared with others.
 #'
-#' @param VEinfos List. It contains informations about vertices and edges, and is exactly return value of
-#' \code{GenerateVEinfos()} or \code{TrimVEinfos()}.
+#' @inheritParams Inside.DummyVEinfos
 #'
 #' @details
 #' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 
 #' participated in each gene pair are recorded in columns named "inter.GeneName.A" and "inter.GeneName.B".
+#'
+#' @importFrom dplyr left_join
 #'
 #'
 #'
 #' @export
 #'
 Tool.GenStdGenePairs.from.VEinfos <- function(
-  VEinfos,
-  is.directional = TRUE
+  VEinfos
 ) {
   vertices.infos <- VEinfos$vertices.infos
   edges.infos <- VEinfos$edges.infos
   #
-  tg.A <- tg.B <- vertices.infos$UID
-  if (is.directional == TRUE) {
-  	tg.A <- vertices.infos[which(vertices.infos$ClusterName == VEinfos$cluster.name.A), "UID"]
-  	tg.B <- vertices.infos[which(vertices.infos$ClusterName == VEinfos$cluster.name.B), "UID"]
-  }
-  inds.e.from.match <- tg.A[match(edges.infos$from, tg.A)]  # as UID = row indices
-  inds.e.to.match <- tg.B[match(edges.infos$to, tg.B)]
-  # from to data.frame
-  std.df <- data.frame("inter.GeneName.A" = vertices.infos$GeneName[inds.e.from.match], 
-    "inter.GeneName.B" = vertices.infos$GeneName[inds.e.to.match],
-    "inter.LogFC.A" = vertices.infos$LogFC[inds.e.from.match], 
-    "inter.LogFC.B" = vertices.infos$LogFC[inds.e.to.match],
-    stringsAsFactors = FALSE)
-  # remove NAs
-  std.df <- std.df[which(!is.na(std.df$inter.GeneName.A)), ]
-  std.df <- std.df[which(!is.na(std.df$inter.GeneName.B)), ]
-  # unique result
-  std.df <- DoPartUnique(std.df, 1:2)
+  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "GeneName", "LogFC")], by = c("from" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 1, ncol(tmp.res))] <- c("inter.GeneName.A", "inter.LogFC.A")
+  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "GeneName", "LogFC")], by = c("to" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 1, ncol(tmp.res))] <- c("inter.GeneName.B", "inter.LogFC.B")
+  # form std data.frame
+  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B")
+  tmp.res <- tmp.res[, match(align.colnames, colnames(tmp.res))]
+  # result
+  std.df <- DoPartUnique(tmp.res, 1:2)
   return(std.df)
 }
 

@@ -1,20 +1,25 @@
 
 
 
-#' TODO
+#' Collect gene pairs by expression change and action effects
 #' 
 #' @description
-#' TODO
+#' This function gets to collect gene pairs by their expression change (total 4 category) and 
+#' action effects (total 4 category).
 #'
 #' @inheritParams Inside.DummyVEinfos
-#' @param limits.exprs.change [TODO]
-#' @param limits.action.effects [TODO]
+#' @param limits.exprs.change It specifies the range of expression change status that needs to be collected. 
+#' @param limits.action.effects It specifies the range of action effects that need to be collected. 
 #' 
 #' @details
-#' This function is to collect hierachical information inside the raw data.
+#' This function is to collect hierachical information inside the raw data, which is collecting gene pairs 
+#' and grouping them by expression change status and action effects.
 #'
 #' @return
-#' TODO
+#' List of 2 layers. The first is the expression change status, and the list is length 4 and names of this list are 
+#' "Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn". The second level of this list is the action effects, and every sublist gets
+#' length 7 and its names are "A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B". Every single item is a table defined in 
+#' class \code{data.frame}.
 #'
 #' @importFrom dplyr left_join
 #'

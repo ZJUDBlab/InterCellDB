@@ -13,9 +13,11 @@ GetResult.PlotOnepairClusters.GeneCrosstalk(
   formula.to.use = list(Tool.formula.onLogFC.default, Tool.formula.onPValAdj.default),
   axis.order.xy = c("AlphaBet", "AlphaBet"),
   axis.order.xy.decreasing = c(TRUE, TRUE),
+  plot.font.size.base = 12,
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   nodes.colour.value.seq = c(0, 0.5, 1),
-  nodes.size.range = c(2, 8)
+  nodes.size.range = c(2, 8),
+  axis.text.x.pattern = element_text(angle = 30, hjust = 1)
 )
 }
 \arguments{
@@ -40,11 +42,15 @@ The 1st one will be plotted differently by different size of nodes, and 2nd one 
 
 \item{axis.order.xy.decreasing}{Logic. It determines whether the orders are of decreasing pattern or increasing pattern.}
 
+\item{plot.font.size.base}{Numeric. It defines the font size of texts such as labels and titles.}
+
 \item{nodes.colour.seq}{Character. It specifies the colour sequence of the nodes.}
 
 \item{nodes.colour.value.seq}{Numeric. It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.}
 
 \item{nodes.size.range}{Numeric. It specifies the size range of the nodes.}
+
+\item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

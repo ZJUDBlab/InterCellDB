@@ -9,16 +9,18 @@
 #'
 #' @inheritParams Inside.DummyVEinfos
 #' @param interact.pairs.acted List. The return value of \code{\link{AnalyzeClustersInteracts}}.
-#' @param to.cmp.clusters.pairs [TODO]
-#' @param to.cmp.clusters.pairs.sel.strategy [TODO]
-#' @param uq.cnt.range [TODO]
-#' @param formula.to.use.onLogFC [TODO]
+#' @param to.cmp.cluster.groups Character. It defines the cluster groups to be compared. 
+#' @param to.cmp.cluster.groups.sel.strategy Character. It defines the pre-defined selection method for getting cluster groups, and 
+#' current strategy options are "inter-cross" and "all-other". It works only when parameter \code{to.cmp.cluster.groups} gets not to 
+#' specificly set the comparing cluster groups.
+#' @param uq.cnt.range Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
+#' to exist in several cluster groups. 
+#' @param formula.to.use.onLogFC Function. It defines the function that calculate one LogFC of genes in every gene pairs, and the default 
+#' calculation formula is to sum them up. 
 #'
-#' @details
-#' [TODO]
 #'
-#'
-#' @return List. [TODO]
+#' @return List of length 2. With one named "res" saving all result and the other 
+#' named "for.plot.use" saving all needed data for plotting by function \code{GetResult.SummarySpecialGenes}.
 #'
 #'
 #' @import dplyr
@@ -31,9 +33,9 @@
 FindSpecialGenesInOnepairCluster <- function(
 	VEinfos,
 	interact.pairs.acted,
-	to.cmp.clusters.pairs = character(),  # should be a subset of interact.pairs.acted$name.allpairs
-	to.cmp.clusters.pairs.sel.strategy = "inter-cross",
-	uq.cnt.range = c(1:2),  # [TODO] GetResult.* futher select once more. 100 clusters as desired default maximum
+	to.cmp.cluster.groups = character(),  # should be a subset of interact.pairs.acted$name.allpairs
+	to.cmp.cluster.groups.sel.strategy = "inter-cross",
+	uq.cnt.range = c(1:100),
 	formula.to.use.onLogFC = Tool.formula.onLogFC.default
 ) {
 	# pre-check
@@ -79,22 +81,22 @@ FindSpecialGenesInOnepairCluster <- function(
 		stringsAsFactors = FALSE)
 
 	# to compare pairs
-	if (length(to.cmp.clusters.pairs) == 0) {  # only if no list is given then use the pre-defined strategy
-		if (to.cmp.clusters.pairs.sel.strategy == "inter-cross") {
+	if (length(to.cmp.cluster.groups) == 0) {  # only if no list is given then use the pre-defined strategy
+		if (to.cmp.cluster.groups.sel.strategy == "inter-cross") {
 			other.pairs.names.C <- setdiff(grep(paste0("^", this.clusters.separate[1]), all.pairs.names, value = TRUE), this.pair.name)
 			other.pairs.names.D <- setdiff(grep(paste0(this.clusters.separate[2], "$"), all.pairs.names, value = TRUE), this.pair.name)
-			to.cmp.clusters.pairs <- unique(c(other.pairs.names.C, other.pairs.names.D))
+			to.cmp.cluster.groups <- unique(c(other.pairs.names.C, other.pairs.names.D))
 		} else {
-			if (to.cmp.clusters.pairs.sel.strategy == "all-other") {
-				to.cmp.clusters.pairs <- setdiff(all.pairs.names, this.pair.name)
+			if (to.cmp.cluster.groups.sel.strategy == "all-other") {
+				to.cmp.cluster.groups <- setdiff(all.pairs.names, this.pair.name)
 			} else {
-				stop("Undefined pre-defined strategy used: ", to.cmp.clusters.pairs.sel.strategy)
+				stop("Undefined pre-defined strategy used: ", to.cmp.cluster.groups.sel.strategy)
 			}
 		}
 	}  # else use the directly specified clusters
 
 	# set the uq.cnt range
-	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(to.cmp.clusters.pairs, split = kClustersSplit, fixed = TRUE))))
+	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(to.cmp.cluster.groups, split = kClustersSplit, fixed = TRUE))))
 	uq.cnt.range <- uq.cnt.range[which(uq.cnt.range %in% seq_along(tmp.all.uq.clusters))]
 	if (length(uq.cnt.range) == 0) {
 		stop("Please specify available uq.cnt.range to continue the analysis!\nThe allowed values are ", 
@@ -103,7 +105,7 @@ FindSpecialGenesInOnepairCluster <- function(
 
 	# generate gene pairs to compare
 	  # only those pairs occurs in target cluster group will be further analyzed
-	other.gene.pairs.df.list <- lapply(to.cmp.clusters.pairs, 
+	other.gene.pairs.df.list <- lapply(to.cmp.cluster.groups, 
 		all.pairs.interacts = all.pairs.interacts, tg.pairs = this.pair.interacts,
 		tmp.sep = this.gp.sep, formula.to.use.onLogFC = formula.to.use.onLogFC, 
 		function(x, all.pairs.interacts, tg.pairs, tmp.sep, formula.to.use.onLogFC) {
@@ -221,48 +223,57 @@ Inside.select.genepairs.method.logfc.sum.default <- function(
 }
 Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.logfc.sum.default
 
-Inside.select.genepairs.method.diff.logfc.sum.default <- function(
-	this.spgenes, 
-	VEinfos, 
-	select.by.method.pairs.limit, 
-	select.by.method.decreasing = TRUE, 
-	...
-) {
-	# [TODO]
-}
-Inside.select.genepairs.method.diff.logfc.sum.IT <- Inside.select.genepairs.method.diff.logfc.sum.default
-
-
+#Inside.select.genepairs.method.diff.logfc.sum.default <- function(
+#	this.spgenes, 
+#	VEinfos, 
+#	select.by.method.pairs.limit, 
+#	select.by.method.decreasing = TRUE, 
+#	...
+#) {
+#}
+#Inside.select.genepairs.method.diff.logfc.sum.IT <- Inside.select.genepairs.method.diff.logfc.sum.default
+# method name is "diff-logfc-sum"
+#select.by.method.diff.option = "1-mean",  # only used in diff-logfc-sum, mean-mean, 1-1, 1-mean, mean-1
+#
 
 #' Summary special genes in cluster groups
 #'
 #' @description
-#' [TODO]
+#' This function is to summary special genes and their specific expressing attributes.
+#' 
 #'
-#' @param onepair.spgenes [TODO]
+#' @param onepair.spgenes The result got from \code{FindSpecialGenesInOnepairCluster()}. 
 #' @inheritParams Inside.DummyVEinfos
-#' @param show.uq.cnt.range [TODO]
-#' @param show.uq.cnt.merged [TODO]
-#' @param select.genepairs [TODO]
-#' @param select.genepairs.method [TODO]
-#' @param select.by.method.pairs.limit [TODO]
-#' @param show.topn.inside.onepair [TODO]
-#' @param prioritize.cluster.groups [TODO]
-#' @param plot.font.size.base [TODO]
-#' @param facet.scales [TODO]
-#' @param facet.space [TODO]
-#' @param facet.text.x [TODO]
-#' @param facet.background [TODO]
-#' @param bar.colour [TODO]
-#' @param bar.width [TODO]
-#' @param axis.text.x.pattern [TODO]
+#' @param show.uq.cnt.range Integer. It defines the range of \code{uq.cnt} that is going to be used in downstream analysis, and 
+#' the default setting is to use all valid \code{uq.cnt}. 
+#' @param show.uq.cnt.merged Logic. If set TRUE, then gene pairs of different \code{uq.cnt} will be merged in analysis, or gene pairs 
+#' will be grouped by their \code{uq.cnt} and be plotted accordingly.
+#' @param select.genepairs Character. It specificly gives the gene pairs that are going to be analyzed. 
+#' @param select.genepairs.method Character. It has options: "random", "logfc-sum". It works only when no specific gene pairs are given in 
+#' parameter \code{select.genepairs}. Method "random" will randomly pick up some gene pairs. Method "logfc-sum" will calculate the sum of LogFCs of 
+#' the 2 genes in every gene pairs, and order them by the calculated values.
+#' @param select.by.method.pairs.limit Integer. It defines the maximum number of gene pairs that are selected by any method.
+#' @param select.by.method.decreasing Logic. It works for method "logfc-sum". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.
+#' @param show.topn.inside.onepair Integer. One gene pairs get to be shared by several cluster groups. By setting this parameter, 
+#' only the top ranked some gene pairs will be finally shown in result. The default value is +Inf, which preserves all result.
+#' @param prioritize.cluster.groups Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
+#' finally plotted from the most left-side to right, and as such, it is called prioritizing. 
+#' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
+#' @param facet.scales It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
+#' @param facet.space It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
+#' @param facet.text.x It defines the facet labeling text on the top horizontal position. 
+#' @param facet.background It defines the background style of labellers in facet way.
+#' @param bar.colour Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
+#' built-in 20 kinds of colours will be automatically used.
+#' @param bar.width Numeric. It defines the bar width.
+#' @param axis.text.x.pattern It defines the axis text style in x-axis. 
 #'
-#' @details
-#' [TODO]
 #'
-#'
-#' @return List. [TODO]
-#'
+#' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
+#' \itemize{
+#'   \item plot: the object of \pkg{ggplot2}.
+#'   \item table: a list of \code{data.frame}.
+#' }
 #'
 #' @import dplyr
 #' @import RColorBrewer
@@ -275,14 +286,13 @@ Inside.select.genepairs.method.diff.logfc.sum.IT <- Inside.select.genepairs.meth
 GetResult.SummarySpecialGenes <- function(
 	onepair.spgenes,
 	VEinfos, 
-	show.uq.cnt.range = c(1), 
+	show.uq.cnt.range = integer(), 
 	show.uq.cnt.merged = TRUE,  # merged shows different uq.cnt in one plot, or in several plots
 	select.genepairs = character(), 
-	select.genepairs.method = "random",  # logfc-sum, diff-logfc-sum, are other 2 options pre-defined
+	select.genepairs.method = "random",  # logfc-sum,  are other 1 options pre-defined
 	select.by.method.pairs.limit = 10, 
-	select.by.method.decreasing = TRUE,     # used in logfc-sum, diff-logfc-sum
-	select.by.method.diff.option = "1-mean",  # only used in diff-logfc-sum, mean-mean, 1-1, 1-mean, mean-1
-	show.topn.inside.onepair = 2,
+	select.by.method.decreasing = TRUE, 
+	show.topn.inside.onepair = +Inf,
 	prioritize.cluster.groups = character(),  # names put here will be showed in left and order as it is in here 
 	# plotting param
 	plot.font.size.base = 12, 
@@ -299,12 +309,17 @@ GetResult.SummarySpecialGenes <- function(
 	## pre-check
 	this.property.valid.uq.cnt <- unique(as.integer(unlist(lapply(this.spgenes, function(x) { x$uq.cnt }))))
 	# check valid uq.cnt
-	tmp.inds.valid.uq <- which(show.uq.cnt.range %in% this.property.valid.uq.cnt)
-	if (length(tmp.inds.valid.uq) != length(show.uq.cnt.range)) {
-		warning("Select not-existed uq.cnt: ", paste0(show.uq.cnt.range[setdiff(seq_along(show.uq.cnt.range), tmp.inds.valid.uq)], collapse = ", "), 
-			", which will be ignored!")
+	if (length(show.uq.cnt.range) == 0) {  # if length uq.cnt = 0 then set it directly
+		show.uq.cnt.range <- this.property.valid.uq.cnt
+	} else {
+		# check valid
+		tmp.inds.valid.uq <- which(show.uq.cnt.range %in% this.property.valid.uq.cnt)
+		if (length(tmp.inds.valid.uq) != length(show.uq.cnt.range)) {
+			warning("Select not-existed uq.cnt: ", paste0(show.uq.cnt.range[setdiff(seq_along(show.uq.cnt.range), tmp.inds.valid.uq)], collapse = ", "), 
+				", which will be ignored!")
+		}
+		show.uq.cnt.range <- show.uq.cnt.range[tmp.inds.valid.uq]
 	}
-	show.uq.cnt.range <- show.uq.cnt.range[tmp.inds.valid.uq]
 	# check topn
 	if (show.topn.inside.onepair < 0) {
 		stop("Top N must be larger than 0! Check parameter show.uq.cnt.range!")
@@ -463,13 +478,12 @@ GetResult.SummarySpecialGenes <- function(
 		colour.sel.it <- colour.sel.it[seq_along(colour.sel.cor.breaks)]
 		names(colour.sel.it) <- colour.sel.cor.breaks
 		# before plot, get facet levels correctly arranged
-		plot.data$uq.name <- factor(plot.data$uq.name)
-		levels(plot.data$uq.name) <- unique(plot.data$uq.name)
+		plot.data$uq.name.align <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name))
 		# the plot
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.y.axis))
 		this.plot <- this.plot + 
 			geom_col(aes(fill = uq.label), width = bar.width) + 
-			facet_grid(cols = vars(uq.name), scales = facet.scales, space = facet.space) + 
+			facet_grid(cols = vars(uq.name.align), scales = facet.scales, space = facet.space) + 
 			scale_x_discrete(breaks = plot.data$uq.label, 
 				limits = tiny.cg.prior,   # function to change the limit
 				labels = plot.data$uq.label) + 

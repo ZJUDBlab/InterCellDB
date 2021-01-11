@@ -158,7 +158,7 @@ Inside.TransCoords.Enlarge.Rotate <- function(
 #' @param hide.types.B Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.
 #' @param hide.sole.vertices Character. It hides sole vertices which have no available edges.
 #' @param expand.gap.radius.list Numeric. It defines the minimum distance in coordinates for each plotting area.
-#' @param expand.shift.degree.list [TODO]
+#' @param expand.shift.degree.list Numeric. It defines the begin degree that points(genes) are to be drawn. The degree is calculated counter-clockwise.
 #' @param expand.gap.degree.list Numeric. It defines the way that points(genes) arrange. If it is set 180, then points will be aligned in vertical line. 
 #' If it is set 90, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
 #' @param expand.center.density.list Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
@@ -633,9 +633,11 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
 #' @param formula.to.use List. It gives the functions to be used for evaluation params.
 #' @param axis.order.xy Character. It determines how the gene names will be ordered in the axis when plotting.
 #' @param axis.order.xy.decreasing Logic. It determines whether the orders are of decreasing pattern or increasing pattern.
+#' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
 #' @param nodes.colour.seq Character. It specifies the colour sequence of the nodes.
 #' @param nodes.colour.value.seq Numeric. It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.
 #' @param nodes.size.range Numeric. It specifies the size range of the nodes.
+#' @param axis.text.x.pattern It defines the axis text style in x-axis. 
 #'
 #'
 #' @details
@@ -657,6 +659,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
 #'
 #' @import dplyr
 #' @import ggplot2
+#' @import cowplot
 #'
 #' @export
 #'
@@ -669,9 +672,11 @@ GetResult.PlotOnepairClusters.GeneCrosstalk <- function(
   formula.to.use = list(Tool.formula.onLogFC.default, Tool.formula.onPValAdj.default),
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
   axis.order.xy.decreasing = c(TRUE, TRUE),  # order direction
+  plot.font.size.base = 12, 
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   nodes.colour.value.seq = c(0.0, 0.5, 1.0),
-  nodes.size.range = c(2, 8)
+  nodes.size.range = c(2, 8),
+  axis.text.x.pattern = element_text(angle = 30, hjust = 1)
 ) {
   # pre-check
   if (length(colnames.to.cmp) < length(formula.to.use)) {
@@ -797,9 +802,9 @@ GetResult.PlotOnepairClusters.GeneCrosstalk <- function(
       scale_colour_gradientn(name = colnames.to.cmp[2], colours = nodes.colour.seq, values = nodes.colour.value.seq)
   gp.res <- gp.res + 
       labs(x = packed.infos[1, "from.cluster"], y = packed.infos[1, "to.cluster"]) + 
-      theme_half_open(font_size = 12) + 
+      theme_half_open(font_size = plot.font.size.base) + 
       background_grid() + 
-      theme(axis.text.x = element_text(angle = 30, hjust = 1))
+      theme(axis.text.x = axis.text.x.pattern)
   # draw the final graph
   return(list(plot = gp.res, tables = packed.infos))
 }

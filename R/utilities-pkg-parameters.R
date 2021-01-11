@@ -185,3 +185,24 @@ Inside.DummyGORefDB <- function(
 	NULL
 }
 
+
+
+#'
+#' Description of parameter direction.A.to.B
+#'
+#' @description
+#' Use to provide the same parameter description for direction.A.to.B
+#'
+#' @param direction.A.to.B Logic. this parameter gets 3 options: TRUE, FALSE, NULL. In InterCellDB-defined gene pairs, gene pairs have 2 genes, with 1 named "inter.GeneName.A", 
+#' and the other named "inter.GeneName.B". As for interactions between specific cluster group like G1~G2, the gene A is expressed by the former, which is G1, and 
+#' gene B is expressed by the latter, which is G2. So, the 3 options mean: With TRUE, all directional gene pairs 
+#' that goes from the former cluster to the latter, like A->B or A--|B, will be extracted, but if it is set FALSE, then all directional gene pairs 
+#' goes the opposite way, which is something like A<--B or A|--B, will be extracted. If NULL is set, then all directional gene pairs will be reserved.
+#'
+#'
+Inside.DummyDirectionAtoB <- function(
+	direction.A.to.B
+) {
+	NULL
+}
+

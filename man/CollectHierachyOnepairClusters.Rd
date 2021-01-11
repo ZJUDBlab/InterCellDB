@@ -2,7 +2,7 @@
 % Please edit documentation in R/detailed-view-part1.R
 \name{CollectHierachyOnepairClusters}
 \alias{CollectHierachyOnepairClusters}
-\title{TODO}
+\title{Collect gene pairs by expression change and action effects}
 \usage{
 CollectHierachyOnepairClusters(
   VEinfos,
@@ -15,16 +15,21 @@ CollectHierachyOnepairClusters(
 \item{VEinfos}{List. It contains informations about vertices and edges, and is exactly return value of
 \code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
 
-\item{limits.exprs.change}{[TODO]}
+\item{limits.exprs.change}{It specifies the range of expression change status that needs to be collected.}
 
-\item{limits.action.effects}{[TODO]}
+\item{limits.action.effects}{It specifies the range of action effects that need to be collected.}
 }
 \value{
-TODO
+List of 2 layers. The first is the expression change status, and the list is length 4 and names of this list are 
+"Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn". The second level of this list is the action effects, and every sublist gets
+length 7 and its names are "A-->B", "A<--B", "A--|B", "A|--B", "A--oB", "Ao--B", "A---B". Every single item is a table defined in 
+class \code{data.frame}.
 }
 \description{
-TODO
+This function gets to collect gene pairs by their expression change (total 4 category) and 
+action effects (total 4 category).
 }
 \details{
-This function is to collect hierachical information inside the raw data.
+This function is to collect hierachical information inside the raw data, which is collecting gene pairs 
+and grouping them by expression change status and action effects.
 }
