@@ -267,6 +267,7 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' built-in 20 kinds of colours will be automatically used.
 #' @param bar.width Numeric. It defines the bar width.
 #' @param axis.text.x.pattern It defines the axis text style in x-axis. 
+#' @param ... Other parameter that can be passed to select by method functions.
 #'
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

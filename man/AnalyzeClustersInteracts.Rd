@@ -88,7 +88,7 @@ without any additional check.}
 
 \item{sub.sel.Y.user.type}{Like \code{sub.sel.X.user.type}.}
 
-\item{calculation.formula}{}
+\item{calculation.formula}{It defines the function to be used to calculate the power of interactions between clusters.}
 
 \item{ind.colname.end.dual}{Integer. Use default value provided only when the pairs.ref database is modified by users.}
 }

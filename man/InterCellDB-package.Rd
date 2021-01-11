@@ -6,7 +6,7 @@
 \alias{InterCellDB-package}
 \title{InterCellDB: Tools for Analyzing Interactions among Cells}
 \description{
-This tool provides databases covering human and mouse, and provides bunches of functions intended to serve for data analysis of scRNA-seq. Its databases collect a variety of data source, including STRING, NCBI-gene, GO, HGNC, Mesh, etc. Its function on analysis ranges from fullview of cell-cell-interaction to specific interactions between specific clusters.
+This tool provides databases covering human and mouse, and provides bunches of functions intended to serve for data analysis of scRNA-seq. Its databases collect a variety of data source, including STRING, NCBI-gene, COMPARTMENTS, GO, Uniprot, etc. Its function on analysis starts from fullview of cell-cell-interaction to specific interactions between specific clusters and intends to find a small subset of important gene pairs.
 }
 \details{
 This package provides databases and tools for scRNA-seq data analysis.

@@ -70,6 +70,8 @@ built-in 20 kinds of colours will be automatically used.}
 \item{bar.width}{Numeric. It defines the bar width.}
 
 \item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
+
+\item{...}{Other parameter that can be passed to select by method functions.}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

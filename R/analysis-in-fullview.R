@@ -363,7 +363,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param sub.sel.X.user.type Its mode depends on what datatype user has defined. The function will accept anything given in this parameter
 #' without any additional check.
 #' @param sub.sel.Y.user.type Like \code{sub.sel.X.user.type}.
-#' @param calculation.formula 
+#' @param calculation.formula It defines the function to be used to calculate the power of interactions between clusters. 
 #' @param ind.colname.end.dual Integer. Use default value provided only when the pairs.ref database is modified by users.
 #'
 #' @details
