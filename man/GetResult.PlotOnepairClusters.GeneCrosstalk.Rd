@@ -27,9 +27,10 @@ GetResult.PlotOnepairClusters.GeneCrosstalk(
 \item{fgenes.remapped.all}{Data.frame. Informations about feature genes(markers), prefer using return value of 
 \code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.}
 
-\item{direction.A.to.B}{Logic. If set NULL, use all given gene pairs, and if set TRUE, use only gene pairs with actions
+\item{direction.A.to.B}{Logic. This parameter defined here is some bit different from that defined in \code{TrimVEinfos}. 
+If set NULL, it will be treated as TRUE, which means it only keeps the gene pairs with actions
 specified as the pattern "A to B"(either positive or negative or unspecified, etc), while if set FALSE, use gene pairs 
-with actions as "B to A".}
+with actions as "B to A". More things see details below.}
 
 \item{colnames.to.cmp}{Character. The colnames to be used as evaluation params, currently only 2 params are supported.
 The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.}
@@ -70,4 +71,13 @@ It calculates in default settings:
   \item LogFC: the log of fold changes, which indicates the relative gene expression.
   \item p_val_adj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
 }
+
+For explaination on changed settings of parameter \code{direction.A.to.B}: 
+
+This function is meant to show the gene pairs between given cluster group (2 clusters), which means it doesn't care about the direction
+of actions of gene pairs. As a result, gene pairs with action effect being "undirected" will not be treated as 2 different records anymore. 
+To be illustrated clearly, here's the example, gene pairs "Adam17---App", which is undirected, will be kept as 2 records in a table like 
+Adam17***App and App***Adam17, so as to decribe its bi-directional attribute of the relation. In the situation of this function, "Adam17---App" 
+is one gene pairs existing between the given 2 clusters, and there is no need to have 2 records for describing their action effects. 
+Be aware of this setting, that's easy to understand why \code{direction.A.to.B} treats NULL as TRUE, and keeps the FALSE & TRUE as their original meanings.
 }

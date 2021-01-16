@@ -20,7 +20,7 @@ TrimVEinfos(
 \code{GenerateVEinfos()} or \code{TrimVEinfos()}.}
 
 \item{sel.some.gene.pairs.df}{Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
-one of the participated genes.}
+one of the participated genes. The 2 required column names need to be specified by another parameter \code{sel.some.gene.pairs.colnames}.}
 
 \item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
 and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.}

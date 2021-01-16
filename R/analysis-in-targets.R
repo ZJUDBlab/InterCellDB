@@ -473,7 +473,7 @@ GenerateVEinfos <- function(
 #'
 #' @inheritParams Inside.DummyVEinfos
 #' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
-#' one of the participated genes.
+#' one of the participated genes. The 2 required column names need to be specified by another parameter \code{sel.some.gene.pairs.colnames}.
 #' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
 #' and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.
 #' @param sel.exprs.change Character. It selects the expression change status that gene pairs can be. It has total 4 options:
@@ -519,9 +519,10 @@ TrimVEinfos <- function(
   ## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
   if (!is.null(sel.some.gene.pairs.df)) {
     if (class(sel.some.gene.pairs.df) == "data.frame" && nrow(sel.some.gene.pairs.df) > 0 && ncol(sel.some.gene.pairs.df) >= 2) {
-      if ((tmp.x = sum(sel.some.gene.pairs.colnames %in% colnames(sel.some.gene.pairs.df))) && 
-          (tmp.x != length(sel.some.gene.pairs.colnames) || tmp.x != 2)) {
-        stop("Given colnames in `sel.some.gene.pairs.colnames` are unvalid!")
+      tmp.x <- sum(sel.some.gene.pairs.colnames %in% colnames(sel.some.gene.pairs.df))
+      if (tmp.x != length(sel.some.gene.pairs.colnames) || tmp.x < 2) {
+        stop("Given colnames in `sel.some.gene.pairs.colnames` are unvalid or less than 2 (unable to define gene pairs)! They are ",
+          paste0(sel.some.gene.pairs.colnames, collapse = ", "))
       }
       tmp.sel.gp.df <- sel.some.gene.pairs.df[, sel.some.gene.pairs.colnames]
       tmp.p1.by.vec <- "GeneName"
