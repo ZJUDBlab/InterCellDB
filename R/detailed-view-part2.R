@@ -321,6 +321,7 @@ GetResult.SummarySpecialGenes <- function(
 		}
 		show.uq.cnt.range <- show.uq.cnt.range[tmp.inds.valid.uq]
 	}
+
 	# check topn
 	if (show.topn.inside.onepair < 0) {
 		stop("Top N must be larger than 0! Check parameter show.uq.cnt.range!")
@@ -334,31 +335,41 @@ GetResult.SummarySpecialGenes <- function(
 			", which will be automatically removed!")
 	}
 
-	# check select gene pairs
-	if (length(select.genepairs) == 0) {  # then use method
-		# check maximum pairs limit
-		if (select.by.method.pairs.limit > length(this.spgenes)) {
-			warning("Maximum gene pairs are:", length(this.spgenes), ", and given limit is automatically shrinked to that value.")
-			select.by.method.pairs.limit <- length(this.spgenes)
+	# fetch selected gene pairs [TODO] select.genepairs too far ahead, get errors
+	inside.fetch.sel.genepairs <- function(
+		input.spgenes,
+		VEinfos,
+		select.genepairs,
+		select.genepairs.method,
+		select.by.method.pairs.limit,
+		select.by.method.decreasing,
+		...
+	) {
+		if (length(select.genepairs) == 0) {  # then use method
+			# check maximum pairs limit
+			if (select.by.method.pairs.limit > length(input.spgenes)) {
+				warning("Maximum gene pairs are:", length(input.spgenes), ", and given limit is automatically shrinked to that value.")
+				select.by.method.pairs.limit <- length(input.spgenes)
+			}
+			# select by methods
+			select.genepairs <- switch(select.genepairs.method, 
+				"random" = Inside.select.genepairs.method.random.IT(input.spgenes, select.by.method.pairs.limit, ...), 
+				"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(input.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, ...), 
+				stop("Undefined method for selecting gene pairs. Please re-check the given param: select.genepairs.method!!")
+			)
+		} else {  # check validity of those select gene pairs
+			tmp.inds.vd.gp <- which(select.genepairs %in% names(input.spgenes))
+			if (length(tmp.inds.vd.gp) != length(select.genepairs)) {
+				warning("Selected gene pairs not exist: ", 
+					paste0(select.genepairs[setdiff(seq_along(select.genepairs), tmp.inds.vd.gp)], collapse = ", "), 
+					", which will be removed from following analysis!")
+			}
+			select.genepairs <- select.genepairs[tmp.inds.vd.gp]
 		}
-		# select by methods
-		select.genepairs <- switch(select.genepairs.method, 
-			"random" = Inside.select.genepairs.method.random.IT(this.spgenes, select.by.method.pairs.limit, ...), 
-			"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(this.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, ...), 
-			stop("Undefined method for selecting gene pairs. Please re-check the given param: select.genepairs.method!!")
-		)
-	} else {  # check validity of those select gene pairs
-		tmp.inds.vd.gp <- which(select.genepairs %in% names(this.spgenes))
-		if (length(tmp.inds.vd.gp) != length(select.genepairs)) {
-			warning("Selected gene pairs not exist: ", 
-				paste0(select.genepairs[setdiff(seq_along(select.genepairs), tmp.inds.vd.gp)], collapse = ", "), 
-				", which will be removed from following analysis!")
-		}
-		select.genepairs <- select.genepairs[tmp.inds.vd.gp]
+		# unique on gene pairs
+		select.genepairs <- unique(select.genepairs)
+		return(select.genepairs)
 	}
-	# unique on gene pairs
-	select.genepairs <- unique(select.genepairs)
-
 	# template function for dealing every valid uq.cnt
 	inside.collect.uq.cnt.each <- function(
 		all.spgenes,
@@ -423,20 +434,22 @@ GetResult.SummarySpecialGenes <- function(
 		plot.data.uq <- list()
 		for (iuq in show.uq.cnt.range) {
 			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
-			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% select.genepairs)]
 			plot.data.uq <- c(plot.data.uq, tmp.spgenes)
 		}
-		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, select.genepairs, prioritize.cluster.groups)
+		tmp.sel.gpairs <- inside.fetch.sel.genepairs(plot.data.uq, VEinfos, select.genepairs, select.genepairs.method, select.by.method.pairs.limit, select.by.method.decreasing, ...)
+		plot.data.uq <- plot.data.uq[which(names(plot.data.uq) %in% tmp.sel.gpairs)]
+		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups)
 	} else {
 		plot.data.uq.notm.list <- list()
 		tmp.uq.cnt.valid.list <- integer()
 		for (iuq in show.uq.cnt.range) {
 			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
-			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% select.genepairs)]
+			tmp.sel.gpairs <- inside.fetch.sel.genepairs(tmp.spgenes, VEinfos, select.genepairs, select.genepairs.method, select.by.method.pairs.limit, select.by.method.decreasing, ...)
+			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% tmp.sel.gpairs)]
 			if (length(tmp.spgenes) == 0) {
 				next  # not added to the result list
 			}
-			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, select.genepairs, prioritize.cluster.groups)
+			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups)
 			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
 			tmp.uq.cnt.valid.list <- c(tmp.uq.cnt.valid.list, iuq)
 		}
@@ -497,7 +510,8 @@ GetResult.SummarySpecialGenes <- function(
 			theme_half_open(font_size = plot.font.size.base) + 
 			theme(axis.text.x = axis.text.x.pattern,
 				strip.text.x = facet.text.x,
-				strip.background = facet.background)
+				strip.background = facet.background) + 
+			theme(legend.position = "none")  # remove the legends
 		return(this.plot)
 	}
 

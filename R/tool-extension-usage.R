@@ -13,6 +13,7 @@
 #' @param warning.given Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.
 #'
 #' @return Data.frame.
+#'
 #' | <col-1> <col-2> <col-3> ...|
 #'
 #' | GeneID Gene.name user.type ...|

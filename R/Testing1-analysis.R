@@ -492,8 +492,7 @@ Testing.FindCommonChangedGenesInOneCluster <- function(
 #' the direction will be from \code{"ClusterC"} to \code{"ClusterD"}.
 #' @param clusters.select.auto Character. If parameter \code{select.interacts} is not specified, it gives all related clusters,
 #' and all permutation of interacts between these clusters will be used.
-#' @param is.directional Logic. It is passed to \code{GenerateVEinfos}. If TRUE, it only uses single direction 
-#' of clusters' interaction, otherwise use the bi-directional.
+#' @inheritParams Inside.DummyDirectionAtoB
 #' @param if.ignore.annos Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
@@ -539,7 +538,7 @@ Testing.PlotInteractsInMultipleClusters <- function(
   return.table.vals = FALSE,
   select.interacts = NULL,
   clusters.select.auto = NULL,
-  is.directional = TRUE,
+  direction.A.to.B = TRUE,
   if.ignore.annos = TRUE,
   sel.mode.val = NULL,
   sel.action.effect.val = NULL,
@@ -608,7 +607,7 @@ Testing.PlotInteractsInMultipleClusters <- function(
     tmp.rcluster.B <- tmp.related.clusters[2]
     tmp.AB.1p <- ExtractTargetOnepairClusters(interact.pairs.acted, tmp.rcluster.A, tmp.rcluster.B)
     tmp.gmoc <- GenerateMapDetailOnepairClusters(tmp.AB.1p, actions.ref.db)
-    tmp.VEinfos <- GenerateVEinfos(tmp.gmoc, fgenes.remapped.all, is.directional = is.directional, if.ignore.annos = if.ignore.annos)
+    tmp.VEinfos <- GenerateVEinfos(tmp.gmoc, fgenes.remapped.all, direction.A.to.B = direction.A.to.B, if.ignore.annos = if.ignore.annos)
     tmp.VEinfos <- TrimVEinfos(tmp.VEinfos, sel.mode.val = sel.mode.val, sel.action.effect.val = sel.action.effect.val)
     if (tmp.rcluster.A == tmp.rcluster.B) {
       tmp.rcluster.B <- paste0(tmp.rcluster.B, ".mirror")
