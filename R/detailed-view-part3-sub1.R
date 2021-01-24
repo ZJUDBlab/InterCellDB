@@ -18,7 +18,7 @@ ScatterSimple.Plot <- function(
   coords.xy.colnames = c("gx", "gy")
 ) {
   # warning or stop for area.extend.times
-  ssp.words <- " Please increases the area.extend.times by multiply it by 10."
+  ssp.words <- " Please increases the area.extend.times by multiply or increment it by 10."
   # pre-check
   if (nrow(data.veinfo) < 1) {
     if (!is.null(colnames(data.veinfo))) {
@@ -107,6 +107,82 @@ ScatterSimple.Plot <- function(
 
 
 
+# [inside usage]
+# This function is a random points scatter algorithm used for some area like circle ring
+# The return value of this function is the @param data.veinfo plus 2 new columns
+# that given by @param coords.xy.colnames
+#
+ScatterRing.Plot <- function(
+  vertices.infos,
+  center.xy,  # (x, y)
+  ext.len,  # circle, if non-circle is wanted, use coords.trans functions
+  ring.radius.range.percent = c(0, 1),  # [1] means the inner radius percent, [2] means the outer one
+  radius.gap.factor = 1,
+  sample.shift.degree = 0,  # default goes from +x axis to measure degree
+  sample.gap.degree = 60,  # default will be 30
+  coords.xy.colnames = c("gx", "gy")
+) {
+  # pre-check
+  if (nrow(vertices.infos) < 1) {
+    if (!is.null(colnames(vertices.infos))) {
+      tmp.ret <- data.frame(ttx = numeric(0), tty = numeric(0))
+      colnames(tmp.ret) <- coords.xy.colnames
+      return(cbind(vertices.infos, tmp.ret))
+    } else {
+      return(NULL)
+    }
+  }
+  #
+  if (length(coords.xy.colnames) != 2) {
+    stop("Unexpected colnames whose length <!=> 2!")
+  }
+  # get area radius both the near center one and the away one
+  radius.near.center <- ceiling(ring.radius.range.percent[1] * ext.len)  # use ceiling to ensure the minimum gets larger
+  radius.away.center <- floor(ring.radius.range.percent[2] * ext.len)  # use floor to make sure the maximum gets smaller
+
+  this.puts.cnt <- radius.away.center - radius.near.center + 1 - 2  # count the available points position
+  if (this.puts.cnt < 0) {
+    stop("Area is too small to locate even one point!")
+  }
+  # sample
+  if (sample.gap.degree < 1 || sample.gap.degree > 360) {
+    sample.gap.degree <- 30  # the default
+  }
+  this.deg.splits <- floor(360 / sample.gap.degree)
+
+  # scatter preparation
+  tmp.ring.unit.locs <- floor(this.puts.cnt / radius.gap.factor)  # add 1 to make the number count rather than number substraction
+  sp.ring.it <- seq_len(tmp.ring.unit.locs) * radius.gap.factor + radius.near.center
+  sp.deg.it <- seq_len(this.deg.splits) - 1
+  sp.total.it <- length(sp.ring.it) * length(sp.deg.it)
+  # check capacity 
+  if (sp.total.it < nrow(vertices.infos) || tmp.ring.unit.locs == 0) {
+    stop("Capacity error: Cannot allocate all points!")
+  }
+  ### scatter process (use deg.* as ref and extend it)
+  ## get coords
+  gen.coords.ssp <- function(data.input, sp.deg.seq, sp.rad.seq, sample.gap.degree, sample.shift.degree, center.xy) {
+    # full sequence of deg and rad
+    full.sref.deg <- (rep(sp.deg.seq, times = length(sp.rad.seq)) * sample.gap.degree + sample.shift.degree) * (pi / 180)
+    full.sref.rad <- rep(sp.rad.seq, each = length(sp.deg.seq))
+    # needed count
+    tmp.scnt <- sample(seq_along(full.sref.deg), nrow(data.input))
+    tmp.sref.deg <- full.sref.deg[tmp.scnt]
+    tmp.sref.rad <- full.sref.rad[tmp.scnt]
+    coords.res <- data.frame(x.s = cos(tmp.sref.deg) * tmp.sref.rad + center.xy[1],
+                 y.s = sin(tmp.sref.deg) * tmp.sref.rad + center.xy[2])
+    coords.res
+  }
+  # ring coords
+  coords.ring.it <- gen.coords.ssp(vertices.infos, sp.deg.it, sp.ring.it, sample.gap.degree, sample.shift.degree, center.xy)
+  ## merge back to df
+  vertices.infos[, coords.xy.colnames] <- coords.ring.it
+  # return
+  vertices.infos
+}
+
+
+
 
 
 # [inside usage]
@@ -142,17 +218,15 @@ Inside.TransCoords.Enlarge.Rotate <- function(
 
 
 
-
-
-# This function is to generate coordinates for unit size circle.
+# This function is to generate coordinates for unit size circle under default parameters. 
 Inside.GetCoords.ZeroCircle <- function(
   center.x = 0, 
   center.y = 0, 
-  radius = 1.0
+  radius = 1.0,
+  gradient.degree = 3  # now 120 splits, and in the future, probably use smaller value
 ) {
   # generating coordinates counter-clockwise
   whole.degree <- 360
-  gradient.degree <- 3  # now 120 splits, and in the future, probably use smaller value
   n.cnt <- floor(whole.degree / gradient.degree)
   uc.x.part <- uc.y.part <- numeric(n.cnt)
   for (i in seq_len(n.cnt)) {
@@ -163,6 +237,41 @@ Inside.GetCoords.ZeroCircle <- function(
   uc.all.coords <- data.frame(x.cc = uc.x.part, y.cc = uc.y.part)
   #end# return 
   uc.all.coords
+}
+
+
+
+# This function is to generate coordinates for sector of circle.
+# It is used after getting result of \code{Inside.GetCoords.ZeroCircle}.
+Inside.GetCoords.PartialCircle <- function(
+  uc.all.coords,
+  start.degree = 0,
+  end.degree = 360,
+  gradient.degree = 3  # get it set as it is used in \code{Inside.GetCoords.ZeroCircle}
+) {
+  # align degree with the closest(floored) neighbor that matches the gradient degree
+  start.deg <- floor(start.degree / gradient.degree) * gradient.degree
+  end.deg <- floor(end.degree / gradient.degree) * gradient.degree
+  while (start.deg < 0) start.deg <- start.deg + 360
+  while (start.deg > 360) start.deg <- start.deg - 360
+  while (end.deg < 0) end.deg <- end.deg + 360
+  while (end.deg > 360) end.deg <- end.deg - 360
+  # 
+  # grain.level <- as.integer(nrow(uc.all.coords) / floor(360 / gradient.degree))  # if gradient.degree = 1, then get 360 data rows. 
+  if (start.deg <= end.deg) {
+    ind.start <- start.deg / gradient.degree + 1
+    ind.end <- ifelse(end.deg < 360, end.deg + gradient.degree, end.deg) / gradient.degree  # here add ifelse to avoid inds exceeding range error
+    vc.part.coords <- uc.all.coords[ind.start:ind.end, ]
+  } else {  # it always go counter-clockwise, so if start from larger degree, it goes across the +x axis
+    ind.start.1 <- start.deg / gradient.degree + 1
+    ind.end.dummy.1 <- 360 / gradient.degree
+    vc.part.1.c <- uc.all.coords[ind.start.1:ind.end.dummy.1, ]
+    ind.end.2 <- ifelse(end.deg < 360, end.deg + gradient.degree, end.deg) / gradient.degree  # here add ifelse to avoid inds exceeding range error
+    vc.part.2.c <- uc.all.coords[1:ind.end.2, ]
+    vc.part.coords <- rbind(vc.part.1.c, vc.part.2.c)
+  }
+  #end# return
+  vc.part.coords
 }
 
 
@@ -189,6 +298,700 @@ Inside.GetCoords.ZeroCircle <- function(
 #' If it is set 90 and shift degree is set 0, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
 #' @param expand.center.density.list Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
 #' the center of the area, and lower value means more sparse.
+#' @param expand.outside.cut.percent.list [TODO]
+#' @param expand.PM.gap.len [TODO]
+#' @param locate.PM.method [TODO]
+#' @param nodes.size.range [TODO]
+#' @param nodes.fill.updn [TODO]
+#' @param nodes.colour Character. Colour of nodes.
+#' @param nodes.alpha Numeric. Alpha of nodes.
+#' @param nodes.shape Vector. Use shape reprentable IDs(in integer) or directly shape description(in character). 
+#' See \pkg{ggplot2} for details
+#' @param nodes.stroke Numeric. Stroke size of nodes. See details in \pkg{ggplot2}.
+#' @param label.size.nodes [TODO]
+#' @param label.colour.nodes [TODO]
+#' @param label.vjust [TODO]
+#' @param label.hjust [TODO]
+#' @param label.nudge.x [TODO]
+#' @param label.nudge.y [TODO]
+#' @param label.padding.itself [TODO]
+#' @param label.size.itself [TODO]
+#' @param link.size Numeric. Size of link width.
+#' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.effect}.
+#' @param link.alpha Numeric. Alpha of link.
+#' @param link.arrow.angle Numeric. Angle of link arrow.
+#' @param link.arrow.length Numeric. Length of link arrow.
+#' @param link.arrow.type Character. Type of link arrow, either \code{open} or \code{closed}.
+#' @param legend.show.fill.updn.label [TODO]
+#' @param legend.show.fill.override.point.size [TODO]
+#' @param legend.show.size.override.colour [TODO]
+#' @param legend.show.size.override.stroke [TODO]
+#'
+#' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
+#' \itemize{
+#'   \item plot: the object of \pkg{ggplot2}.
+#'   \item table: a list of \code{data.frame}.
+#' }
+#'
+#'
+#'
+#' @import ggplot2
+#' @importFrom dplyr bind_rows
+#'
+#' @export
+#'
+GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
+  VEinfos,
+  area.extend.times = 10, 
+  hide.locations.A = c("Other"),
+  hide.types.A = NULL,
+  hide.locations.B = c("Other"),
+  hide.types.B = NULL,
+  hide.sole.vertices = FALSE,  # if TRUE, remove those edges cannot formed vertices
+  expand.gap.radius.list = list(ECM = 2, CTP = 2, NC = 2, OTHER = 2),  
+  expand.shift.degree.list = list(ECM = 90, CTP = 30, NC = 30, OTHER = 30), 
+  expand.gap.degree.list = list(ECM = 180, CTP = 60, NC = 60, OTHER = 60),
+  expand.center.density.list = list(ECM = 0.25, NC = 0.25, OTHER = 0.25),
+  expand.outside.cut.percent.list = list(ECM = 0.03, NC = 0.03, OTHER = 0.03), 
+  expand.PM.gap.len = 2, 
+  locate.PM.method = "uniform",  # or "random"
+  nodes.size.range = c(3, 6), 
+  nodes.fill.updn = c("#D07F86", "#7AAF7A"), 
+  nodes.colour = c("lightgrey"), 
+  nodes.alpha = 1.0,
+  nodes.shape = 21,
+  nodes.stroke = 0,
+  label.size.nodes = c(3, 3),  # [TODO] label.* can give only one value
+  label.colour.nodes = c("black", "black"),
+  label.vjust = c(0, 0),
+  label.hjust = c(1, 0),
+  label.nudge.x = c(0, 0), 
+  label.nudge.y = c(2, 2), 
+  label.padding.itself = list(unit(0.25, "lines"), unit(0.25, "lines")),
+  label.size.itself = c(0.25, 0.25),
+  link.size = 0.6,
+  link.colour = c("#D70051", "#00913A", "#956134", "#B5B5B6"),
+  link.alpha = 1,
+  link.arrow.angle = 20,
+  link.arrow.length = 10,
+  link.arrow.type = "open",
+  legend.show.fill.updn.label = c("UP", "DN"), 
+  legend.show.fill.override.point.size = 3, 
+  legend.show.size.override.colour = "black", 
+  legend.show.size.override.stroke = 0.7
+) {
+  ## precheck
+  # check scatter parameters are correctly settled
+  check.require.items <- c("ECM", "CTP", "NC", "OTHER")
+  check.require.items.ex <- c("ECM", "NC", "OTHER")
+  tmp.1.check <- length(which(names(expand.gap.radius.list) %in% check.require.items)) == length(check.require.items)
+  tmp.2.check <- length(which(names(expand.shift.degree.list) %in% check.require.items)) == length(check.require.items)
+  tmp.3.check <- length(which(names(expand.gap.degree.list) %in% check.require.items)) == length(check.require.items)
+  tmp.4.check <- length(which(names(expand.center.density.list) %in% check.require.items.ex)) == length(check.require.items.ex)
+  tmp.5.check <- length(which(names(expand.outside.cut.percent.list) %in% check.require.items.ex)) == length(check.require.items.ex)
+  if (!(tmp.1.check && tmp.2.check && tmp.3.check && tmp.4.check)) {
+    tmp.error.m <- c("expand.gap.radius.list", "expand.shift.degree.list", "expand.gap.degree.list", "expand.center.density.list", "expand.outside.cut.percent.list")
+    tmp.error.m <- tmp.error.m[c(!tmp.1.check, !tmp.2.check, !tmp.3.check, !tmp.4.check)]
+    stop("The following paramemter: ", paste0(tmp.error.m, collapse = ", "), ", do not include all required cell area, which is ", 
+      paste0(check.require.items, collapse = ", "), ". Please check default paramemter value to fix this problem.")
+  }
+  # check given nodes size range valid?
+  if (length(nodes.size.range) != 2 || 
+    (length(nodes.size.range == 2) && (nodes.size.range[1] <= 0 || nodes.size.range[2] <= 0))) {
+    stop("Given nodes.size.range is unvalid, and please give 2 numeric values (> 0).")
+  }
+  ## check for label.* to make it length 2
+  if (length(label.size.nodes) < 1 || is.null(label.size.nodes)) stop("Paramemter `label.size.nodes` is invalid!")
+  label.size.nodes <- if (length(label.size.nodes) == 1) rep(label.size.nodes, times = 2) else label.size.nodes[1:2]
+  if (length(label.colour.nodes) < 1 || is.null(label.colour.nodes)) stop("Paramemter `label.colour.nodes` is invalid!")
+  label.colour.nodes <- if (length(label.colour.nodes) == 1) rep(label.colour.nodes, times = 2) else label.colour.nodes[1:2]
+  if (length(label.vjust) < 1 || is.null(label.vjust)) stop("Paramemter `label.vjust` is invalid!")
+  label.vjust <- if (length(label.vjust) == 1) rep(label.vjust, times = 2) else label.vjust[1:2]
+  if (length(label.hjust) < 1 || is.null(label.hjust)) stop("Paramemter `label.hjust` is invalid!")
+  label.hjust <- if (length(label.hjust) == 1) rep(label.hjust, times = 2) else label.hjust[1:2]
+  if (length(label.nudge.x) < 1 || is.null(label.nudge.x)) stop("Paramemter `label.nudge.x` is invalid!")
+  label.nudge.x <- if (length(label.nudge.x) == 1) rep(label.nudge.x, times = 2) else label.nudge.x[1:2]
+  if (length(label.nudge.y) < 1 || is.null(label.nudge.y)) stop("Paramemter `label.nudge.y` is invalid!")
+  label.nudge.y <- if (length(label.nudge.y) == 1) rep(label.nudge.y, times = 2) else label.nudge.y[1:2]
+  if (length(label.padding.itself) < 1 || is.null(label.padding.itself)) stop("Paramemter `label.padding.itself` is invalid!")
+  label.padding.itself <- if (length(label.padding.itself) == 1) rep(label.padding.itself, times = 2) else label.padding.itself[1:2]
+  if (length(label.size.itself) < 1 || is.null(label.size.itself)) stop("Paramemter `label.size.itself` is invalid!")
+  label.size.itself <- if (length(label.size.itself) == 1) rep(label.size.itself, times = 2) else label.size.itself[1:2]
+  # check link colour
+  if (length(link.colour) != length(kpred.action.effect)) {
+    length(link.colour) <- length(kpred.action.effect)
+    link.colour[which(is.na(link.colour))] <- link.colour[which(!is.na(link.colour))][1]  # use 1st one to all other
+    warning("Given link colour are shorter than expected, and are automatically extended.")
+  }
+
+  #
+  act.A.clustername <- VEinfos$cluster.name.A
+  act.B.clustername <- VEinfos$cluster.name.B
+  edges.infos <- VEinfos$edges.infos
+  vertices.infos <- VEinfos$vertices.infos  # infos included: location
+  vertices.apx.type.A <- VEinfos$vertices.apx.type.A
+  vertices.apx.type.B <- VEinfos$vertices.apx.type.B
+
+  ## defining location properly
+  pred.loc.special <- c("Plasma Membrane", "Extracellular Region", "Other", "Nucleus")
+  # others
+  pred.loc.common.A <- setdiff(levels(factor(vertices.infos$Location[which(vertices.infos$ClusterName == act.A.clustername)])), pred.loc.special)
+  pred.loc.common.B <- setdiff(levels(factor(vertices.infos$Location[which(vertices.infos$ClusterName == act.B.clustername)])), pred.loc.special)
+
+  ## hide some vertices & merge all cytoplasm locations
+  # A
+  tmp.is.A <- which(vertices.infos$ClusterName == act.A.clustername)
+  # A loc
+  if (is.null(hide.locations.A)) {
+    tmp.inds.A.loc <- integer(0)
+  } else {
+    tmp.inds.A.loc <- intersect(tmp.is.A, which(vertices.infos$Location %in% hide.locations.A))
+  }
+  # A type
+  if (is.null(hide.types.A)) {
+    tmp.inds.A.type <- integer(0)
+  } else {
+    tmp.inds.A.type <- intersect(tmp.is.A, which(vertices.infos$GeneName %in% (vertices.apx.type.A[which(vertices.apx.type.A$Type %in% hide.types.A), "GeneName"]) ))
+  }
+  # B
+  tmp.is.B <- which(vertices.infos$ClusterName == act.B.clustername)
+  # B loc
+  if (is.null(hide.locations.B)) {
+    tmp.inds.B.loc <- integer(0)
+  } else {
+    tmp.inds.B.loc <- intersect(tmp.is.B, which(vertices.infos$Location %in% hide.locations.B))
+  }
+  # B type
+  if (is.null(hide.types.B)) {
+    tmp.inds.B.type <- integer(0)
+  } else {
+    tmp.inds.B.type <- intersect(tmp.is.B, which(vertices.infos$GeneName %in% (vertices.apx.type.B[which(vertices.apx.type.B$Type %in% hide.types.B), "GeneName"]) ))
+  }
+  # merge hide inds
+  tmp.inds.hide <- c(tmp.inds.A.loc, tmp.inds.A.type, tmp.inds.B.loc, tmp.inds.B.type)
+  # so then the vertices
+  vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), tmp.inds.hide), ]
+  # hide sole vertices
+  if (hide.sole.vertices == TRUE) {
+    tmp.edge.points <- unique(c(edges.infos[, "from"], edges.infos[, "to"]))
+    tmp.UID.keep <- intersect(vertices.infos$UID, tmp.edge.points)
+    vertices.infos <- vertices.infos[which(vertices.infos[, "UID"] %in% tmp.UID.keep), ]
+  }
+  ## merge cytoplasm locations
+  # A
+  tmp.inds.A.cyto.locs <- intersect(which(vertices.infos$ClusterName == act.A.clustername), 
+    which(vertices.infos$Location %in% pred.loc.common.A))
+  tmp.cor.A.cyto.gnames <- vertices.infos[tmp.inds.A.cyto.locs, "GeneName"]
+  tmp.inds.A.cyto.list <- tapply(tmp.inds.A.cyto.locs, tmp.cor.A.cyto.gnames, function(x) { x })
+  tmp.inds.A.cyto.getall <- as.integer(unlist(tmp.inds.A.cyto.list))
+  tmp.inds.A.cyto.reserve <- as.integer(unlist(lapply(tmp.inds.A.cyto.list, function(x) { x[[1]] })))
+  vertices.infos$Location[tmp.inds.A.cyto.reserve] <- rep("Cytoplasm", times = length(tmp.inds.A.cyto.reserve))
+  vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), setdiff(tmp.inds.A.cyto.getall, tmp.inds.A.cyto.reserve)), ]
+  # B
+  tmp.inds.B.cyto.locs <- intersect(which(vertices.infos$ClusterName == act.B.clustername), 
+    which(vertices.infos$Location %in% pred.loc.common.B))
+  tmp.cor.B.cyto.gnames <- vertices.infos[tmp.inds.B.cyto.locs, "GeneName"]
+  tmp.inds.B.cyto.list <- tapply(tmp.inds.B.cyto.locs, tmp.cor.B.cyto.gnames, function(x) { x })
+  tmp.inds.B.cyto.getall <- as.integer(unlist(tmp.inds.B.cyto.list))
+  tmp.inds.B.cyto.reserve <- as.integer(unlist(lapply(tmp.inds.B.cyto.list, function(x) { x[[1]] })))
+  vertices.infos$Location[tmp.inds.B.cyto.reserve] <- rep("Cytoplasm", times = length(tmp.inds.B.cyto.reserve))
+  vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), setdiff(tmp.inds.B.cyto.getall, tmp.inds.B.cyto.reserve)), ]
+  # check if no edges left
+  tmp.is.A <- which(vertices.infos$ClusterName == act.A.clustername)
+  tmp.is.B <- which(vertices.infos$ClusterName == act.B.clustername)
+  if (length(tmp.is.A) == 0 || length(tmp.is.B) == 0) {
+    stop("Hide too much vertices to be NO available edges at all.")
+  }
+  vertices.infos$UID <- seq_len(nrow(vertices.infos))
+  inds.part.new.id.from <- match(edges.infos[, "from"], rownames(vertices.infos))
+  inds.part.new.id.to   <- match(edges.infos[, "to"], rownames(vertices.infos))
+  edges.infos[, "from"] <- vertices.infos$UID[inds.part.new.id.from]
+  edges.infos[, "to"] <- vertices.infos$UID[inds.part.new.id.to]
+  # remove NAs
+  edges.infos <- edges.infos[intersect(which(!is.na(edges.infos[, "from"])), which(!is.na(edges.infos[, "to"]))), ]
+  rownames(vertices.infos) <- NULL  # make rownames be equal to UID
+  # set the apx* vars
+  tmp.inds.A.apx.types <- which(vertices.apx.type.A[, "GeneName"] %in% vertices.infos[which(vertices.infos$ClusterName == act.A.clustername), "GeneName"])
+  vertices.apx.type.A <- vertices.apx.type.A[tmp.inds.A.apx.types, ]
+  tmp.inds.B.apx.types <- which(vertices.apx.type.B[, "GeneName"] %in% vertices.infos[which(vertices.infos$ClusterName == act.B.clustername), "GeneName"])
+  vertices.apx.type.B <- vertices.apx.type.B[tmp.inds.B.apx.types, ]
+
+  ## specifiy locations when ploting
+  ## A
+  tmp.inds.is.A <- which(vertices.infos$ClusterName == act.A.clustername)
+  # locations
+  this.inds.A.pmem <- intersect(which(vertices.infos$Location == "Plasma Membrane"), tmp.inds.is.A)
+  this.inds.A.exm <- intersect(which(vertices.infos$Location == "Extracellular Region"), tmp.inds.is.A)
+  this.inds.A.other <- intersect(which(vertices.infos$Location == "Other"), tmp.inds.is.A)
+  this.inds.A.nucleus <- intersect(which(vertices.infos$Location == "Nucleus"), tmp.inds.is.A)
+  this.inds.A.common <- lapply(pred.loc.common.A, 
+    inds.is.A = tmp.inds.is.A, vertices.infos = vertices.infos,
+    function(x, inds.is.A, vertices.infos) {
+      intersect(which(vertices.infos$Location == x), inds.is.A)
+    })
+  this.inds.A.common <- as.integer(unlist(this.inds.A.common))  # all are in Cytoplasm
+  ## B
+  tmp.inds.is.B <- which(vertices.infos$ClusterName == act.B.clustername)
+  # locations
+  this.inds.B.pmem <- intersect(which(vertices.infos$Location == "Plasma Membrane"), tmp.inds.is.B)
+  this.inds.B.exm <- intersect(which(vertices.infos$Location == "Extracellular Region"), tmp.inds.is.B)
+  this.inds.B.other <- intersect(which(vertices.infos$Location == "Other"), tmp.inds.is.B)
+  this.inds.B.nucleus <- intersect(which(vertices.infos$Location == "Nucleus"), tmp.inds.is.B)
+  this.inds.B.common <- lapply(pred.loc.common.B, 
+    inds.is.B = tmp.inds.is.B, vertices.infos = vertices.infos,
+    function(x, inds.is.B, vertices.infos) {
+      intersect(which(vertices.infos$Location == x), inds.is.B)
+    })
+  this.inds.B.common <- as.integer(unlist(this.inds.B.common))  # all are in Cytoplasm
+
+  ## calculate every area with its plotting parameters
+  # basic metric
+  # nucleus R: 5, cell-partial R: 10, co-centeralized
+  # cell-extra(near 0,0) L: 2, PM L-x-shift(between 2 membrane): 1, PM L-x-len: 2, PM L-y-len: 20
+  # outside-ECM L-x: 8
+  # outside-OTHER (full align with cell in x axis) L-x-len: 22, L-y-len: 5
+  # [TODO] if use program to automatically calculate the most suitable base.gen.it (like area.extend.times)
+  # 
+  # base.gen.it <- 1
+  # 
+  tmp.start.point <- c(0, 0)
+  basep.ecm.x <- 8; basep.PM.x.shift <- 1; basep.PM.x.len <- 2; basep.cell.extra <- 2; 
+  basep.cellp.radius <- 10; basep.nucleus.radius <- 4; 
+  basep.other.cellp.dist.in.y <- 1; basep.other.y.len <- 3;
+  basep.label.cluster.extra.move.y <- 0.5
+  # apply area.extend.times
+  basep.ecm.x <- basep.ecm.x * area.extend.times; basep.PM.x.shift <- basep.PM.x.shift * area.extend.times;
+  basep.PM.x.len <- basep.PM.x.len * area.extend.times; basep.cell.extra <- basep.cell.extra * area.extend.times;
+  #
+  basep.cellp.radius <- basep.cellp.radius * area.extend.times; basep.nucleus.radius <- basep.nucleus.radius * area.extend.times;
+  basep.other.cellp.dist.in.y <- basep.other.cellp.dist.in.y * area.extend.times; basep.other.y.len <- basep.other.y.len * area.extend.times
+  #
+  basep.label.cluster.extra.move.y <- basep.label.cluster.extra.move.y * area.extend.times
+  ### use base to calc every stick point and center
+  ## stick point (in +X direction, it always goes from left-corner, left-top, right-top, right-corner
+  ## or goes clockwise)
+  # ECM
+  this.ecm.stick.x <- c(0, 0, basep.ecm.x, basep.ecm.x)
+  this.ecm.stick.y <- basep.cellp.radius * c(-1, 1, 1, -1)
+  # PM (use circle coords but has 4 stick points like rect)
+  this.pm.stick.x <- basep.ecm.x + basep.PM.x.len + c(rep(0, times = 2), rep(basep.PM.x.shift, times = 2))
+  this.pm.stick.y <- basep.cellp.radius * c(-1, 1, 1, -1)
+  # --- some sum ---
+  tmp.start.cell.p.x <- basep.ecm.x + basep.PM.x.len + basep.PM.x.shift
+  # CELL [Exception:goes from left-top, clockwise]
+  # (in +X direction, it leaves out the left line of the rect)
+  this.cell.path.x <- c(tmp.start.cell.p.x, tmp.start.cell.p.x + 2 * basep.cellp.radius, tmp.start.cell.p.x + 2 * basep.cellp.radius, tmp.start.cell.p.x)
+  this.cell.path.y <- basep.cellp.radius * c(1, 1, -1, -1)
+  # NUCLEUS
+  # Nucleus is circle, no stick x y
+  # OTHER
+  this.other.stick.x <- this.cell.path.x  # align with cell, so the stick.y gets slightly different to the rest
+  this.other.stick.y <- 0 - basep.cellp.radius - basep.other.cellp.dist.in.y - basep.other.y.len / 2 + basep.other.y.len / 2 * c(1, 1, -1, -1)
+
+  ## center
+  this.ecm.cxy <- c(basep.ecm.x / 2, 0)
+  # PM needs no center to scatter
+  this.cell.cxy <- c(tmp.start.cell.p.x + basep.cell.extra + basep.cellp.radius - basep.cell.extra, 0)
+  this.nucleus.cxy <- this.cell.cxy
+  this.other.cxy <- c(this.cell.cxy[1] - basep.cell.extra / 2, 0 - basep.cellp.radius - basep.other.cellp.dist.in.y - basep.other.y.len / 2)
+
+  ## scatter radius
+  this.ecm.sct.rad <- min(basep.ecm.x / 2, basep.cellp.radius)
+  # PM doesn't scatter
+  this.cell.sct.rad.outer <- basep.cellp.radius
+  this.cell.sct.rad.inner <- basep.nucleus.radius  # as use ring scatter method
+  this.nucleus.sct.rad <- basep.nucleus.radius
+  this.other.sct.rad <- min(basep.cell.extra + 2 * basep.cellp.radius, basep.other.y.len) / 2
+
+  ## scatter transform parameter
+  this.ecm.trans <- c(basep.ecm.x / 2, basep.cellp.radius) / this.ecm.sct.rad
+  # PM doesn't scatter
+  # CELL use ring method, no need to tranform
+  this.nucleus.trans <- c(basep.nucleus.radius, basep.nucleus.radius) / this.nucleus.sct.rad
+  this.other.trans <- c(basep.cell.extra + 2 * basep.cellp.radius, basep.other.y.len) / 2 / this.other.sct.rad
+
+  ## rest things
+  # PM curves
+  tmp.ref.near.c <- c(basep.ecm.x + basep.PM.x.len, 0)
+  tmp.ref.away.c <- c(basep.ecm.x + basep.PM.x.len + basep.PM.x.shift, 0)
+  tmp.uc.near.c <- Inside.GetCoords.ZeroCircle(center.x = tmp.ref.near.c[1], center.y = tmp.ref.near.c[2], radius = basep.PM.x.len, gradient.degree = 1)
+  tmp.uc.away.c <- Inside.GetCoords.ZeroCircle(center.x = tmp.ref.away.c[1], center.y = tmp.ref.away.c[2], radius = basep.PM.x.len, gradient.degree = 1)
+  #- near.c
+  this.PM.curve.near.c <- Inside.GetCoords.PartialCircle(tmp.uc.near.c, start.degree = 90, end.degree = 270, gradient.degree = 1)
+  this.PM.curve.near.c <- Inside.TransCoords.Enlarge.Rotate(this.PM.curve.near.c, c(basep.PM.x.len, basep.cellp.radius) / basep.PM.x.len, 0, 
+    enlarge.xy.ref = tmp.ref.near.c)
+  this.PM.curve.near.c[, 1] <- rev(this.PM.curve.near.c[, 1])  # x in near.c
+  this.PM.curve.near.c[, 2] <- rev(this.PM.curve.near.c[, 2])  # y in near.c
+  #- away.c
+  this.PM.curve.away.c <- Inside.GetCoords.PartialCircle(tmp.uc.away.c, start.degree = 90, end.degree = 270, gradient.degree = 1)
+  this.PM.curve.away.c <- Inside.TransCoords.Enlarge.Rotate(this.PM.curve.away.c, c(basep.PM.x.len, basep.cellp.radius) / basep.PM.x.len, 0, 
+    enlarge.xy.ref = tmp.ref.away.c)
+  # label (on cluster)
+  this.label.cluster.dxy <- c(this.cell.cxy[1], basep.cellp.radius + basep.label.cluster.extra.move.y)
+  # vertical split line
+  this.vertical.line.extra.mul.to.cellp.radius <- 0.12
+  tmp.vertical.y.val <- basep.cellp.radius * (1 + this.vertical.line.extra.mul.to.cellp.radius)
+  this.vertical.plot.data <- data.frame(x = rep(0, times = 2), y = tmp.vertical.y.val * c(-1, 1))
+
+  ### BASE plot
+  this.base.graph <- ggplot()
+  # coords of plotting compts (must have)
+  # comp A in -x axis
+  # CELL path
+  this.plot.A.cell.path <- data.frame(x = (-1) * this.cell.path.x, y = this.cell.path.y)
+  # CELL base
+  this.plot.A.cell.base <- data.frame(x = (-1) * c(this.pm.stick.x[4], this.PM.curve.away.c$x.cc, this.pm.stick.x[3], this.cell.path.x[2:3]), 
+    y = c(this.pm.stick.y[4], this.PM.curve.away.c$y.cc, this.pm.stick.y[3], this.cell.path.y[2:3]))
+  # NUCLEUS
+  this.plot.A.nucleus <- Inside.GetCoords.ZeroCircle(center.x = (-1) * this.nucleus.cxy[1], center.y = this.nucleus.cxy[2], radius = this.nucleus.sct.rad)
+  # PM get special for add 2 curve between stick points
+  this.plot.A.pmem <- data.frame(x = (-1) * c(this.pm.stick.x[1], this.PM.curve.near.c$x.cc, this.pm.stick.x[2:3], this.PM.curve.away.c$x.cc, this.pm.stick.x[4]),
+    y = c(this.pm.stick.y[1], this.PM.curve.near.c$y.cc, this.pm.stick.y[2:3], this.PM.curve.away.c$y.cc, this.pm.stick.y[4]))
+  # ECM not drawn
+  
+  # comp B in +x axis
+  # CELL path
+  this.plot.B.cell.path <- data.frame(x = this.cell.path.x, y = this.cell.path.y)
+  # CELL base
+  this.plot.B.cell.base <- data.frame(x = c(this.pm.stick.x[4], this.PM.curve.away.c$x.cc, this.pm.stick.x[3], this.cell.path.x[2:3]), 
+    y = c(this.pm.stick.y[4], this.PM.curve.away.c$y.cc, this.pm.stick.y[3], this.cell.path.y[2:3]))
+  # NUCLEUS
+  this.plot.B.nucleus <- Inside.GetCoords.ZeroCircle(center.x = this.nucleus.cxy[1], center.y = this.nucleus.cxy[2], radius = this.nucleus.sct.rad)
+  # PM get special for add 2 curve between stick points
+  this.plot.B.pmem <- data.frame(x = c(this.pm.stick.x[1], this.PM.curve.near.c$x.cc, this.pm.stick.x[2:3], this.PM.curve.away.c$x.cc, this.pm.stick.x[4]), 
+    y = c(this.pm.stick.y[1], this.PM.curve.near.c$y.cc, this.pm.stick.y[2:3], this.PM.curve.away.c$y.cc, this.pm.stick.y[4]))
+  # ECM not drawn
+
+  # [HIDE] area OTHER is plotted optionally
+  # this.plot.A.other <- data.frame(x = (-1) * this.other.stick.x, y = this.other.stick.y)
+  # this.plot.B.other <- data.frame(x = this.other.stick.x, y = this.other.stick.y)
+
+  ## plot the base
+  #tmpb.other.fill <- "white"; tmpb.other.colour <- "black"; tmpb.other.linetype <- "dotted"
+  #tmpb.cellx.colour <- "black"; tmpb.cellx.linetype <- "solid"
+  tmpb.cellbase.fill <- "#F8F5FA"; tmpb.cellbase.alpha <- 1; tmpb.cellbase.colour <- "#F8F5FA"; tmpb.cellbase.linetype <- "solid"
+  tmpb.pmemx.fill <- "#B3AFC5"; tmpb.pmemx.alpha <- 1; tmpb.pmemx.colour <- "#B3AFC5"; tmpb.pmemx.linetype <- "solid"
+  tmpb.nucleus.fill <- "#9A92AE"; tmpb.nucleus.alpha <- 1; tmpb.nucleus.colour <- "#9A92AE"; tmpb.nucleus.linetype <- "solid"
+  # extra: vertical split line
+  tmpex.vline.colour <- "lightgrey"; tmpex.vline.linetype <- "dashed"
+  this.graph.raw.base <- this.base.graph +
+      # [HIDE] other
+      #geom_polygon(data = this.plot.A.other, aes(x, y), 
+      #  fill = tmpb.other.fill, colour = tmpb.other.colour, linetype = tmpb.other.linetype) +
+      geom_polygon(data = this.plot.A.cell.base, aes(x, y),
+        fill = tmpb.cellbase.fill, alpha = tmpb.cellbase.alpha, colour = tmpb.cellbase.colour, linetype = tmpb.cellbase.linetype) + 
+      #geom_path(data = this.plot.A.cell.path, aes(x, y), 
+      #  colour = tmpb.cellx.colour, linetype = tmpb.cellx.linetype) +
+      geom_polygon(data = this.plot.A.pmem, aes(x, y), 
+        fill = tmpb.pmemx.fill, alpha = tmpb.pmemx.alpha, colour = tmpb.pmemx.colour, linetype = tmpb.pmemx.linetype) + 
+      geom_polygon(data = this.plot.A.nucleus, aes(x = x.cc, y = y.cc),
+        fill = tmpb.nucleus.fill, alpha = tmpb.nucleus.alpha, colour = tmpb.nucleus.colour, linetype = tmpb.nucleus.linetype) + 
+      # [HIDE] other
+      #geom_polygon(data = this.plot.B.other, aes(x, y), 
+      #  fill = tmpb.other.fill, colour = tmpb.other.colour, linetype = tmpb.other.linetype) +
+      geom_polygon(data = this.plot.B.cell.base, aes(x, y),
+        fill = tmpb.cellbase.fill, alpha = tmpb.cellbase.alpha, colour = tmpb.cellbase.colour, linetype = tmpb.cellbase.linetype) + 
+      #geom_path(data = this.plot.B.cell.path, aes(x, y),
+      #  colour = tmpb.cellx.colour, linetype = tmpb.cellx.linetype) +
+      geom_polygon(data = this.plot.B.pmem, aes(x, y), 
+        fill = tmpb.pmemx.fill, alpha = tmpb.pmemx.alpha, colour = tmpb.pmemx.colour, linetype = tmpb.pmemx.linetype) + 
+      geom_polygon(data = this.plot.B.nucleus, aes(x = x.cc, y = y.cc), 
+        fill = tmpb.nucleus.fill, alpha = tmpb.nucleus.alpha, colour = tmpb.nucleus.colour, linetype = tmpb.nucleus.linetype) + 
+      # extra: vertical split line
+      geom_path(data = this.vertical.plot.data, aes(x, y), 
+        colour = tmpex.vline.colour, linetype = tmpex.vline.linetype)
+
+  # label the cluster
+  this.label.clusters <- data.frame(
+    x.lc = c(-1 * this.label.cluster.dxy[1], this.label.cluster.dxy[1]), 
+    y.lc = rep(this.label.cluster.dxy[2], times = 2),
+    r.label.c = c(act.A.clustername, act.B.clustername))
+  this.graph.raw.base <- this.graph.raw.base + 
+      geom_text(data = this.label.clusters, 
+        mapping = aes(x = x.lc, y = y.lc, label = r.label.c),
+        colour = "black", size = 4, 
+        vjust = 0, hjust = 0.5)
+
+
+  ### plot points
+  this.graph.add.ps <- this.graph.raw.base
+  this.vx.ext.infos <- data.frame()
+  ## plot Plasma Membrane
+  # fetch available coords of points
+  tmp.pmem.y.lim <- c(this.pm.stick.y[1], this.pm.stick.y[2])
+  tmp.pmem.seeker <- this.pm.stick.y[1]
+  tmp.pmem.inds.seek <- integer()
+  for (ip in seq_along(this.PM.curve.near.c$y.cc)) {
+    tmp.it <- this.PM.curve.near.c$y.cc[ip]
+    if (tmp.it < tmp.pmem.seeker) {
+      next
+    } else {
+      tmp.pmem.inds.seek <- c(tmp.pmem.inds.seek, ip)
+      tmp.pmem.seeker <- tmp.pmem.seeker + expand.PM.gap.len
+    }
+  }
+  # remove the first and last few percentage to avoid edges effect, here remove 1 more in last direction as the following algorithm 
+  # uses biased 1:max, which got 0 position lacked, so 1 more removed from last ones
+  tmp.pmem.inds.seek <- tmp.pmem.inds.seek[setdiff(seq_along(tmp.pmem.inds.seek), c(1, (length(tmp.pmem.inds.seek) - 1):length(tmp.pmem.inds.seek)))]
+  if (length(tmp.pmem.inds.seek) == 0) {
+    stop("Error: could not allocate even 1 gene as setting too big gap for placing genes in PM.")
+  }
+  if (length(tmp.pmem.inds.seek) < max(this.inds.A.pmem, this.inds.B.pmem)) {
+    stop("Cannot be located inside PM! Please increases the area.extend.times by multiply or increment it by 10.")
+  }
+  this.pmem.all.avp <- data.frame(gx = this.PM.curve.near.c$x.cc[tmp.pmem.inds.seek], gy = this.PM.curve.near.c$y.cc[tmp.pmem.inds.seek])# available in +x
+  ## to plot
+  # A 
+  this.pmem.A.vx.ext <- vertices.infos[this.inds.A.pmem, ]
+  this.pmem.A.vx.ext[, c("gx", "gy")] <- switch(locate.PM.method, 
+    "random" = this.pmem.all.avp[sample(seq_len(nrow(this.pmem.all.avp)), length(this.inds.A.pmem)), c("gx", "gy")],
+    "uniform" = this.pmem.all.avp[floor((nrow(this.pmem.all.avp) / length(this.inds.A.pmem)) * seq_along(this.inds.A.pmem)), c("gx", "gy")], 
+    stop("Undefined method, only `random` and `uniform` are allowed!"))
+  this.pmem.A.vx.ext$gx <- (-1) * this.pmem.A.vx.ext$gx
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.pmem.A.vx.ext)
+  # B
+  this.pmem.B.vx.ext <- vertices.infos[this.inds.B.pmem, ]
+  this.pmem.B.vx.ext[, c("gx", "gy")] <- switch(locate.PM.method, 
+    "random" = this.pmem.all.avp[sample(seq_len(nrow(this.pmem.all.avp)), length(this.inds.B.pmem)), c("gx", "gy")],
+    "uniform" = this.pmem.all.avp[floor((nrow(this.pmem.all.avp) / length(this.inds.B.pmem)) * seq_along(this.inds.B.pmem)), c("gx", "gy")], 
+    stop("Undefined method, only `random` and `uniform` are allowed!"))
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.pmem.B.vx.ext)
+
+  ## plot Extracellular Region
+  # A
+  this.exm.A.ctp.xy <- c(-1 * this.ecm.cxy[1], this.ecm.cxy[2])
+  this.exm.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.exm, ], 
+    expand.outside.cut.percent.list$ECM, this.exm.A.ctp.xy, this.ecm.sct.rad, 
+    radius.gap.factor = expand.gap.radius.list$ECM, 
+    sample.shift.degree = expand.shift.degree.list$ECM, 
+    sample.gap.degree = expand.gap.degree.list$ECM, 
+    density.half.near = expand.center.density.list$ECM, 
+    coords.xy.colnames = c("gx", "gy"))
+  this.exm.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.exm.A.vx.ext[, c("gx", "gy")], 
+    enlarge.xy.times = this.ecm.trans, rotate.degree = 0, 
+    enlarge.xy.ref = this.exm.A.ctp.xy, rotate.xy.ref = this.exm.A.ctp.xy)
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.exm.A.vx.ext)
+  # B
+  this.exm.B.ctp.xy <- this.ecm.cxy
+  this.exm.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.exm, ], 
+    expand.outside.cut.percent.list$ECM, this.exm.B.ctp.xy, this.ecm.sct.rad, 
+    radius.gap.factor = expand.gap.radius.list$ECM, 
+    sample.shift.degree = expand.shift.degree.list$ECM, 
+    sample.gap.degree = expand.gap.degree.list$ECM, 
+    density.half.near = expand.center.density.list$ECM,
+    coords.xy.colnames = c("gx", "gy"))
+  this.exm.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.exm.B.vx.ext[, c("gx", "gy")], 
+    enlarge.xy.times = this.ecm.trans, rotate.degree = 0, 
+    enlarge.xy.ref = this.exm.B.ctp.xy, rotate.xy.ref = this.exm.B.ctp.xy)
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.exm.B.vx.ext)
+
+  ## plot Nucleus
+  # A
+  this.nucleus.A.ctp.xy <- c(-1 * this.nucleus.cxy[1], this.nucleus.cxy[2])
+  this.nucleus.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.nucleus, ], 
+    expand.outside.cut.percent.list$NC, this.nucleus.A.ctp.xy, this.nucleus.sct.rad, 
+    radius.gap.factor = expand.gap.radius.list$NC, 
+    sample.shift.degree = expand.shift.degree.list$NC, 
+    sample.gap.degree = expand.gap.degree.list$NC, 
+    density.half.near = expand.center.density.list$NC, 
+    coords.xy.colnames = c("gx", "gy"))
+  this.nucleus.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.nucleus.A.vx.ext[, c("gx", "gy")], 
+    enlarge.xy.times = this.nucleus.trans, rotate.degree = 0, 
+    enlarge.xy.ref = this.nucleus.A.ctp.xy, rotate.xy.ref = this.nucleus.A.ctp.xy)
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.nucleus.A.vx.ext)
+  # B
+  this.nucleus.B.ctp.xy <- this.nucleus.cxy
+  this.nucleus.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.nucleus, ], 
+    expand.outside.cut.percent.list$NC, this.nucleus.B.ctp.xy, this.nucleus.sct.rad, 
+    radius.gap.factor = expand.gap.radius.list$NC, 
+    sample.shift.degree = expand.shift.degree.list$NC, 
+    sample.gap.degree = expand.gap.degree.list$NC, 
+    density.half.near = expand.center.density.list$NC, 
+    coords.xy.colnames = c("gx", "gy"))
+  this.nucleus.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.nucleus.B.vx.ext[, c("gx", "gy")], 
+    enlarge.xy.times = this.nucleus.trans, rotate.degree = 0, 
+    enlarge.xy.ref = this.nucleus.B.ctp.xy, rotate.xy.ref = this.nucleus.B.ctp.xy)
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.nucleus.B.vx.ext)
+  
+  ## plot Other [HIDE]
+  ## A
+  #this.other.A.ctp.xy <- c(-1 * this.other.cxy[1], this.other.cxy[2])
+  #this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], 
+  #  expand.outside.cut.percent.list$OTHER, this.other.A.ctp.xy, this.other.sct.rad, 
+  #  radius.gap.factor = expand.gap.radius.list$OTHER, 
+  #  sample.shift.degree = expand.shift.degree.list$OTHER, 
+  #  sample.gap.degree = expand.gap.degree.list$OTHER, 
+  #  density.half.near = expand.center.density.list$OTHER, 
+  #  coords.xy.colnames = c("gx", "gy"))
+  #this.other.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.A.vx.ext[, c("gx", "gy")], 
+  #  enlarge.xy.times = this.other.trans, rotate.degree = 0, 
+  #  enlarge.xy.ref = this.other.A.ctp.xy, rotate.xy.ref = this.other.A.ctp.xy)
+  #this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.A.vx.ext)
+  ## B
+  #this.other.B.ctp.xy <- this.other.cxy
+  #this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], 
+  #  expand.outside.cut.percent.list$OTHER, this.other.B.ctp.xy, this.other.sct.rad, 
+  #  radius.gap.factor = expand.gap.radius.list$OTHER, 
+  #  sample.shift.degree = expand.shift.degree.list$OTHER, 
+  #  sample.gap.degree = expand.gap.degree.list$OTHER, 
+  #  density.half.near = expand.center.density.list$OTHER, 
+  #  coords.xy.colnames = c("gx", "gy"))
+  #this.other.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.B.vx.ext[, c("gx", "gy")], 
+  #  enlarge.xy.times = this.other.trans, rotate.degree = 0, 
+  #  enlarge.xy.ref = this.other.B.ctp.xy, rotate.xy.ref = this.other.B.ctp.xy)
+  #this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.B.vx.ext)
+
+  ## plot Cytoplasm
+  # A
+  this.cyto.A.ctp.xy <- c(-1 * this.cell.cxy[1], this.cell.cxy[2])
+  this.cyto.A.vx.ext <- ScatterRing.Plot(vertices.infos[this.inds.A.common, ], 
+    this.cyto.A.ctp.xy, this.cell.sct.rad.outer, 
+    ring.radius.range.percent = c(this.cell.sct.rad.inner, this.cell.sct.rad.outer) / this.cell.sct.rad.outer,
+    radius.gap.factor = expand.gap.radius.list$CTP, 
+    sample.shift.degree = expand.shift.degree.list$CTP, 
+    sample.gap.degree = expand.gap.degree.list$CTP, 
+    coords.xy.colnames = c("gx", "gy"))
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.cyto.A.vx.ext)
+  # B
+  this.cyto.B.ctp.xy <- this.cell.cxy
+  this.cyto.B.vx.ext <- ScatterRing.Plot(vertices.infos[this.inds.B.common, ], 
+    this.cyto.B.ctp.xy, this.cell.sct.rad.outer, 
+    ring.radius.range.percent = c(this.cell.sct.rad.inner, this.cell.sct.rad.outer) / this.cell.sct.rad.outer, 
+    radius.gap.factor = expand.gap.radius.list$CTP, 
+    sample.shift.degree = expand.shift.degree.list$CTP, 
+    sample.gap.degree = expand.gap.degree.list$CTP, 
+    coords.xy.colnames = c("gx", "gy"))
+  this.vx.ext.infos <- rbind(this.vx.ext.infos, this.cyto.B.vx.ext)  
+
+
+  ## set points size range by LogFC
+  tmp.linear.size <- (nodes.size.range[2] - nodes.size.range[1]) / (max(abs(this.vx.ext.infos$LogFC)) - min(abs(this.vx.ext.infos$LogFC)))
+  this.vx.ext.infos$nodes.size <- (abs(this.vx.ext.infos$LogFC) - min(abs(this.vx.ext.infos$LogFC))) * tmp.linear.size + nodes.size.range[1]
+  
+  ## add nodes fill by LogFC UP (>0) or DN (<0)
+  this.vx.ext.infos$UPDN <- as.character(unlist(lapply(this.vx.ext.infos$LogFC, function(x) {
+    ifelse(x >= 0, legend.show.fill.updn.label[1], legend.show.fill.updn.label[2])
+    })))
+  this.updn.fill <- nodes.fill.updn
+  names(this.updn.fill) <- legend.show.fill.updn.label[1:2]
+
+  # -------------
+  this.graph.gplot <- this.graph.add.ps
+  ## plot vertices
+  this.graph.gplot <- this.graph.gplot +
+    geom_point(data = this.vx.ext.infos,
+      mapping = aes(x = gx, y = gy, fill = UPDN, size = nodes.size),
+      colour = nodes.colour,
+      alpha = nodes.alpha,
+      shape = nodes.shape,
+      stroke = nodes.stroke) + 
+    scale_fill_manual(name = "Exprs Change", values = this.updn.fill, breaks = names(this.updn.fill), aesthetics = "fill", 
+      guide = guide_legend(override.aes = list(size = legend.show.fill.override.point.size))) +  
+    scale_size_identity(name = "LogFC", 
+      guide = guide_legend(override.aes = list(colour = legend.show.size.override.colour, stroke = legend.show.size.override.stroke)))
+
+  ## split the label function to be cluster specific
+  # A
+  tmp.plot.label.A <- geom_label(data = this.vx.ext.infos[which(this.vx.ext.infos$ClusterName == act.A.clustername), ],
+      mapping = aes(x = gx, y = gy, label = GeneName),
+      size = label.size.nodes[[1]],
+      colour = label.colour.nodes[[1]],
+      vjust = label.vjust[[1]], hjust = label.hjust[[1]], 
+      nudge_x = label.nudge.x[[1]], nudge_y = label.nudge.y[[1]], 
+      label.padding = label.padding.itself[[1]],
+      label.size = label.size.itself[[1]])
+  # B
+  tmp.plot.label.B <- geom_label(data = this.vx.ext.infos[which(this.vx.ext.infos$ClusterName == act.B.clustername), ],
+      mapping = aes(x = gx, y = gy, label = GeneName),
+      size = label.size.nodes[[2]],
+      colour = label.colour.nodes[[2]],
+      vjust = label.vjust[[2]], hjust = label.hjust[[2]], 
+      nudge_x = label.nudge.x[[2]], nudge_y = label.nudge.y[[2]], 
+      label.padding = label.padding.itself[[2]],
+      label.size = label.size.itself[[2]]) 
+  #
+  this.graph.gplot <- this.graph.gplot + list(tmp.plot.label.A, tmp.plot.label.B)
+
+  # -------------
+  ## plot edges
+  inds.e.from.match <- match(edges.infos$from, this.vx.ext.infos$UID)
+  inds.e.to.match <- match(edges.infos$to, this.vx.ext.infos$UID)
+  edges.infos[, c("from.gx", "from.gy")] <- this.vx.ext.infos[inds.e.from.match, c("gx", "gy")]
+  edges.infos[, c("to.gx", "to.gy")] <- this.vx.ext.infos[inds.e.to.match, c("gx", "gy")]
+  #
+  pred.mode <- kpred.mode
+  pred.action.effect <- kpred.action.effect
+  show.mode.val <- levels(factor(edges.infos$mode))
+  show.action.effect.val <- levels(factor(edges.infos$action.effect))
+
+  # draw edges (remove colour edges)
+  names(link.colour) <- pred.action.effect  # for aesthetics
+
+  draw.add.comps.list <- list()
+  # use reverse order to plot positive & negative above the unspecified or undirected
+  for (j in rev(1:length(pred.action.effect))) {
+    this.edges.infos <- edges.infos[which(edges.infos[, "action.effect"] == pred.action.effect[j]), ]
+    for (i in 1:length(pred.mode)) {
+      if (!(pred.action.effect[j] %in% show.action.effect.val)) {
+        break
+      }
+      inds.this.mode <- which(this.edges.infos[, "mode"] == pred.mode[i])
+      draw.add.comps.list <- append(draw.add.comps.list, 
+        geom_segment(mapping = aes(x = from.gx, y = from.gy, xend = to.gx, yend = to.gy, colour = action.effect),
+          data = this.edges.infos[inds.this.mode, ],
+          alpha = link.alpha, size = link.size,
+          arrow = arrow(angle = link.arrow.angle, length = unit(link.arrow.length, "pt"), type = link.arrow.type)
+          )
+      )
+    }
+  }
+  draw.add.comps.list <- append(draw.add.comps.list, 
+    scale_colour_manual(name = "Action.Effects", values = link.colour, breaks = names(link.colour), aesthetics = "colour")
+  )
+  this.graph.gplot <- this.graph.gplot + draw.add.comps.list
+
+  # other settings
+  this.graph.gplot <- this.graph.gplot + 
+    scale_x_continuous(breaks = NULL) +
+    scale_y_continuous(breaks = NULL) +
+    labs(x = NULL, y = NULL) +
+    theme(panel.background = element_blank())
+
+  # table exported columns
+  tmp.vertices.colnames <- setdiff(colnames(this.vx.ext.infos), c("gx", "gy", "nodes.size"))
+  tmp.edges.colnames <- setdiff(colnames(edges.infos), c("from.gx", "from.gy", "to.gx", "to.gy"))
+
+  ## res
+  list(plot = this.graph.gplot, 
+    table = list(vertices.infos = this.vx.ext.infos[, tmp.vertices.colnames], 
+                 edges.infos = edges.infos[, tmp.edges.colnames]))
+}
+
+
+
+
+
+#' Draw CellPlot for one pair of clusters
+#' 
+#' @description
+#' This function analyzes the interaction pairs between two target clusters, and gives one vivid two-cell
+#' graph and several result tables in the return values.
+#'
+#' @inheritParams Inside.DummyVEinfos
+#' @param area.extend.times Numeric. Its default value is 10 which can handle most cases. If a warning given like "Cannot be located inside!" or something else, 
+#' one should change this paramemter to be larger to get all vertices allocated.
+#' @param hide.locations.A Character. It applies extra limitation on the locations of A in gene pairs formatted as A-B.
+#' @param hide.types.A Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.
+#' @param hide.locations.B Character. It applies extra limitation on the locations of B in gene pairs formatted as A-B.
+#' @param hide.types.B Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.
+#' @param hide.sole.vertices Character. It hides sole vertices which have no available edges.
+#' @param expand.gap.radius.list Numeric. It defines the minimum distance between points(genes) for each plotting area.
+#' @param expand.shift.degree.list Numeric. It defines the begin degree that points(genes) are to be drawn. The degree is calculated counter-clockwise.
+#' @param expand.gap.degree.list Numeric. It defines the way that points(genes) arrange. If it is set 180 and shift degree is set 90, then points will be aligned in vertical line. 
+#' If it is set 90 and shift degree is set 0, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
+#' @param expand.center.density.list Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
+#' the center of the area, and lower value means more sparse.
+#' @param expand.outside.cut.percent.list [TODO]
 #' @param nodes.size.range [TODO]
 #' @param nodes.fill [TODO]
 #' @param nodes.colour Character. Colour of nodes.
@@ -204,6 +1007,7 @@ Inside.GetCoords.ZeroCircle <- function(
 #' @param link.arrow.angle Numeric. Angle of link arrow.
 #' @param link.arrow.length Numeric. Length of link arrow.
 #' @param link.arrow.type Character. Type of link arrow, either \code{open} or \code{closed}.
+#' @param caption [TODO]
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
@@ -215,11 +1019,10 @@ Inside.GetCoords.ZeroCircle <- function(
 #'
 #' @import ggplot2
 #' @importFrom dplyr bind_rows
-#' @importFrom cowplot draw_label
 #'
 #' @export
 #'
-GetResult.PlotOnepairClusters.CellPlot <- function(
+GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
   VEinfos,
   area.extend.times = 10, 
   hide.locations.A = NULL,
@@ -232,7 +1035,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   expand.gap.degree.list = list(ECM = 180, PM = 180, CTP = 60, NC = 60, OTHER = 60),
   expand.center.density.list = list(ECM = 0.25, PM = 0.25, CTP = 0.25, NC = 0.25, OTHER = 0.25),
   expand.outside.cut.percent.list = list(ECM = 0.03, PM = 0.03, CTP = 0.03, NC = 0.03, OTHER = 0.03), 
-  nodes.size.range = c(1, 3),  # [TODO] make it change to LogFC
+  nodes.size.range = c(1, 3), 
   nodes.fill = "grey",  # [TODO] make it change to anno.Type. Use NULL as default, inside give the Discrete colour mapping
   nodes.colour = "grey",
   nodes.alpha = 1.0,
@@ -246,7 +1049,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   link.arrow.angle = 20,
   link.arrow.length = 10,
   link.arrow.type = "open",
-  caption  # [TODO] add in right corner [Term annotation] PM: Plasma Membrane, ECR: Extracellular Region, ER: Endoplasmic Reticulum, Golgi: Golgi Apparatus"
+  caption = ""
 ) {
   ## precheck
   # check scatter parameters are correctly settled
@@ -660,6 +1463,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
   }
   # after all regions and their names being settled, get caption drawn
   # [TODO] caption here
+  # add in right corner [Term annotation] PM: Plasma Membrane, ECR: Extracellular Region, ER: Endoplasmic Reticulum, Golgi: Golgi Apparatus"
   
 
   ## set points size range by LogFC
@@ -737,6 +1541,7 @@ GetResult.PlotOnepairClusters.CellPlot <- function(
     table = list(vertices.infos = this.vx.ext.infos[, tmp.vertices.colnames], 
                  edges.infos = edges.infos[, tmp.edges.colnames]))
 }
+
 
 
 

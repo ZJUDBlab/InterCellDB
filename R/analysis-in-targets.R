@@ -205,7 +205,7 @@ GenerateMapDetailOnepairClusters <- function(
   tmp.inds.overlap <- as.integer(unlist(lapply(tmp.overlap, total.list = this.pv.sc.ind.list, function(x, total.list){
     total.list[[x]]
     })))
-  this.pv.pairs <- this.pv.pairs[setdiff(1:nrow(this.pv.pairs), tmp.inds.overlap), ]
+  this.pv.pairs <- this.pv.pairs[setdiff(seq_len(nrow(this.pv.pairs)), tmp.inds.overlap), ]
 
   
   #
