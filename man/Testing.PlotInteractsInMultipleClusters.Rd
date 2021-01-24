@@ -11,7 +11,7 @@ Testing.PlotInteractsInMultipleClusters(
   return.table.vals = FALSE,
   select.interacts = NULL,
   clusters.select.auto = NULL,
-  is.directional = TRUE,
+  direction.A.to.B = TRUE,
   if.ignore.annos = TRUE,
   sel.mode.val = NULL,
   sel.action.effect.val = NULL,
@@ -48,8 +48,11 @@ the direction will be from \code{"ClusterC"} to \code{"ClusterD"}.}
 \item{clusters.select.auto}{Character. If parameter \code{select.interacts} is not specified, it gives all related clusters,
 and all permutation of interacts between these clusters will be used.}
 
-\item{is.directional}{Logic. It is passed to \code{GenerateVEinfos}. If TRUE, it only uses single direction 
-of clusters' interaction, otherwise use the bi-directional.}
+\item{direction.A.to.B}{Logic. this parameter gets 3 options: TRUE, FALSE, NULL. In InterCellDB-defined gene pairs, gene pairs have 2 genes, with 1 named "inter.GeneName.A", 
+and the other named "inter.GeneName.B". As for interactions between specific cluster group like G1~G2, the gene A is expressed by the former, which is G1, and 
+gene B is expressed by the latter, which is G2. So, the 3 options mean: With TRUE, all directional gene pairs 
+that goes from the former cluster to the latter, like A->B or A--|B, will be extracted, but if it is set FALSE, then all directional gene pairs 
+goes the opposite way, which is something like A<--B or A|--B, will be extracted. If NULL is set, then all directional gene pairs will be reserved.}
 
 \item{if.ignore.annos}{Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 be treated as the same, and only one row information will be reserved.}

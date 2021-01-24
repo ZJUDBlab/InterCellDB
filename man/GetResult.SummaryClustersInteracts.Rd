@@ -14,7 +14,7 @@ GetResult.SummaryClustersInteracts(
   cnt.max.limit = NULL,
   cnt.min.limit = NULL,
   hide.cnt.label = FALSE,
-  nodes.size = c(1, 6),
+  nodes.size.range = c(1, 6),
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   nodes.colour.value.seq = c(0, 0.5, 1),
   label.power.options = list(hjust = "middle", vjust = "top", nudge.x = 0, nudge.y =
@@ -45,7 +45,7 @@ which is formatted data about target interaction pairs.}
 
 \item{hide.cnt.label}{Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.}
 
-\item{nodes.size}{Numeric. It specifies the size of the nodes in the graph.}
+\item{nodes.size.range}{Numeric. It specifies the range of sizes of the nodes in the graph.}
 
 \item{nodes.colour.seq}{Character. Given colours will be used to generate colour gradient for plotting.}
 
