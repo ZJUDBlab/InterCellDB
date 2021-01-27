@@ -231,15 +231,14 @@ GenerateMapDetailOnepairClusters <- function(
         score = as.integer(tmp.put.act.infos[, 3]), 
         stringsAsFactors = FALSE
       )
-      ## NOT del.1, anymore.
       # to examine if more specific mode has been recorded, that is the same mode but more detailed action type
-      #inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)
-      #inds.rest <- which(tmp.put.act.infos.df$actionid != 1)
-      #logic.del.1 <- tmp.put.act.infos.df[inds.del.1, "mode"] %in% tmp.put.act.infos.df[inds.rest, "mode"]
-      #tmp.put.act.infos.df.exm <- rbind(tmp.put.act.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
-      #               tmp.put.act.infos.df[inds.rest, ]
-      #             )
-      #tmp.put.act.infos.df.exm <- unique(tmp.put.act.infos.df.exm)
+      inds.del.1 <- which(tmp.put.act.infos.df$actionid == 1)
+      inds.rest <- which(tmp.put.act.infos.df$actionid != 1)
+      logic.del.1 <- tmp.put.act.infos.df[inds.del.1, "mode"] %in% tmp.put.act.infos.df[inds.rest, "mode"]
+      tmp.put.act.infos.df.exm <- rbind(tmp.put.act.infos.df[inds.del.1[which(logic.del.1 == FALSE)], ],
+                     tmp.put.act.infos.df[inds.rest, ]
+                   )
+      tmp.put.act.infos.df.exm <- unique(tmp.put.act.infos.df.exm)
       # tick
       tmp.prog$tick()
       # return
@@ -248,7 +247,7 @@ GenerateMapDetailOnepairClusters <- function(
         act.B.genename = tmp.put.pairs[1, "inter.GeneName.B"],
         act.A.logfc = tmp.put.pairs[1, "inter.LogFC.A"],
         act.B.logfc = tmp.put.pairs[1, "inter.LogFC.B"],
-        action.infos = tmp.put.act.infos.df
+        action.infos = tmp.put.act.infos.df.exm
       )
   })
 

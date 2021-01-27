@@ -23,6 +23,8 @@ DataPrep.RemapClustersMarkers <- function(
   entrez.db <- genes.ref.db$gene.ncbi.db
   map.synonyms.db <- genes.ref.db$gene.synonyms.db
   dup.synonyms.ref <- genes.ref.db$gene.dup.synonyms.db$Synonym.each  # character
+  # force removing factors
+  markers.all.from.Seurat$gene <- as.character(markers.all.from.Seurat$gene)
   # check if some genes are already authorized symbols
   inds.raw.match <- which(markers.all.from.Seurat$gene %in% entrez.db$Symbol_from_nomenclature_authority)
   markers.raw.match   <- markers.all.from.Seurat[inds.raw.match, ]
