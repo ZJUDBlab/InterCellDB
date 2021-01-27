@@ -302,6 +302,7 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param expand.PM.gap.len [TODO]
 #' @param locate.PM.method [TODO]
 #' @param nodes.size.range [TODO]
+#' @param nodes.size.gap [TODO]
 #' @param nodes.fill.updn [TODO]
 #' @param nodes.colour Character. Colour of nodes.
 #' @param nodes.alpha Numeric. Alpha of nodes.
@@ -355,7 +356,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   expand.outside.cut.percent.list = list(ECM = 0.03, NC = 0.03, OTHER = 0.03), 
   expand.PM.gap.len = 2, 
   locate.PM.method = "uniform",  # or "random"
-  nodes.size.range = c(3, 6), 
+  nodes.size.range = c(6, 12), 
+  nodes.size.gap = 1, 
   nodes.fill.updn = c("#D07F86", "#7AAF7A"), 
   nodes.colour = c("lightgrey"), 
   nodes.alpha = 1.0,
@@ -378,7 +380,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   legend.show.fill.updn.label = c("UP", "DN"), 
   legend.show.fill.override.point.size = 3, 
   legend.show.size.override.colour = "black", 
-  legend.show.size.override.stroke = 0.7
+  legend.show.size.override.stroke = 0.7, 
+  legend.show.size.override.size.proportion = 1
 ) {
   ## precheck
   # check scatter parameters are correctly settled
@@ -422,6 +425,10 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
     length(link.colour) <- length(kpred.action.effect)
     link.colour[which(is.na(link.colour))] <- link.colour[which(!is.na(link.colour))][1]  # use 1st one to all other
     warning("Given link colour are shorter than expected, and are automatically extended.")
+  }
+  # check given nodes.size.gap
+  if (length(nodes.size.gap) != 1 || nodes.size.gap > abs(nodes.size.range[2] - nodes.size.range[1])) {
+    stop("Given `nodes.size.gap` is invalid or too large!")
   }
 
   #
@@ -887,8 +894,11 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
       stroke = nodes.stroke) + 
     scale_fill_manual(name = "Exprs Change", values = this.updn.fill, breaks = names(this.updn.fill), aesthetics = "fill", 
       guide = guide_legend(override.aes = list(size = legend.show.fill.override.point.size))) +  
-    scale_size_identity(name = "LogFC", 
-      guide = guide_legend(override.aes = list(colour = legend.show.size.override.colour, stroke = legend.show.size.override.stroke)))
+    scale_size_continuous(name = "LogFC", range = c(nodes.size.range[1], nodes.size.range[2]), 
+      breaks = seq(from = nodes.size.range[1], to = nodes.size.range[2], by = nodes.size.gap), 
+      guide = guide_legend(override.aes = list(colour = legend.show.size.override.colour, 
+        stroke = legend.show.size.override.stroke,
+        size = legend.show.size.override.size.proportion * seq(from = nodes.size.range[1], to = nodes.size.range[2], by = nodes.size.gap))))
 
   ## split the label function to be cluster specific
   # A

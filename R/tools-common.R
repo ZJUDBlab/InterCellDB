@@ -102,9 +102,9 @@ Tool.SplitToGenDataFrame <- function(
 			paste0(tmp.len.splits, collapse = ", "), ".")
 	}
 	tmp.merge.elems <- as.character(unlist(tmp.splits))
-	tmp.merge.base.index <- 1:(length(tmp.merge.elems) / tmp.len.splits)
+	tmp.merge.base.index <- seq_len(length(tmp.merge.elems) / tmp.len.splits)
 	res.prep.list <- list()
-	for (i in 1:tmp.len.splits) {
+	for (i in seq_len(tmp.len.splits)) {
 		tmp.indices <- tmp.merge.base.index * tmp.len.splits - (tmp.len.splits - i)
 		res.prep.list <- c(res.prep.list, list(tmp.merge.elems[tmp.indices]))
 	}
@@ -114,10 +114,10 @@ Tool.SplitToGenDataFrame <- function(
 	} else {
 		warning("Given colnames are not matched with the result columns, and unexpected errors may happen!")
 		if (length(res.colnames) > ncol(res.df)) {
-			colnames(res.df) <- res.colnames[1:ncol(res.df)]
+			colnames(res.df) <- res.colnames[seq_len(ncol(res.df))]
 		} else {
 			if (length(res.colnames) > 0) {
-				colnames(res.df)[1:length(res.colnames)] <- res.colnames
+				colnames(res.df)[seq_along(res.colnames)] <- res.colnames
 			}
 		}
 	}

@@ -19,7 +19,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData(
   expand.outside.cut.percent.list = list(ECM = 0.03, NC = 0.03, OTHER = 0.03),
   expand.PM.gap.len = 2,
   locate.PM.method = "uniform",
-  nodes.size.range = c(3, 6),
+  nodes.size.range = c(6, 12),
+  nodes.size.gap = 1,
   nodes.fill.updn = c("#D07F86", "#7AAF7A"),
   nodes.colour = c("lightgrey"),
   nodes.alpha = 1,
@@ -42,7 +43,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData(
   legend.show.fill.updn.label = c("UP", "DN"),
   legend.show.fill.override.point.size = 3,
   legend.show.size.override.colour = "black",
-  legend.show.size.override.stroke = 0.7
+  legend.show.size.override.stroke = 0.7,
+  legend.show.size.override.size.proportion = 1
 )
 }
 \arguments{
@@ -79,6 +81,8 @@ the center of the area, and lower value means more sparse.}
 \item{locate.PM.method}{[TODO]}
 
 \item{nodes.size.range}{[TODO]}
+
+\item{nodes.size.gap}{[TODO]}
 
 \item{nodes.fill.updn}{[TODO]}
 
