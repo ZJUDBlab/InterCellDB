@@ -29,8 +29,7 @@ DataPrep.RemapClustersMarkers <- function(
   inds.raw.match <- which(markers.all.from.Seurat$gene %in% entrez.db$Symbol_from_nomenclature_authority)
   markers.raw.match   <- markers.all.from.Seurat[inds.raw.match, ]
   markers.raw.unmatch <- markers.all.from.Seurat[setdiff(seq_len(nrow(markers.all.from.Seurat)), inds.raw.match), ]
-  ret.final.unmatch <- character()
-  ret.final.synonyms <- character()
+  ret.remap.from.synonyms <- ret.final.unmatch <- ret.dup.synonyms <- character()
   if (nrow(markers.raw.unmatch) > 0) {  # some unmatches exist
     inds.map.match <- match(markers.raw.unmatch$gene, map.synonyms.db$Synonym.each)
     print(paste0("In unmatched ", nrow(markers.raw.unmatch), " genes, ", length(which(!is.na(inds.map.match))), " are remapped from synonyms!"))
@@ -52,11 +51,13 @@ DataPrep.RemapClustersMarkers <- function(
         paste0(paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~"), collapse = ",  "), "."
       )
     # for return values
+    ret.remap.from.synonyms <- paste(tmp.gene.name.use.old, tmp.gene.name.use.new, sep = "~")
     ret.final.unmatch <- markers.raw.unmatch$gene[which(is.na(inds.map.match))]
-    ret.final.synonyms <- paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~")
+    ret.dup.synonyms <- paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~")
   }
   return(list(result = rbind(markers.raw.match, markers.raw.unmatch), 
-    unmatched = ret.final.unmatch, synonyms.dup = ret.final.synonyms))
+    remapped.from.synonyms = ret.remap.from.synonyms, 
+    unmatched = ret.final.unmatch, synonyms.dup = ret.dup.synonyms))
 }
 
 

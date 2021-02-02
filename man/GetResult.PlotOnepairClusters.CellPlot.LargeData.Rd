@@ -32,8 +32,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData(
   link.alpha = 0.5,
   link.arrow.angle = 20,
   link.arrow.length = 10,
-  link.arrow.type = "open",
-  caption = ""
+  link.arrow.type = "open"
 )
 }
 \arguments{
@@ -63,11 +62,12 @@ If it is set 90 and shift degree is set 0, then points will be put counter-clock
 \item{expand.center.density.list}{Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
 the center of the area, and lower value means more sparse.}
 
-\item{expand.outside.cut.percent.list}{[TODO]}
+\item{expand.outside.cut.percent.list}{Numeric. It is used to restrict plotting area range against center point in each plotting area. The value of this parameter 
+defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.}
 
-\item{nodes.size.range}{[TODO]}
+\item{nodes.size.range}{Numeric of length 2. The former gives the minimum size, while the latter gives the maximum. Node(genes) sizes are reflecting the actual LogFC value of every gene.}
 
-\item{nodes.fill}{[TODO]}
+\item{nodes.fill}{Character. Fill of nodes.}
 
 \item{nodes.colour}{Character. Colour of nodes.}
 
@@ -93,8 +93,6 @@ See \pkg{ggplot2} for details}
 \item{link.arrow.length}{Numeric. Length of link arrow.}
 
 \item{link.arrow.type}{Character. Type of link arrow, either \code{open} or \code{closed}.}
-
-\item{caption}{[TODO]}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

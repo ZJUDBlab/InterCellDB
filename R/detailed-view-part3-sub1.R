@@ -298,35 +298,49 @@ Inside.GetCoords.PartialCircle <- function(
 #' If it is set 90 and shift degree is set 0, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
 #' @param expand.center.density.list Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
 #' the center of the area, and lower value means more sparse.
-#' @param expand.outside.cut.percent.list [TODO]
-#' @param expand.PM.gap.len [TODO]
-#' @param locate.PM.method [TODO]
-#' @param nodes.size.range [TODO]
-#' @param nodes.size.gap [TODO]
-#' @param nodes.fill.updn [TODO]
+#' @param expand.outside.cut.percent.list Numeric. It is used to restrict plotting area range against center point in each plotting area. The value of this parameter 
+#' defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.
+#' @param expand.PM.gap.len Numeric. It defines the gap of each points(genes) plotted in area:Plasma Membrane. The larger value means sparser the points being plotted, while smaller denser.
+#' @param locate.PM.method Character. It defines the way to allocate points(genes) plotted in area:Plasma Membrane. It supports 2 methods for now: 
+#' "random" and "uniform".
+#' @param nodes.size.range Numeric of length 2. The former gives the minimum size, while the latter gives the maximum. Node(genes) sizes are reflecting the actual LogFC value of every gene. 
+#' @param nodes.size.gap Numeric. It is used along with \code{nodes.size.range}. It defines the resolution of changing point sizes. For example, defines \code{nodes.size.range = c(3,6)} and 
+#'  \code{nodes.size.gap = 1}, then point sizes are \code{c(3,4,5,6)}, and will be shown the same in graph legend.
+#' @param nodes.fill.updn Character of length 2. It defines the 2 colours used to distinguish the up-regulated and down-regulated nodes(genes). 
 #' @param nodes.colour Character. Colour of nodes.
 #' @param nodes.alpha Numeric. Alpha of nodes.
 #' @param nodes.shape Vector. Use shape reprentable IDs(in integer) or directly shape description(in character). 
 #' See \pkg{ggplot2} for details
 #' @param nodes.stroke Numeric. Stroke size of nodes. See details in \pkg{ggplot2}.
-#' @param label.size.nodes [TODO]
-#' @param label.colour.nodes [TODO]
-#' @param label.vjust [TODO]
-#' @param label.hjust [TODO]
-#' @param label.nudge.x [TODO]
-#' @param label.nudge.y [TODO]
-#' @param label.padding.itself [TODO]
-#' @param label.size.itself [TODO]
+#' @param label.size.nodes Numeric. It defines the size of label text on nodes(genes). If get length 2, the former defines size of nodes in the left part of graph, and 
+#' the latter corresponds to the right part of graph. 
+#' @param label.colour.nodes Character. It defines the colour of label.
+#' @param label.vjust Numeric. It defines the vertical alignment value for labels.
+#' @param label.hjust Numeric. It defines the horizontal alignment value for labels. 
+#' @param label.nudge.x Numeric. It defines the slight adjustment movement along x-axis when plotting.
+#' @param label.nudge.y Numeric. It defines the slight adjustment movement along y-axis when plotting.
+#' @param label.padding.itself Numeric. It defines the padding size of label.
+#' @param label.size.itself Numeric. It defines the size of label itself(includes padding, etc).
 #' @param link.size Numeric. Size of link width.
 #' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.effect}.
 #' @param link.alpha Numeric. Alpha of link.
 #' @param link.arrow.angle Numeric. Angle of link arrow.
 #' @param link.arrow.length Numeric. Length of link arrow.
 #' @param link.arrow.type Character. Type of link arrow, either \code{open} or \code{closed}.
-#' @param legend.show.fill.updn.label [TODO]
-#' @param legend.show.fill.override.point.size [TODO]
-#' @param legend.show.size.override.colour [TODO]
-#' @param legend.show.size.override.stroke [TODO]
+#' @param legend.show.fill.updn.label Character of length 2. It gives the labels putting in legend:fill.
+#' @param legend.show.fill.override.point.size Numeric. It changes the size of template points used in legend:fill.
+#' @param legend.show.size.override.colour Character. It changes the colour of template points used in legend:colour. 
+#' @param legend.show.size.override.stroke Numeric. It changes the stroke of template points used in legend:colour.
+#' @param legend.show.size.override.size.proportion Numeric. It changes the size of template points used in legend:size, to avoid 
+#' unbalanced large or small size shown in legend. 
+#'
+#'
+#'
+#' @details
+#' All parameters starts with 'label.' can be specified of 2 values or only 1 value. As the graph contains 2 cells(drawn like it), with 1 cell put in the 
+#' left side and the other put in right side, there are some situations that number of nodes(genes) is quite unbalanced between them. The label may hard to 
+#' be placed properly. To deal with this problem, this function gives the way to specify different label patterns for each part. That's why parameters started with 
+#' 'label.' can be set of 2 values as well as 1 value.
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
@@ -363,7 +377,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   nodes.alpha = 1.0,
   nodes.shape = 21,
   nodes.stroke = 0,
-  label.size.nodes = c(3, 3),  # [TODO] label.* can give only one value
+  label.size.nodes = c(3, 3), 
   label.colour.nodes = c("black", "black"),
   label.vjust = c(0, 0),
   label.hjust = c(1, 0),
@@ -1001,9 +1015,10 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
 #' If it is set 90 and shift degree is set 0, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
 #' @param expand.center.density.list Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
 #' the center of the area, and lower value means more sparse.
-#' @param expand.outside.cut.percent.list [TODO]
-#' @param nodes.size.range [TODO]
-#' @param nodes.fill [TODO]
+#' @param expand.outside.cut.percent.list Numeric. It is used to restrict plotting area range against center point in each plotting area. The value of this parameter 
+#' defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.
+#' @param nodes.size.range Numeric of length 2. The former gives the minimum size, while the latter gives the maximum. Node(genes) sizes are reflecting the actual LogFC value of every gene. 
+#' @param nodes.fill Character. Fill of nodes.
 #' @param nodes.colour Character. Colour of nodes.
 #' @param nodes.alpha Numeric. Alpha of nodes.
 #' @param nodes.shape Vector. Use shape reprentable IDs(in integer) or directly shape description(in character). 
@@ -1017,7 +1032,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
 #' @param link.arrow.angle Numeric. Angle of link arrow.
 #' @param link.arrow.length Numeric. Length of link arrow.
 #' @param link.arrow.type Character. Type of link arrow, either \code{open} or \code{closed}.
-#' @param caption [TODO]
+#'
+#'
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
@@ -1046,7 +1062,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
   expand.center.density.list = list(ECM = 0.25, PM = 0.25, CTP = 0.25, NC = 0.25, OTHER = 0.25),
   expand.outside.cut.percent.list = list(ECM = 0.03, PM = 0.03, CTP = 0.03, NC = 0.03, OTHER = 0.03), 
   nodes.size.range = c(1, 3), 
-  nodes.fill = "grey",  # [TODO] make it change to anno.Type. Use NULL as default, inside give the Discrete colour mapping
+  nodes.fill = "grey", 
   nodes.colour = "grey",
   nodes.alpha = 1.0,
   nodes.shape = 21,
@@ -1058,8 +1074,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
   link.alpha = 0.5,
   link.arrow.angle = 20,
   link.arrow.length = 10,
-  link.arrow.type = "open",
-  caption = ""
+  link.arrow.type = "open"
 ) {
   ## precheck
   # check scatter parameters are correctly settled
@@ -1472,7 +1487,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
         colour = "orange", size = 2)
   }
   # after all regions and their names being settled, get caption drawn
-  # [TODO] caption here
+  # [TODO] caption here, not to added for now
   # add in right corner [Term annotation] PM: Plasma Membrane, ECR: Extracellular Region, ER: Endoplasmic Reticulum, Golgi: Golgi Apparatus"
   
 

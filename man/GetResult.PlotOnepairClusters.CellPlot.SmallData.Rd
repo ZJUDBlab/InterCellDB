@@ -74,17 +74,20 @@ If it is set 90 and shift degree is set 0, then points will be put counter-clock
 \item{expand.center.density.list}{Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
 the center of the area, and lower value means more sparse.}
 
-\item{expand.outside.cut.percent.list}{[TODO]}
+\item{expand.outside.cut.percent.list}{Numeric. It is used to restrict plotting area range against center point in each plotting area. The value of this parameter 
+defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.}
 
-\item{expand.PM.gap.len}{[TODO]}
+\item{expand.PM.gap.len}{Numeric. It defines the gap of each points(genes) plotted in area:Plasma Membrane. The larger value means sparser the points being plotted, while smaller denser.}
 
-\item{locate.PM.method}{[TODO]}
+\item{locate.PM.method}{Character. It defines the way to allocate points(genes) plotted in area:Plasma Membrane. It supports 2 methods for now: 
+"random" and "uniform".}
 
-\item{nodes.size.range}{[TODO]}
+\item{nodes.size.range}{Numeric of length 2. The former gives the minimum size, while the latter gives the maximum. Node(genes) sizes are reflecting the actual LogFC value of every gene.}
 
-\item{nodes.size.gap}{[TODO]}
+\item{nodes.size.gap}{Numeric. It is used along with \code{nodes.size.range}. It defines the resolution of changing point sizes. For example, defines \code{nodes.size.range = c(3,6)} and 
+\code{nodes.size.gap = 1}, then point sizes are \code{c(3,4,5,6)}, and will be shown the same in graph legend.}
 
-\item{nodes.fill.updn}{[TODO]}
+\item{nodes.fill.updn}{Character of length 2. It defines the 2 colours used to distinguish the up-regulated and down-regulated nodes(genes).}
 
 \item{nodes.colour}{Character. Colour of nodes.}
 
@@ -95,21 +98,22 @@ See \pkg{ggplot2} for details}
 
 \item{nodes.stroke}{Numeric. Stroke size of nodes. See details in \pkg{ggplot2}.}
 
-\item{label.size.nodes}{[TODO]}
+\item{label.size.nodes}{Numeric. It defines the size of label text on nodes(genes). If get length 2, the former defines size of nodes in the left part of graph, and 
+the latter corresponds to the right part of graph.}
 
-\item{label.colour.nodes}{[TODO]}
+\item{label.colour.nodes}{Character. It defines the colour of label.}
 
-\item{label.vjust}{[TODO]}
+\item{label.vjust}{Numeric. It defines the vertical alignment value for labels.}
 
-\item{label.hjust}{[TODO]}
+\item{label.hjust}{Numeric. It defines the horizontal alignment value for labels.}
 
-\item{label.nudge.x}{[TODO]}
+\item{label.nudge.x}{Numeric. It defines the slight adjustment movement along x-axis when plotting.}
 
-\item{label.nudge.y}{[TODO]}
+\item{label.nudge.y}{Numeric. It defines the slight adjustment movement along y-axis when plotting.}
 
-\item{label.padding.itself}{[TODO]}
+\item{label.padding.itself}{Numeric. It defines the padding size of label.}
 
-\item{label.size.itself}{[TODO]}
+\item{label.size.itself}{Numeric. It defines the size of label itself(includes padding, etc).}
 
 \item{link.size}{Numeric. Size of link width.}
 
@@ -123,13 +127,16 @@ See \pkg{ggplot2} for details}
 
 \item{link.arrow.type}{Character. Type of link arrow, either \code{open} or \code{closed}.}
 
-\item{legend.show.fill.updn.label}{[TODO]}
+\item{legend.show.fill.updn.label}{Character of length 2. It gives the labels putting in legend:fill.}
 
-\item{legend.show.fill.override.point.size}{[TODO]}
+\item{legend.show.fill.override.point.size}{Numeric. It changes the size of template points used in legend:fill.}
 
-\item{legend.show.size.override.colour}{[TODO]}
+\item{legend.show.size.override.colour}{Character. It changes the colour of template points used in legend:colour.}
 
-\item{legend.show.size.override.stroke}{[TODO]}
+\item{legend.show.size.override.stroke}{Numeric. It changes the stroke of template points used in legend:colour.}
+
+\item{legend.show.size.override.size.proportion}{Numeric. It changes the size of template points used in legend:size, to avoid 
+unbalanced large or small size shown in legend.}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
@@ -141,4 +148,10 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 \description{
 This function analyzes the interaction pairs between two target clusters, and gives one vivid two-cell
 graph and several result tables in the return values.
+}
+\details{
+All parameters starts with 'label.' can be specified of 2 values or only 1 value. As the graph contains 2 cells(drawn like it), with 1 cell put in the 
+left side and the other put in right side, there are some situations that number of nodes(genes) is quite unbalanced between them. The label may hard to 
+be placed properly. To deal with this problem, this function gives the way to specify different label patterns for each part. That's why parameters started with 
+'label.' can be set of 2 values as well as 1 value.
 }
