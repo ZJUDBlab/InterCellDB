@@ -5,7 +5,7 @@
 \alias{kpred.mode}
 \title{Predefined mode}
 \format{
-An object of class \code{character} of length 9.
+An object of class \code{character} of length 7.
 }
 \usage{
 kpred.mode

@@ -322,7 +322,8 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param label.padding.itself Numeric. It defines the padding size of label.
 #' @param label.size.itself Numeric. It defines the size of label itself(includes padding, etc).
 #' @param link.size Numeric. Size of link width.
-#' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.effect}.
+#' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.mode}. Otherwise, named vector could be provided 
+#' with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}.
 #' @param link.alpha Numeric. Alpha of link.
 #' @param link.arrow.angle Numeric. Angle of link arrow.
 #' @param link.arrow.length Numeric. Length of link arrow.
@@ -333,6 +334,8 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param legend.show.size.override.stroke Numeric. It changes the stroke of template points used in legend:colour.
 #' @param legend.show.size.override.size.proportion Numeric. It changes the size of template points used in legend:size, to avoid 
 #' unbalanced large or small size shown in legend. 
+#' @param legend.manual.left.spacing  [TODO] change left spacing of the manual legend to ggplot2 automatically-generated legends
+#'
 #'
 #'
 #'
@@ -345,11 +348,14 @@ Inside.GetCoords.PartialCircle <- function(
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
 #'   \item plot: the object of \pkg{ggplot2}.
+#'   \item grid.plot: graphical output generated from \pkg{grid}.
 #'   \item table: a list of \code{data.frame}.
 #' }
 #'
 #'
 #'
+#' @import grid
+#' @import gtable
 #' @import ggplot2
 #' @importFrom dplyr bind_rows
 #'
@@ -386,16 +392,19 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   label.padding.itself = list(unit(0.25, "lines"), unit(0.25, "lines")),
   label.size.itself = c(0.25, 0.25),
   link.size = 0.6,
-  link.colour = c("#D70051", "#00913A", "#956134", "#B5B5B6"),
-  link.alpha = 1,
-  link.arrow.angle = 20,
-  link.arrow.length = 10,
-  link.arrow.type = "open",
+  link.colour = c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF"), 
+  link.alpha = 1, 
+  link.linetype = c("solid", "solid", "solid", "44"), 
+  link.arrow.angle = c(20, 90, 60, 0), 
+  link.arrow.length = c(12, 6, 8, 0), 
+  link.arrow.type = c("closed", "open", "open", "open"), 
   legend.show.fill.updn.label = c("UP", "DN"), 
   legend.show.fill.override.point.size = 3, 
   legend.show.size.override.colour = "black", 
   legend.show.size.override.stroke = 0.7, 
-  legend.show.size.override.size.proportion = 1
+  legend.show.size.override.size.proportion = 1,
+  legend.manual.left.spacing = unit(0.2, "cm"),
+  legend.manual.internal.spacing = unit(0.6, "cm") 
 ) {
   ## precheck
   # check scatter parameters are correctly settled
@@ -434,12 +443,24 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   label.padding.itself <- if (length(label.padding.itself) == 1) rep(label.padding.itself, times = 2) else label.padding.itself[1:2]
   if (length(label.size.itself) < 1 || is.null(label.size.itself)) stop("Paramemter `label.size.itself` is invalid!")
   label.size.itself <- if (length(label.size.itself) == 1) rep(label.size.itself, times = 2) else label.size.itself[1:2]
-  # check link colour
-  if (length(link.colour) != length(kpred.action.effect)) {
-    length(link.colour) <- length(kpred.action.effect)
-    link.colour[which(is.na(link.colour))] <- link.colour[which(!is.na(link.colour))][1]  # use 1st one to all other
-    warning("Given link colour are shorter than expected, and are automatically extended.")
+  # check and set link colour
+  if (is.null(names(link.colour))) {
+    if (length(link.colour) != length(kpred.mode)) {
+      length(link.colour) <- length(kpred.mode)
+      link.colour[which(is.na(link.colour))] <- "grey"  # use grey to all other
+      warning("Given link colour are shorter than expected, and are automatically extended.")
+    }
+  } else {
+    template.link.colour <- c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF")
+    tmp.inds.link.col <- match(names(link.colour), kpred.mode)
+    tmp.link.colour <- link.colour[!is.na(tmp.inds.link.col)]  # get the valid ones
+    warning("Named link colour has some unvalid names: ", paste0(link.colour[is.na(tmp.inds.link.col)], collapse = ", "), 
+      ", which will be automatically replaced with default colour values.")
+    template.link.colour[match(names(tmp.link.colour), kpred.mode)] <- tmp.link.colour
+    link.colour <- template.link.colour
   }
+  names(link.colour) <- kpred.mode  # set the names right
+  
   # check given nodes.size.gap
   if (length(nodes.size.gap) != 1 || nodes.size.gap > abs(nodes.size.range[2] - nodes.size.range[1])) {
     stop("Given `nodes.size.gap` is invalid or too large!")
@@ -907,12 +928,14 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
       shape = nodes.shape,
       stroke = nodes.stroke) + 
     scale_fill_manual(name = "Exprs Change", values = this.updn.fill, breaks = names(this.updn.fill), aesthetics = "fill", 
-      guide = guide_legend(override.aes = list(size = legend.show.fill.override.point.size))) +  
+      guide = guide_legend(override.aes = list(size = legend.show.fill.override.point.size),
+        order = 1)) + 
     scale_size_continuous(name = "LogFC", range = c(nodes.size.range[1], nodes.size.range[2]), 
       breaks = seq(from = nodes.size.range[1], to = nodes.size.range[2], by = nodes.size.gap), 
       guide = guide_legend(override.aes = list(colour = legend.show.size.override.colour, 
         stroke = legend.show.size.override.stroke,
-        size = legend.show.size.override.size.proportion * seq(from = nodes.size.range[1], to = nodes.size.range[2], by = nodes.size.gap))))
+        size = legend.show.size.override.size.proportion * seq(from = nodes.size.range[1], to = nodes.size.range[2], by = nodes.size.gap),
+        order = 2)))
 
   ## split the label function to be cluster specific
   # A
@@ -943,36 +966,30 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   edges.infos[, c("from.gx", "from.gy")] <- this.vx.ext.infos[inds.e.from.match, c("gx", "gy")]
   edges.infos[, c("to.gx", "to.gy")] <- this.vx.ext.infos[inds.e.to.match, c("gx", "gy")]
   #
-  pred.mode <- kpred.mode
-  pred.action.effect <- kpred.action.effect
   show.mode.val <- levels(factor(edges.infos$mode))
   show.action.effect.val <- levels(factor(edges.infos$action.effect))
-
-  # draw edges (remove colour edges)
-  names(link.colour) <- pred.action.effect  # for aesthetics
-
-  draw.add.comps.list <- list()
-  # use reverse order to plot positive & negative above the unspecified or undirected
-  for (j in rev(1:length(pred.action.effect))) {
-    this.edges.infos <- edges.infos[which(edges.infos[, "action.effect"] == pred.action.effect[j]), ]
-    for (i in 1:length(pred.mode)) {
-      if (!(pred.action.effect[j] %in% show.action.effect.val)) {
-        break
-      }
-      inds.this.mode <- which(this.edges.infos[, "mode"] == pred.mode[i])
-      draw.add.comps.list <- append(draw.add.comps.list, 
-        geom_segment(mapping = aes(x = from.gx, y = from.gy, xend = to.gx, yend = to.gy, colour = action.effect),
-          data = this.edges.infos[inds.this.mode, ],
-          alpha = link.alpha, size = link.size,
-          arrow = arrow(angle = link.arrow.angle, length = unit(link.arrow.length, "pt"), type = link.arrow.type)
-          )
-      )
-    }
+  # check if global variables cover all action modes and effects
+  if (sum(show.mode.val %in% kpred.mode) != length(show.mode.val)) {
+    warning("Database changes with new action mode: ", paste0(setdiff(show.mode.val, kpred.mode), collapse = ", "), "!")
   }
-  draw.add.comps.list <- append(draw.add.comps.list, 
-    scale_colour_manual(name = "Action.Effects", values = link.colour, breaks = names(link.colour), aesthetics = "colour")
-  )
-  this.graph.gplot <- this.graph.gplot + draw.add.comps.list
+  if (sum(show.action.effect.val %in% kpred.action.effect) != length(show.action.effect.val)) {
+    warning("Database changes with new action effect: ", paste0(setdiff(show.action.effect.val, kpred.action.effect), collapse = ", "), "!")
+  }
+
+  # draw edges
+  # use reverse order to plot positive & negative above the unspecified or undirected
+  for (j in rev(1:length(kpred.action.effect))) {
+    if (!(kpred.action.effect[j] %in% show.action.effect.val)) {
+      next
+    }
+    this.edges.infos <- edges.infos[which(edges.infos[, "action.effect"] == kpred.action.effect[j]), ]
+    this.graph.gplot <- this.graph.gplot + geom_segment(data = this.edges.infos,
+      mapping = aes(x = from.gx, y = from.gy, xend = to.gx, yend = to.gy, colour = mode),
+      alpha = link.alpha, size = link.size, linetype = link.linetype[j], 
+      arrow = arrow(angle = link.arrow.angle[j], length = unit(link.arrow.length[j], "pt"), type = link.arrow.type[j]))
+  }
+  this.graph.gplot <- this.graph.gplot + 
+    scale_colour_manual(guide = FALSE, values = link.colour, breaks = names(link.colour), aesthetics = "colour")
 
   # other settings
   this.graph.gplot <- this.graph.gplot + 
@@ -981,12 +998,174 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
     labs(x = NULL, y = NULL) +
     theme(panel.background = element_blank())
 
+  # --- then goes to grid, no more ggplot ---
+  this.gGrob <- ggplotGrob(this.graph.gplot)
+  ### create manual legend for action mode and action effect
+  ## for action mode, for at least 7 types valid given in database, and add some extra types manually
+  ## action mode only need one line and one colour, so can be easily generated
+  plot.lwd.L.mode <- 1
+  plot.grey.bg.L.mode <- polygonGrob(x = c(0, 1, 1, 0),
+      y = c(1, 1, 0, 0),
+      gp = gpar(
+        col = NA, 
+        fill = "lightgrey",
+        alpha = 0.4)
+    )
+  tmp.legend.mode <- kpred.mode[which(kpred.mode %in% show.mode.val)]
+  LT.m.mode.list <- lapply(seq_along(tmp.legend.mode), 
+    tmp.legend.mode = tmp.legend.mode, 
+    link.colour.mode = link.colour, link.alpha.mode = link.alpha, 
+    plot.lwd.L.mode = plot.lwd.L.mode, plot.grey.bg.L.mode = plot.grey.bg.L.mode, 
+    function(x, tmp.legend.mode, link.colour.mode, link.alpha.mode, plot.lwd.L.mode, plot.grey.bg.L.mode) {
+        this.L <- grobTree(
+          plot.grey.bg.L.mode, 
+          polylineGrob(x = c(.1, .9),
+            y = c(.5, .5),
+            id = c(1, 1)),
+          gp = gpar(
+            col = link.colour.mode[x],
+            alpha = link.alpha.mode, 
+            lwd = plot.lwd.L.mode)
+        )
+        this.T <- textGrob(tmp.legend.mode[x], x = .1, y = .5, just = "left", 
+          gp = gpar(fontsize = 10))
+        list(L = this.L, T = this.T)
+      })
+  # legend key and label
+  L.mode.to.use <- lapply(LT.m.mode.list, function(x) { x$L })
+  T.mode.to.use <- lapply(LT.m.mode.list, function(x) { x$T })
+  # legend title
+  title.mode <- textGrob("Action Mode", x = .0, y = .5, just = "left")
+
+  ## for action effect, only 4 types
+  # legend key
+  plot.lwd.L.act.eff <- 1
+  plot.grey.bg.L.act.eff <- polygonGrob(x = c(0, 1, 1, 0),
+      y = c(1, 1, 0, 0),
+      gp = gpar(
+        col = NA, 
+        fill = "lightgrey",
+        alpha = 0.4)
+    )
+  L.act.eff.1 <- grobTree(
+      plot.grey.bg.L.act.eff, 
+      polylineGrob(x = c(.1, .9), 
+        y = c(.5, .5),
+        id = c(1, 1)),
+      polygonGrob(x = c(.9, .6, .6),
+        y = c(.5, .4, .6)),
+      gp = gpar(
+        #col = "#D70051",  # for positive
+        col = "black", 
+        # fill = "#D70051",  # for positive
+        fill = "black", 
+        alpha = link.alpha, 
+        lwd = plot.lwd.L.act.eff)
+    )
+  L.act.eff.2 <- grobTree(
+      plot.grey.bg.L.act.eff,
+      polylineGrob(x = c(.1, .85, .85, .85, .85, .85),
+        y = c(.5, .5, .5, .35, .5, .65),
+        id = c(1, 1, 2, 2, 3, 3)),
+      gp = gpar(
+        #col = "#00913A",  # for negative
+        col = "black", 
+        alpha = link.alpha, 
+        lwd = plot.lwd.L.act.eff)
+    )
+  L.act.eff.3 <- grobTree(
+      plot.grey.bg.L.act.eff, 
+      polylineGrob(x = c(.1, .9, .9, .8, .9, .8),
+        y = c(0.5, 0.5, .5, .3, .5, .7),
+        id = c(1, 1, 2, 2, 3, 3)),  # [NOTE] point in 0:25 is 75% size as given in size (measure in diameter)
+      #pointsGrob(x = 0.8, y = 0.5, size = unit(0.266, "npc"), pch = 16, default.units = "npc"),
+      gp = gpar(
+        #col = "#956134",  # for unspecified
+        col = "black", 
+        alpha = link.alpha, 
+        lwd = plot.lwd.L.act.eff)
+    )
+  L.act.eff.4 <- grobTree(
+      plot.grey.bg.L.act.eff, 
+      linesGrob(x = c(.1, .9),
+        y = c(.5, .5)),
+      gp = gpar(
+        #col = "#B5B5B6",  # for undirected
+        col = "black", 
+        alpha = link.alpha, 
+        lwd = plot.lwd.L.act.eff)
+    )
+  # legend label
+  T.act.eff.1 <- textGrob("positive", x = .1, y = .5, just = "left", gp = gpar(fontsize = 10))
+  T.act.eff.2 <- textGrob("negative", x = .1, y = .5, just = "left", gp = gpar(fontsize = 10))
+  T.act.eff.3 <- textGrob("unspecified", x = .1, y = .5, just = "left", gp = gpar(fontsize = 10))
+  T.act.eff.4 <- textGrob("undirected", x = .1, y = .5, just = "left", gp = gpar(fontsize = 10))
+  # legend title
+  title.act.eff <- textGrob("Action Effect", x = .0, y = .5, just = "left")
+  # pack all action effect elements up (except the title)
+  L.act.eff.list <- list(L.act.eff.1, L.act.eff.2, L.act.eff.3, L.act.eff.4)
+  T.act.eff.list <- list(T.act.eff.1, T.act.eff.2, T.act.eff.3, T.act.eff.4)
+  # choose the existing ones to be used in legend
+  exist.inds.act.eff <- which(kpred.action.effect %in% show.action.effect.val)
+  L.act.eff.to.use <- L.act.eff.list[exist.inds.act.eff]
+  T.act.eff.to.use <- T.act.eff.list[exist.inds.act.eff]
+
+  ## create gtable for action legend
+  # get fit width for text
+  table.fit.width.for.text <- max(unlist(lapply(T.act.eff.to.use, function(x) {
+      convertWidth(grobWidth(x), "cm", TRUE)
+    })),
+    unlist(lapply(T.mode.to.use, function(x) {
+      convertWidth(grobWidth(x), "cm", TRUE)
+    }))
+  )
+  # create gtable
+  table.act.width  <- c(.6, table.fit.width.for.text / 0.9)
+  table.act.height.mode <- unit(c(.6, rep(1, times = length(L.mode.to.use)) * 0.6), "cm")
+  table.act.gap <- legend.manual.internal.spacing
+  if (class(legend.manual.internal.spacing) != "unit") {
+    if (!is.numeric(legend.manual.internal.spacing)) {
+      stop("Non-numeric value given to specify spacing! Please check paramemter 'legend.manual.internal.spacing'!")
+    } else {
+      warning("Given spacing is not class:unit. Auto change to unit in 'cm'.")
+      table.act.gap <- unit(legend.manual.internal.spacing, "cm")
+    }
+  }
+  table.act.height.act.eff <- unit(c(.6, rep(1, times = length(L.act.eff.to.use)) * 0.6), "cm")
+  leg.m.act <- gtable(width = unit(table.act.width, "cm"), 
+    height = unit.c(table.act.height.mode, table.act.gap, table.act.height.act.eff))
+  ## add all grobs into it
+  tmp.pos.at.mode <- 1
+  # add act mode legend title
+  leg.m.act <- gtable_add_grob(leg.m.act, title.mode, t = tmp.pos.at.mode, l = 1, r = 2)
+  # add act mode rest grobs
+  for (i in seq_along(L.mode.to.use)) {
+    leg.m.act <- gtable_add_grob(leg.m.act, L.mode.to.use[[i]], t = tmp.pos.at.mode + i, l = 1)
+    leg.m.act <- gtable_add_grob(leg.m.act, T.mode.to.use[[i]], t = tmp.pos.at.mode + i, l = 2)
+  }
+  # action effect
+  tmp.pos.at.act.eff <- 1 + length(L.mode.to.use) + 2
+  # add act effect legend title
+  leg.m.act <- gtable_add_grob(leg.m.act, title.act.eff, t = tmp.pos.at.act.eff, l = 1, r = 2)
+  # add act effect rest grobs
+  for (i in seq_along(L.act.eff.to.use)) {
+    leg.m.act <- gtable_add_grob(leg.m.act, L.act.eff.to.use[[i]], t = tmp.pos.at.act.eff + i, l = 1)
+    leg.m.act <- gtable_add_grob(leg.m.act, T.act.eff.to.use[[i]], t = tmp.pos.at.act.eff + i, l = 2)
+  }
+
+
+  # merge ggplot2 and manual legend
+  mleg.start.pos <- this.gGrob$layout[which(this.gGrob$layout$name == "guide-box"), c("t", "l")]
+  this.gGrob <- gtable_add_cols(this.gGrob, sum(leg.m.act$widths), mleg.start.pos$l)
+  this.gGrob <- gtable_add_grob(this.gGrob, leg.m.act, t = mleg.start.pos$t, l = mleg.start.pos$l + 1)
+  this.gGrob <- gtable_add_cols(this.gGrob, legend.manual.left.spacing, mleg.start.pos$l)
+
   # table exported columns
   tmp.vertices.colnames <- setdiff(colnames(this.vx.ext.infos), c("gx", "gy", "nodes.size"))
   tmp.edges.colnames <- setdiff(colnames(edges.infos), c("from.gx", "from.gy", "to.gx", "to.gy"))
 
   ## res
-  list(plot = this.graph.gplot, 
+  list(plot = NULL, grid.plot = this.gGrob, 
     table = list(vertices.infos = this.vx.ext.infos[, tmp.vertices.colnames], 
                  edges.infos = edges.infos[, tmp.edges.colnames]))
 }
@@ -1547,7 +1726,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
     }
   }
   draw.add.comps.list <- append(draw.add.comps.list, 
-    scale_colour_manual(name = "Action.effect", values = link.colour, breaks = names(link.colour), aesthetics = "colour")
+    scale_colour_manual(name = "Action Effect", values = link.colour, breaks = names(link.colour), aesthetics = "colour")
   )
   this.graph.gplot <- this.graph.gplot + draw.add.comps.list
 

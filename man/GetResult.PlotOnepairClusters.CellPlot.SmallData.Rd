@@ -35,16 +35,20 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData(
   label.padding.itself = list(unit(0.25, "lines"), unit(0.25, "lines")),
   label.size.itself = c(0.25, 0.25),
   link.size = 0.6,
-  link.colour = c("#D70051", "#00913A", "#956134", "#B5B5B6"),
+  link.colour = c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6",
+    "#0A0AFF"),
   link.alpha = 1,
-  link.arrow.angle = 20,
-  link.arrow.length = 10,
-  link.arrow.type = "open",
+  link.linetype = c("solid", "solid", "solid", "44"),
+  link.arrow.angle = c(20, 90, 60, 0),
+  link.arrow.length = c(12, 6, 8, 0),
+  link.arrow.type = c("closed", "open", "open", "open"),
   legend.show.fill.updn.label = c("UP", "DN"),
   legend.show.fill.override.point.size = 3,
   legend.show.size.override.colour = "black",
   legend.show.size.override.stroke = 0.7,
-  legend.show.size.override.size.proportion = 1
+  legend.show.size.override.size.proportion = 1,
+  legend.manual.left.spacing = unit(0.2, "cm"),
+  legend.manual.internal.spacing = unit(0.6, "cm")
 )
 }
 \arguments{
@@ -117,7 +121,8 @@ the latter corresponds to the right part of graph.}
 
 \item{link.size}{Numeric. Size of link width.}
 
-\item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.effect}.}
+\item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.mode}. Otherwise, named vector could be provided 
+with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}.}
 
 \item{link.alpha}{Numeric. Alpha of link.}
 
@@ -137,11 +142,14 @@ the latter corresponds to the right part of graph.}
 
 \item{legend.show.size.override.size.proportion}{Numeric. It changes the size of template points used in legend:size, to avoid 
 unbalanced large or small size shown in legend.}
+
+\item{legend.manual.left.spacing}{[TODO] change left spacing of the manual legend to ggplot2 automatically-generated legends}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 \itemize{
   \item plot: the object of \pkg{ggplot2}.
+  \item grid.plot: graphical output generated from \pkg{grid}.
   \item table: a list of \code{data.frame}.
 }
 }

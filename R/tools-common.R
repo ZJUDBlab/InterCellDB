@@ -10,7 +10,9 @@
 #' @param ... other plot functions that directly passed using \code{+} in definition of \pkg{ggplot2}.
 #' It will make slight changes on the final plotting result.
 #'
+#' 
 #'
+#' @import grid grid.newpage grid.draw
 #'
 #' @export
 #'
@@ -18,12 +20,17 @@ Tool.ShowGraph <- function(
 	formatted.result,
 	...
 ) {
-	plot.res <- formatted.result$plot
-	for (each.item in list(...)) {
-		plot.res <- plot.res + each.item
+	if (!is.null(formatted.result$plot)) {
+		plot.res <- formatted.result$plot
+		for (each.item in list(...)) {
+			plot.res <- plot.res + each.item
+		}
+		plot.res  # return
+	} else {
+		plot.res <- formatted.result$grid.plot
+		grid.newpage()
+		grid.draw(plot.res)
 	}
-	#end# return
-	plot.res
 }
 
 

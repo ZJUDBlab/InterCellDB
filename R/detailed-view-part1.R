@@ -190,7 +190,7 @@ Inside.PlotShowGrouping <- function(
   }
   # add unified legend
   res.legend <- get_legend(gplot.res.list[[1]] + 
-    guides(fill = guide_legend(title = "Action.Effects")) + 
+    guides(fill = guide_legend(title = "Action Effect")) + 
     theme(legend.position = "right", 
       legend.key.size = legend.key.size,
       legend.title = legend.title,
