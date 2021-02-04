@@ -124,7 +124,9 @@ the latter corresponds to the right part of graph.}
 \item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.mode}. Otherwise, named vector could be provided 
 with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}.}
 
-\item{link.alpha}{Numeric. Alpha of link.}
+\item{link.alpha}{Numeric. Alpha of links.}
+
+\item{link.linetype}{Character. Linetype of links.}
 
 \item{link.arrow.angle}{Numeric. Angle of link arrow.}
 

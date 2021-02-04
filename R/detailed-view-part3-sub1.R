@@ -324,7 +324,8 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param link.size Numeric. Size of link width.
 #' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.mode}. Otherwise, named vector could be provided 
 #' with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}.
-#' @param link.alpha Numeric. Alpha of link.
+#' @param link.alpha Numeric. Alpha of links.
+#' @param link.linetype Character. Linetype of links.
 #' @param link.arrow.angle Numeric. Angle of link arrow.
 #' @param link.arrow.length Numeric. Length of link arrow.
 #' @param link.arrow.type Character. Type of link arrow, either \code{open} or \code{closed}.
