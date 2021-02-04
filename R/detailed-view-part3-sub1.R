@@ -1134,8 +1134,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
     }
   }
   table.act.height.act.eff <- unit(c(.6, rep(1, times = length(L.act.eff.to.use)) * 0.6), "cm")
-  leg.m.act <- gtable(width = unit(table.act.width, "cm"), 
-    height = unit.c(table.act.height.mode, table.act.gap, table.act.height.act.eff))
+  leg.m.act <- gtable(widths = unit(table.act.width, "cm"), 
+    heights = unit.c(table.act.height.mode, table.act.gap, table.act.height.act.eff))
   ## add all grobs into it
   tmp.pos.at.mode <- 1
   # add act mode legend title
