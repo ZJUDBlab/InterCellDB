@@ -1,7 +1,7 @@
 Package: InterCellDB
 Type: Package
 Title: Tools for Analyzing Interactions among Cells
-Version: 1.1.1
+Version: 1.1.2
 Date: 2020-12-14
 Authors@R: c(person("Jin Ziyang", "Developer", role = c("aut", "cre"), email = "454785187@qq.com"),
   person("Shi Ligen", "Developer", role = c("aut", "rev"), email = "slg0904@163.com"),

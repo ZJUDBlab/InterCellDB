@@ -11,7 +11,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData(
   hide.types.A = NULL,
   hide.locations.B = c("Other"),
   hide.types.B = NULL,
-  hide.sole.vertices = FALSE,
+  hide.sole.vertices = TRUE,
   expand.gap.radius.list = list(ECM = 2, CTP = 2, NC = 2, OTHER = 2),
   expand.shift.degree.list = list(ECM = 90, CTP = 30, NC = 30, OTHER = 30),
   expand.gap.degree.list = list(ECM = 180, CTP = 60, NC = 60, OTHER = 60),
@@ -66,7 +66,7 @@ one should change this paramemter to be larger to get all vertices allocated.}
 
 \item{hide.types.B}{Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.}
 
-\item{hide.sole.vertices}{Character. It hides sole vertices which have no available edges.}
+\item{hide.sole.vertices}{Character. It hides sole vertices which cannot form available edges anymore.}
 
 \item{expand.gap.radius.list}{Numeric. It defines the minimum distance between points(genes) for each plotting area.}
 
@@ -143,7 +143,9 @@ with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}
 \item{legend.show.size.override.size.proportion}{Numeric. It changes the size of template points used in legend:size, to avoid 
 unbalanced large or small size shown in legend.}
 
-\item{legend.manual.left.spacing}{[TODO] change left spacing of the manual legend to ggplot2 automatically-generated legends}
+\item{legend.manual.left.spacing}{Unit. It spcifies the left spacing of the manual legend to \pkg{ggplot2} automatically-generated legends.}
+
+\item{legend.manual.internal.spacing}{Unit. It defines the spacing between 2 manual legend about action mode and action effect.}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

@@ -291,7 +291,7 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param hide.types.A Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.
 #' @param hide.locations.B Character. It applies extra limitation on the locations of B in gene pairs formatted as A-B.
 #' @param hide.types.B Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.
-#' @param hide.sole.vertices Character. It hides sole vertices which have no available edges.
+#' @param hide.sole.vertices Character. It hides sole vertices which cannot form available edges anymore.
 #' @param expand.gap.radius.list Numeric. It defines the minimum distance between points(genes) for each plotting area.
 #' @param expand.shift.degree.list Numeric. It defines the begin degree that points(genes) are to be drawn. The degree is calculated counter-clockwise.
 #' @param expand.gap.degree.list Numeric. It defines the way that points(genes) arrange. If it is set 180 and shift degree is set 90, then points will be aligned in vertical line. 
@@ -334,8 +334,8 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param legend.show.size.override.stroke Numeric. It changes the stroke of template points used in legend:colour.
 #' @param legend.show.size.override.size.proportion Numeric. It changes the size of template points used in legend:size, to avoid 
 #' unbalanced large or small size shown in legend. 
-#' @param legend.manual.left.spacing  [TODO] change left spacing of the manual legend to ggplot2 automatically-generated legends
-#'
+#' @param legend.manual.left.spacing Unit. It spcifies the left spacing of the manual legend to \pkg{ggplot2} automatically-generated legends.
+#' @param legend.manual.internal.spacing Unit. It defines the spacing between 2 manual legend about action mode and action effect.
 #'
 #'
 #'
@@ -368,7 +368,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   hide.types.A = NULL,
   hide.locations.B = c("Other"),
   hide.types.B = NULL,
-  hide.sole.vertices = FALSE,  # if TRUE, remove those edges cannot formed vertices
+  hide.sole.vertices = TRUE, 
   expand.gap.radius.list = list(ECM = 2, CTP = 2, NC = 2, OTHER = 2),  
   expand.shift.degree.list = list(ECM = 90, CTP = 30, NC = 30, OTHER = 30), 
   expand.gap.degree.list = list(ECM = 180, CTP = 60, NC = 60, OTHER = 60),
@@ -1093,7 +1093,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
         #col = "#B5B5B6",  # for undirected
         col = "black", 
         alpha = link.alpha, 
-        lwd = plot.lwd.L.act.eff)
+        lwd = plot.lwd.L.act.eff,
+        lty = "22")
     )
   # legend label
   T.act.eff.1 <- textGrob("positive", x = .1, y = .5, just = "left", gp = gpar(fontsize = 10))
@@ -1234,7 +1235,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
   hide.types.A = NULL,
   hide.locations.B = NULL,
   hide.types.B = NULL,
-  hide.sole.vertices = TRUE,  # if TRUE, remove those edges cannot formed vertices
+  hide.sole.vertices = TRUE,
   expand.gap.radius.list = list(ECM = 2, PM = 3, CTP = 2, NC = 2, OTHER = 2),
   expand.shift.degree.list = list(ECM = 90, PM = 90, CTP = 30, NC = 30, OTHER = 30), 
   expand.gap.degree.list = list(ECM = 180, PM = 180, CTP = 60, NC = 60, OTHER = 60),

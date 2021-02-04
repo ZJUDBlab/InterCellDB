@@ -335,7 +335,7 @@ GetResult.SummarySpecialGenes <- function(
 			", which will be automatically removed!")
 	}
 
-	# fetch selected gene pairs [TODO] select.genepairs too far ahead, get errors
+	# fetch selected gene pairs
 	inside.fetch.sel.genepairs <- function(
 		input.spgenes,
 		VEinfos,

@@ -12,7 +12,7 @@
 #'
 #' 
 #'
-#' @import grid grid.newpage grid.draw
+#' @importFrom grid grid.newpage grid.draw
 #'
 #' @export
 #'
