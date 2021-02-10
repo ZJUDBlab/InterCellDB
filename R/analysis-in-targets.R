@@ -468,16 +468,20 @@ GenerateVEinfos <- function(
 #' Trim the vertices and edges infos
 #'
 #' @description
-#' This function uses mode and action.effect as the restrictions when users select part of the result.
+#' This function applies some extra restrictions when users want to select part of the result.
 #'
 #' @inheritParams Inside.DummyVEinfos
+#' @inheritParams Inside.DummyDirectionAtoB
+#' @param sel.some.genes.A Character. It selects some genes in cluster A(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.A} to fetch that).
+#' @param sel.some.genes.B Character. It selects some genes in cluster B(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.B} to fetch that).
+#' @param sel.some.genes.merge.option Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by some given genes.  
+#' The default way is to intersect the subsets, and the other option is union.
 #' @param sel.some.gene.pairs.df Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 #' one of the participated genes. The 2 required column names need to be specified by another parameter \code{sel.some.gene.pairs.colnames}.
 #' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
 #' and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.
 #' @param sel.exprs.change Character. It selects the expression change status that gene pairs can be. It has total 4 options:
 #' "Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn", which are defined in global variables \code{kpred.exprs.change}.
-#' @inheritParams Inside.DummyDirectionAtoB
 #' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
 #' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
@@ -500,13 +504,16 @@ GenerateVEinfos <- function(
 #'
 TrimVEinfos <- function(
   VEinfos, 
+  direction.A.to.B = NULL, 
+  sel.some.genes.A = NULL, 
+  sel.some.genes.B = NULL, 
+  sel.some.genes.merge.option = "intersect", 
   sel.some.gene.pairs.df = NULL, 
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
   sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"), 
-  direction.A.to.B = NULL, 
   sel.mode.val = NULL, 
   sel.action.effect.val = NULL,
-  sel.mode.action.merge.option = "intersect"
+  sel.mode.action.merge.option = "intersect" 
 ) {
   afterV.A.clustername <- VEinfos$cluster.name.A
   afterV.B.clustername <- VEinfos$cluster.name.B
@@ -514,6 +521,44 @@ TrimVEinfos <- function(
   edges.all.infos <- VEinfos$edges.infos
   vertices.A.apx.types <- VEinfos$vertices.apx.type.A
   vertices.B.apx.types <- VEinfos$vertices.apx.type.B
+  ### select target edges.part.infos and vertices.part.infos by some genes
+  if (!is.null(sel.some.genes.A) || !is.null(sel.some.genes.B)) {
+    # --- merge option ---
+    if(!(sel.some.genes.merge.option[[1]] %in% c("union", "intersect"))) {  # only use [1]
+      stop("Sel-some-genes merge option error: undefined merge options! only 'union' and 'intersect' are allowed.")
+    }
+    uid.somegenes.sel.A <- uid.somegenes.sel.B <- integer()
+    if (is.null(sel.some.genes.A)) {
+      uid.somegenes.sel.A <- vertices.all.infos[which(vertices.all.infos$ClusterName == afterV.A.clustername), "UID"]
+    } else {
+      uid.somegenes.sel.A <- vertices.all.infos[intersect(which(vertices.all.infos$ClusterName == afterV.A.clustername), which(vertices.all.infos$GeneName %in% sel.some.genes.A)), "UID"]    
+    }
+    if (is.null(sel.some.genes.B)) {
+      uid.somegenes.sel.B <- vertices.all.infos[which(vertices.all.infos$ClusterName == afterV.B.clustername), "UID"]
+    } else {
+      uid.somegenes.sel.B <- vertices.all.infos[intersect(which(vertices.all.infos$ClusterName == afterV.B.clustername), which(vertices.all.infos$GeneName %in% sel.some.genes.B)), "UID"]    
+    }
+    inds.somegenes.result <- integer()
+    if (sel.some.genes.merge.option == "intersect") {
+      # conv
+      inds.somegenes.conv <- intersect(which(edges.all.infos$from %in% uid.somegenes.sel.A), which(edges.all.infos$to %in% uid.somegenes.sel.B))
+      # rev
+      inds.somegenes.rev <- intersect(which(edges.all.infos$from %in% uid.somegenes.sel.B), which(edges.all.infos$to %in% uid.somegenes.sel.A))
+      inds.somegenes.result <- unique(c(inds.somegenes.conv, inds.somegenes.rev))
+    } else {
+      if (sel.some.genes.merge.option == "union") {
+        # conv
+        inds.somegenes.conv <- union(which(edges.all.infos$from %in% uid.somegenes.sel.A), which(edges.all.infos$to %in% uid.somegenes.sel.B))
+        # rev
+        inds.somegenes.rev <- union(which(edges.all.infos$from %in% uid.somegenes.sel.B), which(edges.all.infos$to %in% uid.somegenes.sel.A))
+        inds.somegenes.result <- unique(c(inds.somegenes.conv, inds.somegenes.rev))
+      }
+    }
+    edges.sel0.infos <- edges.all.infos[inds.somegenes.result, ]
+  } else {
+    edges.sel0.infos <- edges.all.infos
+  }
+
   ### select target edges.part.infos and vertices.part.infos by some gene pairs
   ## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
   if (!is.null(sel.some.gene.pairs.df)) {
@@ -536,13 +581,13 @@ TrimVEinfos <- function(
       # get subset, using short-inter-pair to match
       tob.res.short.interacts.conv <- paste(tob.res.sel.gp.df[, "part1.UID"], tob.res.sel.gp.df[, "part2.UID"], sep = "->")
       tob.res.short.interacts.rev <- paste(tob.res.sel.gp.df[, "part2.UID"], tob.res.sel.gp.df[, "part1.UID"], sep = "->")
-      tmp.edges.short.interacts <- paste(edges.all.infos[, "from"], edges.all.infos[, "to"], sep = "->")
-      edges.sel1.infos <- edges.all.infos[which(tmp.edges.short.interacts %in% unique(c(tob.res.short.interacts.conv, tob.res.short.interacts.rev))), ]
+      tmp.edges.short.interacts <- paste(edges.sel0.infos[, "from"], edges.sel0.infos[, "to"], sep = "->")
+      edges.sel1.infos <- edges.sel0.infos[which(tmp.edges.short.interacts %in% unique(c(tob.res.short.interacts.conv, tob.res.short.interacts.rev))), ]
     } else {
       stop("Given parameter `sel.some.gene.pairs.df` should be data.frame that has 2 columns.")      
     }
   } else {
-    edges.sel1.infos <- edges.all.infos
+    edges.sel1.infos <- edges.sel0.infos
   }
 
   ### select target edges.part.infos and vertices.part.infos by exprs changes of genes
@@ -635,7 +680,7 @@ TrimVEinfos <- function(
       if (sel.mode.action.merge.option == "intersect") {
         inds.mode.actf.sel <- intersect(inds.mode.sel, inds.actf.sel)
       } else {
-        stop("Mode-ActionEffect merge option error: undefined merge options!")
+        stop("Mode-ActionEffect merge option error: undefined merge options! only 'union' and 'intersect' are allowed.")
       }
     }
     edges.part.infos <- edges.sel3.infos[inds.mode.actf.sel, ]

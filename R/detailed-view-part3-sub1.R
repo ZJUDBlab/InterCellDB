@@ -979,7 +979,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
 
   # draw edges
   # use reverse order to plot positive & negative above the unspecified or undirected
-  for (j in rev(1:length(kpred.action.effect))) {
+  for (j in rev(seq_along(kpred.action.effect))) {
     if (!(kpred.action.effect[j] %in% show.action.effect.val)) {
       next
     }
@@ -1711,9 +1711,9 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
 
   draw.add.comps.list <- list()
   # use reverse order to plot positive & negative above the unspecified or undirected
-  for (j in rev(1:length(pred.action.effect))) {
+  for (j in rev(seq_along(pred.action.effect))) {
     this.edges.infos <- edges.infos[which(edges.infos[, "action.effect"] == pred.action.effect[j]), ]
-    for (i in 1:length(pred.mode)) {
+    for (i in seq_along(pred.mode)) {
       if (!(pred.action.effect[j] %in% show.action.effect.val)) {
         break
       }

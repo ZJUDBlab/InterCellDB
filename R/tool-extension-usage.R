@@ -101,15 +101,24 @@ Tool.formula.onPValAdj.default <- function(
   data.f, 
   data.b
 ) {
+	default.max.replace <- 10000  # use 10000 as default maximum
   if (length(data.f) != length(data.b)) {
     stop("Unexpected non-identical length data input!")
   }
   tmp.f <- abs(log10(data.f))
   tmp.b <- abs(log10(data.b))
-  max.f <- max(tmp.f[which(is.finite(tmp.f))])
-  max.b <- max(tmp.b[which(is.finite(tmp.b))])
-  tmp.f[which(is.infinite(tmp.f))] <- 10 * max.f
-  tmp.b[which(is.infinite(tmp.b))] <- 10 * max.b
+  inds.tmp.f <- which(is.finite(tmp.f))
+  inds.tmp.b <- which(is.finite(tmp.b))
+  if (length(inds.tmp.f) == 0 && length(inds.tmp.b) == 0) {
+  	tmp.f <- tmp.b <- 10 * default.max.replace
+  } else {
+  	max.f <- max(tmp.f[inds.tmp.f])
+		max.f	<- ifelse(max.f	== -Inf, default.max.replace, max.f)
+		max.b <- max(tmp.b[inds.tmp.b])
+		max.b	<- ifelse(max.b == -Inf, default.max.replace, max.b)
+		tmp.f[inds.tmp.f] <- 10 * max.f
+		tmp.b[inds.tmp.b] <- 10 * max.b
+  }
   return(tmp.f * tmp.b)
 }
 
@@ -135,21 +144,23 @@ Tool.formula.onPValAdj.default <- function(
 #'
 #' @export
 #'
-Tool.GenStdGenePairs.from.VEinfos <- function(
+Tool.GenStdGenePairs.from.VEinfos <- function(  # [TODO] this removes the belonging of cluster. WRONG
   VEinfos
 ) {
   vertices.infos <- VEinfos$vertices.infos
   edges.infos <- VEinfos$edges.infos
   #
-  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "GeneName", "LogFC")], by = c("from" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 1, ncol(tmp.res))] <- c("inter.GeneName.A", "inter.LogFC.A")
-  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "GeneName", "LogFC")], by = c("to" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 1, ncol(tmp.res))] <- c("inter.GeneName.B", "inter.LogFC.B")
+  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC")], by = c("from" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 2:0)] <- c("inter.Cluster.A", "inter.GeneName.A", "inter.LogFC.A")
+  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC")], by = c("to" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 2:0)] <- c("inter.Cluster.B", "inter.GeneName.B", "inter.LogFC.B")
   # form std data.frame
-  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B")
+  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B", "inter.Cluster.A", "inter.Cluster.B")
   tmp.res <- tmp.res[, match(align.colnames, colnames(tmp.res))]
   # result
   std.df <- DoPartUnique(tmp.res, 1:2)
+  # match cluster
+  std.df <- std.df[intersect(which(std.df$inter.Cluster.A == VEinfos$cluster.name.A), which(std.df$inter.Cluster.B == VEinfos$cluster.name.B)), ]
   return(std.df)
 }
 
