@@ -98,28 +98,29 @@ Tool.formula.onLogFC.default <- function(
 #' @export
 #'
 Tool.formula.onPValAdj.default <- function(
-  data.f, 
-  data.b
+	data.f, 
+	data.b
 ) {
 	default.max.replace <- 10000  # use 10000 as default maximum
-  if (length(data.f) != length(data.b)) {
-    stop("Unexpected non-identical length data input!")
-  }
-  tmp.f <- abs(log10(data.f))
-  tmp.b <- abs(log10(data.b))
-  inds.tmp.f <- which(is.finite(tmp.f))
-  inds.tmp.b <- which(is.finite(tmp.b))
-  if (length(inds.tmp.f) == 0 && length(inds.tmp.b) == 0) {
-  	tmp.f <- tmp.b <- 10 * default.max.replace
-  } else {
-  	max.f <- max(tmp.f[inds.tmp.f])
-		max.f	<- ifelse(max.f	== -Inf, default.max.replace, max.f)
+	if (length(data.f) != length(data.b)) {
+		stop("Unexpected non-identical length data input!")
+	}
+	tmp.f <- abs(log10(data.f))
+	tmp.b <- abs(log10(data.b))
+	inds.tmp.f <- which(is.finite(tmp.f))
+	inds.tmp.b <- which(is.finite(tmp.b))
+	if (length(inds.tmp.f) == 0 && length(inds.tmp.b) == 0) {
+		tmp.f <- rep(10 * default.max.replace, times = length(tmp.f))
+		tmp.b <- rep(10 * default.max.replace, times = length(tmp.b))
+	} else {
+		max.f <- max(tmp.f[inds.tmp.f])
+		max.f	<- ifelse(is.infinite(max.f), default.max.replace, max.f)
 		max.b <- max(tmp.b[inds.tmp.b])
-		max.b	<- ifelse(max.b == -Inf, default.max.replace, max.b)
-		tmp.f[inds.tmp.f] <- 10 * max.f
-		tmp.b[inds.tmp.b] <- 10 * max.b
-  }
-  return(tmp.f * tmp.b)
+		max.b	<- ifelse(is.infinite(max.b), default.max.replace, max.b)
+		tmp.f[which(is.infinite(tmp.f))] <- 10 * max.f
+		tmp.b[which(is.infinite(tmp.b))] <- 10 * max.b
+	}
+	return(tmp.f * tmp.b)
 }
 
 
@@ -144,7 +145,7 @@ Tool.formula.onPValAdj.default <- function(
 #'
 #' @export
 #'
-Tool.GenStdGenePairs.from.VEinfos <- function(  # [TODO] this removes the belonging of cluster. WRONG
+Tool.GenStdGenePairs.from.VEinfos <- function(
   VEinfos
 ) {
   vertices.infos <- VEinfos$vertices.infos

@@ -599,19 +599,19 @@ AnalyzeClustersInteracts <- function(
   }
   # before running, print the selection used
   cat(paste0("\n---Strategy Used---", 
-    "\nClusters in X: ", paste0(user.settings$X.clusters, collapse = ", "), 
-    "\nClusters in Y: ", paste0(user.settings$Y.clusters, collapse = ", "), 
-    "\nexprs.change: ", paste0(user.settings$exprs.logfc, collapse = ", "), 
-    "\nLocation in X: ", ifelse(is.null(user.settings[["X.Location"]]), "-", paste0(user.settings[["X.Location"]], collapse = ", ")),  
-    "\nLocation score in X: ", ifelse(is.null(user.settings[["X.Location.score.limit"]]), "-", paste0(user.settings[["X.Location.score.limit"]], collapse = ", ")), 
-    "\nLocation in Y: ", ifelse(is.null(user.settings[["Y.Location"]]), "-", paste0(user.settings[["Y.Location"]], collapse = ", ")), 
-    "\nLocation score in Y: ", ifelse(is.null(user.settings[["Y.Location.score.limit"]]), "-", paste0(user.settings[["Y.Location.score.limit"]], collapse = ", ")), 
-    "\nType in X: ", ifelse(is.null(user.settings[["X.Type"]]), "-", paste0(user.settings[["X.Type"]], collapse = ", ")), 
-    "\nType in Y: ", ifelse(is.null(user.settings[["Y.Type"]]), "-", paste0(user.settings[["Y.Type"]], collapse = ", ")), 
-    "\nUse user database: ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
-    "\nUse user merge option: ", ifelse(!is.null(user.type.database), user.settings[["user.merge.option"]], "NOTUSED"),
-    "\nUse some genes: ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
-    "\nUse some gene pairs: ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
+    "\n[Clusters in X] ", paste0(user.settings$X.clusters, collapse = ", "), 
+    "\n[Clusters in Y] ", paste0(user.settings$Y.clusters, collapse = ", "), 
+    "\n[exprs.change] ", paste0(user.settings$exprs.logfc, collapse = ", "), 
+    "\n[Location in X] ", ifelse(is.null(user.settings[["X.Location"]]), "-", paste0(user.settings[["X.Location"]], collapse = ", ")),  
+    "\n[Location score in X] ", ifelse(is.null(user.settings[["X.Location.score.limit"]]), "-", paste0(user.settings[["X.Location.score.limit"]], collapse = ", ")), 
+    "\n[Location in Y] ", ifelse(is.null(user.settings[["Y.Location"]]), "-", paste0(user.settings[["Y.Location"]], collapse = ", ")), 
+    "\n[Location score in Y] ", ifelse(is.null(user.settings[["Y.Location.score.limit"]]), "-", paste0(user.settings[["Y.Location.score.limit"]], collapse = ", ")), 
+    "\n[Type in X] ", ifelse(is.null(user.settings[["X.Type"]]), "-", paste0(user.settings[["X.Type"]], collapse = ", ")), 
+    "\n[Type in Y] ", ifelse(is.null(user.settings[["Y.Type"]]), "-", paste0(user.settings[["Y.Type"]], collapse = ", ")), 
+    "\n[Use user database] ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
+    "\n[Use user merge option] ", ifelse(!is.null(user.type.database), user.settings[["user.merge.option"]], "NOTUSED"),
+    "\n[Use some genes] ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
+    "\n[Use some gene pairs] ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
     "\n"
   ))
   ### then run the analysis
