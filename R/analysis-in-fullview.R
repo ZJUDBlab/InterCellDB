@@ -280,16 +280,12 @@ Inside.AnalyzeClustersInteracts <- function(
             ref.slim.max.list <- ref.max.list[which(names(ref.max.list) %in% names(tmp.max.list))]
             # to compare the max value
             tmp.max.list <- tmp.max.list[which(!is.na(tmp.max.list))]  # to prevent some genes have no detailed locations
-            tmp.max.list <- tmp.max.list[order(names(tmp.max.list), decreasing = FALSE)]
-            ref.slim.max.list <- ref.slim.max.list[order(names(ref.slim.max.list), decreasing = FALSE)]
-            # caught the error
-            if (length(tmp.max.list) != length(ref.slim.max.list)) {
-              stop("Unexpected error in location strategy! Please avoid using this strategy in current situation!")
-            }
-            # else run
-            tmp.max.list <- tmp.max.list[which(tmp.max.list == ref.slim.max.list)]
-            tmp.max.df <- data.frame(GeneID = as.numeric(names(tmp.max.list)), score = tmp.max.list, stringsAsFactors = FALSE)
-            tmp.max.res <- left_join(tmp.max.df, data.loc, by = c("GeneID", "score"))
+            tmp.max.df <- data.frame(GeneID = names(tmp.max.list), loc.val.tmp = tmp.max.list, stringsAsFactors = FALSE)
+            ref.max.df <- data.frame(GeneID = names(ref.max.list), loc.val.ref = ref.max.list, stringsAsFactors = FALSE)
+            tmp.max.df.m <- left_join(tmp.max.df, ref.max.df, by = c("GeneID" = "GeneID"))
+            tmp.max.df.m <- tmp.max.df.m[which(tmp.max.df.m$loc.val.tmp == tmp.max.df.m$loc.val.ref), ]
+            tmp.max.pre.res.df <- data.frame(GeneID = as.numeric(tmp.max.df.m$GeneID), score = tmp.max.df.m$loc.val.tmp, stringsAsFactors = FALSE)
+            tmp.max.res <- left_join(tmp.max.pre.res.df, data.loc, by = c("GeneID", "score"))
             ret.val <- tmp.max.res[, colnames(data.loc)]
           }  # else, do nothing
         } else {  # use score

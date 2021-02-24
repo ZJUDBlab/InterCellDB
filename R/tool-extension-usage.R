@@ -101,7 +101,7 @@ Tool.formula.onPValAdj.default <- function(
 	data.f, 
 	data.b
 ) {
-	default.max.replace <- 10000  # use 10000 as default maximum
+	default.max.replace <- 1000  # use 1000 as default maximum(e-999 are usual lowest limit), when all log(values) are infinite.
 	if (length(data.f) != length(data.b)) {
 		stop("Unexpected non-identical length data input!")
 	}
@@ -110,12 +110,12 @@ Tool.formula.onPValAdj.default <- function(
 	inds.tmp.f <- which(is.finite(tmp.f))
 	inds.tmp.b <- which(is.finite(tmp.b))
 	if (length(inds.tmp.f) == 0 && length(inds.tmp.b) == 0) {
-		tmp.f <- rep(10 * default.max.replace, times = length(tmp.f))
-		tmp.b <- rep(10 * default.max.replace, times = length(tmp.b))
+		tmp.f <- rep(default.max.replace, times = length(tmp.f))
+		tmp.b <- rep(default.max.replace, times = length(tmp.b))
 	} else {
-		max.f <- max(tmp.f[inds.tmp.f])
+		max.f <- max(tmp.f[inds.tmp.f])  # if length(inds.tmp.f) == 0, max returns -Inf
 		max.f	<- ifelse(is.infinite(max.f), default.max.replace, max.f)
-		max.b <- max(tmp.b[inds.tmp.b])
+		max.b <- max(tmp.b[inds.tmp.b])  # if length(inds.tmp.b) == 0, max returns -Inf
 		max.b	<- ifelse(is.infinite(max.b), default.max.replace, max.b)
 		tmp.f[which(is.infinite(tmp.f))] <- 10 * max.f
 		tmp.b[which(is.infinite(tmp.b))] <- 10 * max.b
