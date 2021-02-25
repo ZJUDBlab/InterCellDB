@@ -1,15 +1,33 @@
 # This file documents all datasets in this pacakge.
 # written in 2020.03.28
 
-### --- Human ---
+### Small Tools
 
+#' Merged Uniprot Keywords
+#'
+#' @description
+#' A dataset contains the mapping of original Uniprot Keywords and remapped keys
+#' 
+#' @format Data.frame.
+#' \itemize{
+#'    \item {\code{orig.uniprot.keywords}: } {[TODO]}
+#'    \item {\code{merged.molecular.function}: } {[TODO]
+#'          }
+#' }
+#'
+#' @source <https://www.uniprot.org>, and download the Keywords-[molecular function] of genes.
+#'
+"Uniprot.key.map.list"
+
+
+### --- Human ---
 
 #' Reference database of human genes
 #'
 #' @description
 #' A dataset contains the basic informations of 41745 human genes.
 #' 
-#' format List.
+#' @format List.
 #' \itemize{
 #'    \item {\code{gene.ncbi.db}: } {it is downloaded from NCBI ftp site:"/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz".}
 #'    \item {\code{gene.synonyms.db}: } {data.frame, it records the synonyms-genenames pairs, which are generated from \code{gene.ncbi.db}.
@@ -91,7 +109,6 @@
 
 
 ### --- Mouse ---
-
 
 #' Reference database of mouse genes
 #'
