@@ -474,6 +474,7 @@ AnalyzeClustersInteracts <- function(
 ) {
   # CONST: user merge option 
   user.merge.option.list <- c("intersect", "union")
+  user.sel.location.special <- c("All.Cytoplasm")  # This word will be interpreted to all cytoplasm-belonging locations
   # generate default settings
   this.fac.clusters <- levels(factor(fgenes.remapped.all$cluster))
   user.settings <- list(
@@ -531,12 +532,24 @@ AnalyzeClustersInteracts <- function(
     user.settings$exprs.logfc <- rather.m.exprs.changes
   }
   ## Location
+  inside.replace.special.location <- function(sub.sel.IT.Location, locs.special) {
+    tmp.reserved <- setdiff(sub.sel.IT.Location, locs.special)
+    tmp.to.replace <- intersect(sub.sel.IT.Location, locs.special)
+    res.to.replace <- character()
+    if ("All.Cytoplasm" %in% tmp.to.replace) {
+      res.to.replace <- c(res.to.replace, c("Cytoplasm", "Cytoskeleton", "Cytosol", "Endoplasmic Reticulum", 
+        "Endosome", "Endosome", "Golgi Apparatus", "Lysosome", "Mitochondrion", "Peroxisome"))
+    }
+    return(unique(c(tmp.reserved, res.to.replace)))
+  }
   # for X
   if (!is.null(sub.sel.X.Location) && length(sub.sel.X.Location) != 0) {
+    sub.sel.X.Location <- inside.replace.special.location(sub.sel.X.Location, user.sel.location.special)
     user.settings[["X.Location"]] <- as.character(Tc.Cap.simple.vec(sub.sel.X.Location))
   }
   # for Y
   if (!is.null(sub.sel.Y.Location) && length(sub.sel.Y.Location) != 0) {
+    sub.sel.Y.Location <- inside.replace.special.location(sub.sel.Y.Location, user.sel.location.special)
     user.settings[["Y.Location"]] <- as.character(Tc.Cap.simple.vec(sub.sel.Y.Location))
   }
   ## Type

@@ -1660,7 +1660,7 @@ GetResult.PlotOnepairClusters.CellPlot.LargeData <- function(
 
     tmp.common.ctp.xy[which(tmp.common.ctp.xy[, "Map.Items"] == "Endoplasmic Reticulum"), "Map.Items"] <- "ER"
     tmp.common.ctp.xy[which(tmp.common.ctp.xy[, "Map.Items"] == "Golgi Apparatus"), "Map.Items"] <- "Golgi"
-    tmp.common.ctp.xy[which(tmp.common.ctp.xy[, "Map.Items"] == "Cytoplasm"), "Map.Items"] <- "OtherInPlasm"
+    tmp.common.ctp.xy[which(tmp.common.ctp.xy[, "Map.Items"] == "Cytoplasm"), "Map.Items"] <- "OtherCytoplasm"
     #
     this.graph.add.ps <- this.graph.add.ps + 
       geom_text(data = tmp.common.ctp.xy, 
