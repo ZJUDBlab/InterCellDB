@@ -89,6 +89,7 @@ Inside.CollectActionMapping <- function(
     } # else res.actionid <- 1 (stay default)
   } else {
     if (onerow.info["a_is_acting"] == 'f') {
+      # in database, it means it goes is_directional = t, a_is_acting = t, in oppsite way
       # no change, res.actionid <- 1 (stay default)
     } else {
       # is_directional TRUE, a_is_acting TRUE, confirm that it is A-act-upon-B
@@ -225,6 +226,7 @@ GenerateMapDetailOnepairClusters <- function(
       tmp.put.act.infos <- t(tmp.put.act.infos)
       ## data trimming
       # deliminate those 1s when higher IDs exist, which means if directional is determined, leave out old ambiguous ones.
+      # see human database F3->F7, then this situation will be understood
       tmp.put.act.infos.df <- data.frame(
         mode = as.character(tmp.put.act.infos[, 1]), 
         actionid = as.integer(tmp.put.act.infos[, 2]),

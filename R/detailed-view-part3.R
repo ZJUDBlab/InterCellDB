@@ -1061,7 +1061,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
         # fill = "#D70051",  # for positive
         fill = "black", 
         alpha = link.alpha, 
-        lwd = plot.lwd.L.act.eff)
+        lwd = plot.lwd.L.act.eff,
+        lty = link.linetype[1])
     )
   L.act.eff.2 <- grobTree(
       plot.grey.bg.L.act.eff,
@@ -1072,7 +1073,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
         #col = "#00913A",  # for negative
         col = "black", 
         alpha = link.alpha, 
-        lwd = plot.lwd.L.act.eff)
+        lwd = plot.lwd.L.act.eff,
+        lty = link.linetype[2])
     )
   L.act.eff.3 <- grobTree(
       plot.grey.bg.L.act.eff, 
@@ -1084,7 +1086,8 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
         #col = "#956134",  # for unspecified
         col = "black", 
         alpha = link.alpha, 
-        lwd = plot.lwd.L.act.eff)
+        lwd = plot.lwd.L.act.eff,
+        lty = link.linetype[3])
     )
   L.act.eff.4 <- grobTree(
       plot.grey.bg.L.act.eff, 
@@ -1095,7 +1098,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
         col = "black", 
         alpha = link.alpha, 
         lwd = plot.lwd.L.act.eff,
-        lty = "22")
+        lty = link.linetype[4])  # backup "22" if need dashed
     )
   # legend label
   T.act.eff.1 <- textGrob("positive", x = .1, y = .5, just = "left", gp = gpar(fontsize = 10))

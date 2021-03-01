@@ -44,3 +44,7 @@ docs/
 
 # Mac file
 .DS_Store
+
+# Rporj file
+*.Rproj
+.Rbuildignore

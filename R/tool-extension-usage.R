@@ -254,14 +254,16 @@ Tool.FindGenesFromGO <- function(
 				tmp.template <- match(x, go.ref.db$GO_ID)
 				this.category <- go.ref.db[tmp.template, "Category"]
 				tmp.rel.db <- go.relative.db[[which(names(go.relative.db) == this.category)]]
+				# get relative part
 				tmp.rel.inds <- which(names(tmp.rel.db) == x)
-				if (length(tmp.rel.inds) == 0) {
-					tmp.res <- character(0)
-				} else {
+				tmp.res <- character(0)
+				if (length(tmp.rel.inds) != 0) {
 					tmp.rel.go.s <- tmp.rel.db[[tmp.rel.inds]]
 					tmp.res <- unique(go.ref.db[which(go.ref.db$GO_ID %in% tmp.rel.go.s), "Gene.name"])
 				}
-				return(tmp.res)
+				# get plain part
+				tmp.plain.res <- unique(go.ref.db[which(go.ref.db$GO_ID %in% x), "Gene.name"])
+				return(unique(c(tmp.res, tmp.plain.res)))
 			})	
 	} else {
 		# use the plain GO IDs or Terms
