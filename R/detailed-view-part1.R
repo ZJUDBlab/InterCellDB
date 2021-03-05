@@ -107,8 +107,13 @@ CollectHierachyOnepairClusters <- function(
       }
       tmp.sub.1 <- inside.updn.select(tmp.sub.1, i.exc, tmp.action.effect$direction)
       # re-align the result
-      tmp.sub.1 <- tmp.sub.1[, c("from.GeneName", "to.GeneName", "from.LogFC", "to.LogFC")]
-      colnames(tmp.sub.1) <- c("act.C.genename", "act.D.genename", "act.C.logfc", "act.D.logfc")
+      tmp.sub.1 <- tmp.sub.1[, c("from.GeneName", "to.GeneName", "from.LogFC", "to.LogFC", "from.ClusterName", "to.ClusterName")]
+      tmp.sub.1.conv <- tmp.sub.1[intersect(which(tmp.sub.1$from.ClusterName == op.clustername), which(tmp.sub.1$to.ClusterName == rv.clustername)), ]
+      colnames(tmp.sub.1.conv) <- c("act.C.genename", "act.D.genename", "act.C.logfc", "act.D.logfc", "act.C.ClusterName", "act.D.ClusterName")
+      tmp.sub.1.rev  <- tmp.sub.1[intersect(which(tmp.sub.1$from.ClusterName == rv.clustername), which(tmp.sub.1$to.ClusterName == op.clustername)), ]
+      tmp.sub.1.rev  <- tmp.sub.1.rev[, ReverseOddEvenCols(6)]
+      colnames(tmp.sub.1.rev) <- c("act.C.genename", "act.D.genename", "act.C.logfc", "act.D.logfc", "act.C.ClusterName", "act.D.ClusterName")
+      tmp.sub.1 <- rbind(tmp.sub.1.conv, tmp.sub.1.rev)
       # add it to result
       if (nrow(tmp.sub.1) > 0) {
         tmp.sub.1 <- cbind(tmp.sub.1, UPDN.group = i.exc, ACT.TYPE = j.act, stringsAsFactors = FALSE)
