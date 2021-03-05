@@ -16,6 +16,42 @@ Inside.EvaluateByABS <- function(
 FullView.Evaluation.func.default <- Inside.EvaluateByABS
 
 
+# function for select location score
+Inside.select.location.score <- function(
+  data.loc, 
+  anno.location.ref, 
+  strategy1.ref, 
+  option) 
+{
+  ret.val <- data.loc
+  if (nrow(ret.val) == 0) {
+    return(ret.val)
+  }
+  if (is.character(option)) {  # use pre-defined strategies
+    if (option == "the most confident") {  # the only strategy supported yet
+      tmp.max.list <- tapply(data.loc[, "score"], data.loc[, "GeneID"], max)
+      ref.max.list <- strategy1.ref  # used here
+      ref.slim.max.list <- ref.max.list[which(names(ref.max.list) %in% names(tmp.max.list))]
+      # to compare the max value
+      tmp.max.list <- tmp.max.list[which(!is.na(tmp.max.list))]  # to prevent some genes have no detailed locations
+      tmp.max.df <- data.frame(GeneID = names(tmp.max.list), loc.val.tmp = tmp.max.list, stringsAsFactors = FALSE)
+      ref.max.df <- data.frame(GeneID = names(ref.max.list), loc.val.ref = ref.max.list, stringsAsFactors = FALSE)
+      tmp.max.df.m <- left_join(tmp.max.df, ref.max.df, by = c("GeneID" = "GeneID"))
+      tmp.max.df.m <- tmp.max.df.m[which(tmp.max.df.m$loc.val.tmp == tmp.max.df.m$loc.val.ref), ]
+      tmp.max.pre.res.df <- data.frame(GeneID = as.numeric(tmp.max.df.m$GeneID), score = tmp.max.df.m$loc.val.tmp, stringsAsFactors = FALSE)
+      tmp.max.res <- left_join(tmp.max.pre.res.df, data.loc, by = c("GeneID", "score"))
+      ret.val <- tmp.max.res[, colnames(data.loc)]
+    }  # else, do nothing
+  } else {  # use score
+    if (is.numeric(option)) {
+      option <- as.integer(option)  # coerce to integer score
+      ret.val <- data.loc[which(data.loc[, "score"] %in% option), ]
+    } else {
+      warning("Score limit get neither NUMERIC nor PRE-DEFINED options, and will not do anything.")
+    }
+  }
+  ret.val
+}
 
 
 # [inside usage]
@@ -79,25 +115,60 @@ Inside.AnalyzeClustersInteracts <- function(
   prog.bar.p.p$tick(0)
   this.inds.X.clusters <- match(to.use.X.clusters, fac.clusters)
   this.inds.Y.clusters <- match(to.use.Y.clusters, fac.clusters)
-  # constant
+
+  ## pre-subset of all reference database
+  presub.loc.genes <- presub.type.genes <- presub.mk.genes <- unique(markers.remapped.all$gene)
+  # pre-subset loc setting
+  if (!is.null(subgroup.options[["X.Location"]]) && !is.null(subgroup.options[["Y.Location"]])) {
+    presub.loc.set <- union(subgroup.options[["X.Location"]], subgroup.options[["Y.Location"]])
+    tmp.xloc.score.set <- subgroup.options[["X.Location.score.limit"]]
+    if (is.character(tmp.xloc.score.set)) {
+      tmp.xloc.score.set <- c(1:5)  # using full length
+    }
+    tmp.yloc.score.set <- subgroup.options[["Y.Location.score.limit"]]
+    if (is.character(tmp.yloc.score.set)) {
+      tmp.yloc.score.set <- c(1:5)
+    }
+    presub.loc.score.set <- union(tmp.xloc.score.set, tmp.yloc.score.set)
+    presub.loc.genes <- anno.location.ref[intersect(which(anno.location.ref$GO.Term.target %in% presub.loc.set), 
+      which(anno.location.ref$score %in% presub.loc.score.set)), "Gene.name"]
+  }
+  # pre-subset type setting
+  if (!is.null(subgroup.options[["X.Type"]]) && !is.null(subgroup.options[["Y.Type"]])) {
+    presub.type.set <- union(subgroup.options[["X.Type"]], subgroup.options[["Y.Type"]])
+    presub.type.genes <- anno.type.ref[which(anno.type.ref$Keyword.Name %in% presub.type.set), "Gene.name"]
+  }
+  # get genes
+  presub.genes <- unique(Reduce(intersect, list(markers.remapped.all$gene, presub.loc.genes, presub.type.genes)))
+  # subset the reference database
+  pairs.ref <- pairs.ref[intersect(which(pairs.ref$inter.GeneName.A %in% presub.genes), which(pairs.ref$inter.GeneName.B %in% presub.genes)), ]
+  anno.location.ref <- anno.location.ref[which(anno.location.ref$Gene.name %in% presub.genes), ]
+  anno.type.ref <- anno.type.ref[which(anno.type.ref$Gene.name %in% presub.genes), ]
+
+  # create some used constant within loops
+  # 0. use for gene in gene pair database
+  #const.gpairs.gene.inds.A <- tapply(seq_along(pairs.ref$inter.GeneName.A), pairs.ref$inter.GeneName.A, function(x) {x})
+  #const.gpairs.gene.inds.B <- tapply(seq_along(pairs.ref$inter.GeneName.B), pairs.ref$inter.GeneName.B, function(x) {x})
   # 1. use for location - "the most confident" strategy
-  const.loc.ref.max.list <- tapply(anno.location.ref[, "score"], anno.location.ref[, "GeneID"], max)
+  const.loc.ref.max.list <- tapply(anno.location.ref$score, anno.location.ref$GeneID, max)
+  
+  # process
   for (i in this.inds.X.clusters) {
     for (k in this.inds.Y.clusters) {
       interact.name <- paste0(fac.clusters[i], kClustersSplit, fac.clusters[k])  # naming interaction
-      markers.rall.i <- markers.remapped.all[which(markers.remapped.all[, "cluster"] == fac.clusters[i]), ]  # extract i & k markers.remapped.* list
-      markers.rall.k <- markers.remapped.all[which(markers.remapped.all[, "cluster"] == fac.clusters[k]), ]
-      genes.list.i <- markers.rall.i[, "gene"]
-      genes.list.k <- markers.rall.k[, "gene"]
+      markers.rall.i <- markers.remapped.all[which(markers.remapped.all$cluster == fac.clusters[i]), ]  # extract i & k markers.remapped.* list
+      markers.rall.k <- markers.remapped.all[which(markers.remapped.all$cluster == fac.clusters[k]), ]
+      genes.list.i <- markers.rall.i$gene
+      genes.list.k <- markers.rall.k$gene
       ## find pairs
       #1 A-B
-      inds.ia.match <- which(pairs.ref[, "inter.GeneName.A"] %in% genes.list.i)
-      inds.kb.match <- which(pairs.ref[, "inter.GeneName.B"] %in% genes.list.k)
+      inds.ia.match <- which(pairs.ref$inter.GeneName.A %in% genes.list.i)
+      inds.kb.match <- which(pairs.ref$inter.GeneName.B %in% genes.list.k)
       inds.ia.kb <- intersect(inds.ia.match, inds.kb.match)
       pairs.ia.kb <- pairs.ref[inds.ia.kb, ]
       #2 B-A
-      inds.ib.match <- which(pairs.ref[, "inter.GeneName.B"] %in% genes.list.i)
-      inds.ka.match <- which(pairs.ref[, "inter.GeneName.A"] %in% genes.list.k)
+      inds.ib.match <- which(pairs.ref$inter.GeneName.B %in% genes.list.i)
+      inds.ka.match <- which(pairs.ref$inter.GeneName.A %in% genes.list.k)
       inds.ib.ka <- intersect(inds.ib.match, inds.ka.match)
       pairs.ib.ka <- pairs.ref[inds.ib.ka, c(ReverseOddEvenCols(ind.colname.end.dual), (ind.colname.end.dual+1):ncol(pairs.ref))]  # reverse A-B to be matching B-A
       colnames(pairs.ib.ka) <- colnames(pairs.ref)
@@ -136,7 +207,7 @@ Inside.AnalyzeClustersInteracts <- function(
         tmp.rgp.b <- restricted.gene.pairs[seq(2, length(restricted.gene.pairs), 2)]
         tmp.rpg.paste.conv <- paste(tmp.rgp.a, tmp.rgp.b, sep = "}")  # special sep, to avoid the same letter appeared in gene names
         tmp.rpg.paste.rev <- paste(tmp.rgp.b, tmp.rgp.a, sep = "}")   # and gene pairs are of no direction, the reverse of given gene pairs are generated
-        tmp.ikab.paste <- paste(pairs.sp.ikab[, "inter.GeneName.A"], pairs.sp.ikab[, "inter.GeneName.B"], sep = "}")
+        tmp.ikab.paste <- paste(pairs.sp.ikab$inter.GeneName.A, pairs.sp.ikab$inter.GeneName.B, sep = "}")
         inds.ikab.pmatch.conv <- which(tmp.ikab.paste %in% tmp.rpg.paste.conv)
         inds.ikab.pmatch.rev <- which(tmp.ikab.paste %in% tmp.rpg.paste.rev)
         inds.ikab.pmatch <- union(inds.ikab.pmatch.conv, inds.ikab.pmatch.rev)
@@ -155,25 +226,25 @@ Inside.AnalyzeClustersInteracts <- function(
       pairs.sp.ikab <- pairs.sp.ikab[, c(1:ind.colname.end.dual, (ncol(pairs.sp.ikab)-1):(ncol(pairs.sp.ikab)), (ind.colname.end.dual+1):(ncol(pairs.sp.ikab)-2))]
       ## do subgroup based on @param subgroup.options
       #1 - exprs change (based on logFC)
-      pairs.subg.logfc <- list(xup.yup = data.frame(), xup.ydn = data.frame(), xdn.yup = data.frame(), xdn.ydn = data.frame())
-      ind.A.up <- which(pairs.sp.ikab[, "inter.LogFC.A"] > 0)
-      ind.A.dn <- which(pairs.sp.ikab[, "inter.LogFC.A"] < 0)
-      ind.B.up <- which(pairs.sp.ikab[, "inter.LogFC.B"] > 0)
-      ind.B.dn <- which(pairs.sp.ikab[, "inter.LogFC.B"] < 0)
+      inds.subg.logfc <- integer()
+      ind.A.up <- which(pairs.sp.ikab$inter.LogFC.A > 0)
+      ind.A.dn <- which(pairs.sp.ikab$inter.LogFC.A < 0)
+      ind.B.up <- which(pairs.sp.ikab$inter.LogFC.B > 0)
+      ind.B.dn <- which(pairs.sp.ikab$inter.LogFC.B < 0)
       if ("Xup.Yup" %in% subgroup.options$exprs.logfc) {
-        pairs.subg.logfc$xup.yup <- pairs.sp.ikab[intersect(ind.A.up, ind.B.up), ]
+        inds.subg.logfc <- c(inds.subg.logfc, intersect(ind.A.up, ind.B.up))
       }
       if ("Xup.Ydn" %in% subgroup.options$exprs.logfc) {
-        pairs.subg.logfc$xup.ydn <- pairs.sp.ikab[intersect(ind.A.up, ind.B.dn), ]
+        inds.subg.logfc <- c(inds.subg.logfc, intersect(ind.A.up, ind.B.dn))
       }
       if ("Xdn.Yup" %in% subgroup.options$exprs.logfc) {
-        pairs.subg.logfc$xdn.yup <- pairs.sp.ikab[intersect(ind.A.dn, ind.B.up), ]
+        inds.subg.logfc <- c(inds.subg.logfc, intersect(ind.A.dn, ind.B.up))
       }
       if ("Xdn.Ydn" %in% subgroup.options$exprs.logfc) {
-        pairs.subg.logfc$xdn.ydn <- pairs.sp.ikab[intersect(ind.A.dn, ind.B.dn), ]
+        inds.subg.logfc <- c(inds.subg.logfc, intersect(ind.A.dn, ind.B.dn))
       }
-      pairs.v1.after.logfc <- rbind(rbind(pairs.subg.logfc$xup.yup, pairs.subg.logfc$xup.ydn), rbind(pairs.subg.logfc$xdn.yup, pairs.subg.logfc$xdn.ydn))
-      ## 2 - Location
+      pairs.v1.after.logfc <- pairs.sp.ikab[inds.subg.logfc, ]
+      ## 2 - Location [NOTE] current implementation gets those genes with no locations and types in database to be NA
       # Location - A
       if (is.null(subgroup.options[["X.Location"]])) {
         this.A.locations <- unique(pairs.v1.after.logfc[, c("inter.GeneID.A", "inter.GeneName.A")])
@@ -265,47 +336,17 @@ Inside.AnalyzeClustersInteracts <- function(
       }
       ## after doing subgroup
       pairs.subg.result <- pairs.v4.aft.user.type
-      # Do Unique
-      pairs.subg.result <- DoPartUnique(pairs.subg.result, c(1,2))
       ## re-slim with Location
-      func.location.score.inside <- function(data.loc, anno.location.ref, strategy1.ref, option) {
-        ret.val <- data.loc
-        if (nrow(ret.val) == 0) {
-          return(ret.val)
-        }
-        if (is.character(option)) {  # use pre-defined strategies
-          if (option == "the most confident") {  # the only strategy supported yet
-            tmp.max.list <- tapply(data.loc[, "score"], data.loc[, "GeneID"], max)
-            ref.max.list <- strategy1.ref  # used here
-            ref.slim.max.list <- ref.max.list[which(names(ref.max.list) %in% names(tmp.max.list))]
-            # to compare the max value
-            tmp.max.list <- tmp.max.list[which(!is.na(tmp.max.list))]  # to prevent some genes have no detailed locations
-            tmp.max.df <- data.frame(GeneID = names(tmp.max.list), loc.val.tmp = tmp.max.list, stringsAsFactors = FALSE)
-            ref.max.df <- data.frame(GeneID = names(ref.max.list), loc.val.ref = ref.max.list, stringsAsFactors = FALSE)
-            tmp.max.df.m <- left_join(tmp.max.df, ref.max.df, by = c("GeneID" = "GeneID"))
-            tmp.max.df.m <- tmp.max.df.m[which(tmp.max.df.m$loc.val.tmp == tmp.max.df.m$loc.val.ref), ]
-            tmp.max.pre.res.df <- data.frame(GeneID = as.numeric(tmp.max.df.m$GeneID), score = tmp.max.df.m$loc.val.tmp, stringsAsFactors = FALSE)
-            tmp.max.res <- left_join(tmp.max.pre.res.df, data.loc, by = c("GeneID", "score"))
-            ret.val <- tmp.max.res[, colnames(data.loc)]
-          }  # else, do nothing
-        } else {  # use score
-          if (is.numeric(option)) {
-            option <- as.integer(option)  # coerce to integer score
-            ret.val <- data.loc[which(data.loc[, "score"] %in% option), ]
-          } else {
-            warning("Score limit get neither NUMERIC nor PRE-DEFINED options, and will not do anything.")
-          }
-        }
-        ret.val
-      }
       # - Location
       this.A.locations <- this.A.locations[which(this.A.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.A"]), ]
-      this.A.locations <- func.location.score.inside(this.A.locations, anno.location.ref, const.loc.ref.max.list, subgroup.options$X.Location.score.limit)
+      this.A.locations <- Inside.select.location.score(this.A.locations, anno.location.ref, const.loc.ref.max.list, subgroup.options$X.Location.score.limit)
       this.B.locations <- this.B.locations[which(this.B.locations[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.B"]), ]
-      this.B.locations <- func.location.score.inside(this.B.locations, anno.location.ref, const.loc.ref.max.list, subgroup.options$Y.Location.score.limit)
+      this.B.locations <- Inside.select.location.score(this.B.locations, anno.location.ref, const.loc.ref.max.list, subgroup.options$Y.Location.score.limit)
       # re-slim rescue here
       pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.A"] %in% this.A.locations[, "GeneID"]), ]
       pairs.subg.result <- pairs.subg.result[which(pairs.subg.result[, "inter.GeneID.B"] %in% this.B.locations[, "GeneID"]), ]
+      # Do Unique
+      pairs.subg.result <- DoPartUnique(pairs.subg.result, c(1,2))
       # - Type
       this.A.types <- this.A.types[which(this.A.types[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.A"]), ]
       this.B.types <- this.B.types[which(this.B.types[, "GeneID"] %in% pairs.subg.result[, "inter.GeneID.B"]), ]
@@ -315,9 +356,9 @@ Inside.AnalyzeClustersInteracts <- function(
       interact.pairs.all$anno.allpairs$location.B[[interact.name]] <- this.B.locations
       interact.pairs.all$anno.allpairs$type.A[[interact.name]] <- this.A.types
       interact.pairs.all$anno.allpairs$type.B[[interact.name]] <- this.B.types     
-      interact.pairs.all$name.allpairs <- append(interact.pairs.all$name.allpairs, interact.name)
-      interact.pairs.all$cnt.allpairs <- append(interact.pairs.all$cnt.allpairs, nrow(pairs.subg.result))
-      interact.pairs.all$strength.allpairs <- append(interact.pairs.all$strength.allpairs,
+      interact.pairs.all$name.allpairs <- c(interact.pairs.all$name.allpairs, interact.name)
+      interact.pairs.all$cnt.allpairs <- c(interact.pairs.all$cnt.allpairs, nrow(pairs.subg.result))
+      interact.pairs.all$strength.allpairs <- c(interact.pairs.all$strength.allpairs,
         calculation.formula(pairs.subg.result, c("inter.LogFC.A", "inter.LogFC.B")))
       prog.bar.p.p$tick()
     }
@@ -473,8 +514,9 @@ AnalyzeClustersInteracts <- function(
   ind.colname.end.dual = 4
 ) {
   # CONST: user merge option 
-  user.merge.option.list <- c("intersect", "union")
-  user.sel.location.special <- c("All.Cytoplasm")  # This word will be interpreted to all cytoplasm-belonging locations
+  opt.sel.location.special <- c("All.Cytoplasm")  # This word will be interpreted to all cytoplasm-belonging locations
+  opt.location.score.strategies <- c("the most confident")
+  opt.user.merge.option.list <- c("intersect", "union")
   # generate default settings
   this.fac.clusters <- levels(factor(fgenes.remapped.all$cluster))
   user.settings <- list(
@@ -544,13 +586,29 @@ AnalyzeClustersInteracts <- function(
   }
   # for X
   if (!is.null(sub.sel.X.Location) && length(sub.sel.X.Location) != 0) {
-    sub.sel.X.Location <- inside.replace.special.location(sub.sel.X.Location, user.sel.location.special)
+    sub.sel.X.Location <- inside.replace.special.location(sub.sel.X.Location, opt.sel.location.special)
     user.settings[["X.Location"]] <- as.character(Tc.Cap.simple.vec(sub.sel.X.Location))
+  }
+  xloc.s.s <- user.settings[["X.Location.score.limit"]]  # only one character is allowed
+  if (is.character(xloc.s.s) && (xloc.s.s[1] %in% opt.location.score.strategies)) {
+    user.settings[["X.Location.score.limit"]]  <- xloc.s.s[1]
+  } else {
+    if (!is.numeric(xloc.s.s)) {
+      stop("Given parameter sub.sel.X.Location.score.limit is not allowed!")
+    }  # numeric pass
   }
   # for Y
   if (!is.null(sub.sel.Y.Location) && length(sub.sel.Y.Location) != 0) {
-    sub.sel.Y.Location <- inside.replace.special.location(sub.sel.Y.Location, user.sel.location.special)
+    sub.sel.Y.Location <- inside.replace.special.location(sub.sel.Y.Location, opt.sel.location.special)
     user.settings[["Y.Location"]] <- as.character(Tc.Cap.simple.vec(sub.sel.Y.Location))
+  }
+  yloc.s.s <- user.settings[["Y.Location.score.limit"]]  # only one character is allowed
+  if (is.character(yloc.s.s) && (yloc.s.s[1] %in% opt.location.score.strategies)) {
+    user.settings[["Y.Location.score.limit"]]  <- yloc.s.s[1]
+  } else {
+    if (!is.numeric(yloc.s.s)) {
+      stop("Given parameter sub.sel.Y.Location.score.limit is not allowed!")
+    }  # numeric pass
   }
   ## Type
   # for X
@@ -565,7 +623,7 @@ AnalyzeClustersInteracts <- function(
   tmp.check.selection.X <- !is.null(sub.sel.X.user.type) && (length(sub.sel.X.user.type) != 0)
   tmp.check.selection.Y <- !is.null(sub.sel.Y.user.type) && (length(sub.sel.Y.user.type) != 0)
   # check#1
-  if ((length(sub.sel.user.merge.option) == 1) && (sub.sel.user.merge.option %in% user.merge.option.list)) {
+  if ((length(sub.sel.user.merge.option) == 1) && (sub.sel.user.merge.option %in% opt.user.merge.option.list)) {
     user.settings[["user.merge.option"]] <- sub.sel.user.merge.option
     # check#1.sub
     # only union strategy needs further check, intersect is all compatible

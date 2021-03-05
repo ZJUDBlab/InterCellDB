@@ -88,23 +88,23 @@ Inside.CollectActionMapping <- function(
       stop("Exception: database is broken by mannually modification, as is_directional is f but a_is_acting is t!")
     } # else res.actionid <- 1 (stay default)
   } else {
-    if (onerow.info["a_is_acting"] == 'f') {
-      # in database, it means it goes is_directional = t, a_is_acting = t, in oppsite way
-      # no change, res.actionid <- 1 (stay default)
+    ifconv <- ifelse(onerow.info[put.colnames] == "conv", 0, 1)
+    # in database, under is_directional = t, 
+    # if a_is_acting = t, confirm that it is A-act-upon-B
+    # if a_is_acting = f, in oppsite way, B-act-upon-A
+    ifa.act <- ifelse(onerow.info["a_is_acting"] == 't', 0, 1)
+    # get final offset
+    if.op <- (ifconv + ifa.act) %% 2
+    if (onerow.info["action"] == "") {
+      res.actionid <- match("A--oB", kaction.id.mapped) + if.op
     } else {
-      # is_directional TRUE, a_is_acting TRUE, confirm that it is A-act-upon-B
-      ifconv <- ifelse(onerow.info[put.colnames] == "conv", 0, 1)
-      if (onerow.info["action"] == "") {
-        res.actionid <- match("A--oB", kaction.id.mapped) + ifconv
+      if (onerow.info["action"] == "activation") {  # the database record positive actions in "activation"
+        res.actionid <- match("A-->B", kaction.id.mapped) + if.op
       } else {
-        if (onerow.info["action"] == "activation") {  # the database record positive actions in "activation"
-          res.actionid <- match("A-->B", kaction.id.mapped) + ifconv
+        if (onerow.info["action"] == "inhibition") {  # the database record negative actions in "inhibition"
+          res.actionid <- match("A--|B", kaction.id.mapped) + if.op
         } else {
-          if (onerow.info["action"] == "inhibition") {  # the database record negative actions in "inhibition"
-            res.actionid <- match("A--|B", kaction.id.mapped) + ifconv
-          } else {
-            stop("Exception: database is broken by mannually modification, as undefined values appear in column('action')!")
-          }
+          stop("Exception: database is broken by mannually modification, as undefined values appear in column('action')!")
         }
       }
     }
