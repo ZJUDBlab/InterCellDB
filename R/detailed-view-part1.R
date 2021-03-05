@@ -88,9 +88,14 @@ CollectHierachyOnepairClusters <- function(
       }
       
       # select subset by up.dn changes
-      inside.updn.select <- function(df, UPDN.group) {
-        col.1 <- "from.LogFC"
-        col.2 <- "to.LogFC"
+      inside.updn.select <- function(df, UPDN.group, direction) {
+        if (direction == 1) {  # direction change the actual mapping from X**.Y** and the action
+          col.1 <- "from.LogFC"
+          col.2 <- "to.LogFC"
+        } else {
+          col.1 <- "to.LogFC"
+          col.2 <- "from.LogFC"
+        }   
         res.df <- switch(UPDN.group,
           "Xup.Yup" = df[intersect(which(df[, col.1] > 0), which(df[, col.2] > 0)), ],
           "Xup.Ydn" = df[intersect(which(df[, col.1] > 0), which(df[, col.2] < 0)), ],
@@ -100,7 +105,7 @@ CollectHierachyOnepairClusters <- function(
         )
         return(res.df)
       }
-      tmp.sub.1 <- inside.updn.select(tmp.sub.1, i.exc)
+      tmp.sub.1 <- inside.updn.select(tmp.sub.1, i.exc, tmp.action.effect$direction)
       # re-align the result
       tmp.sub.1 <- tmp.sub.1[, c("from.GeneName", "to.GeneName", "from.LogFC", "to.LogFC")]
       colnames(tmp.sub.1) <- c("act.C.genename", "act.D.genename", "act.C.logfc", "act.D.logfc")
