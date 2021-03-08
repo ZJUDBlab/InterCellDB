@@ -5,7 +5,14 @@
 \alias{genes.human.ref.db}
 \title{Reference database of human genes}
 \format{
-An object of class \code{list} of length 3.
+List.
+\itemize{
+   \item {\code{gene.ncbi.db}: } {it is downloaded from NCBI ftp site:"/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz".}
+   \item {\code{gene.synonyms.db}: } {data.frame, it records the synonyms-genenames pairs, which are generated from \code{gene.ncbi.db}.
+         It maps gene synonyms to its authorized name and ID.
+         }
+   \item {\code{gene.dup.synonyms.db}: } {data.frame, which documents synonyms with multiple matching genes.}
+}
 }
 \source{
 <ftp://ftp.ncbi.nih.gov/gene/>, and file path is /DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz.
@@ -15,14 +22,5 @@ genes.human.ref.db
 }
 \description{
 A dataset contains the basic informations of 41745 human genes.
-
-format List.
-\itemize{
-   \item {\code{gene.ncbi.db}: } {it is downloaded from NCBI ftp site:"/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz".}
-   \item {\code{gene.synonyms.db}: } {data.frame, it records the synonyms-genenames pairs, which are generated from \code{gene.ncbi.db}.
-         It maps gene synonyms to its authorized name and ID.
-         }
-   \item {\code{gene.dup.synonyms.db}: } {data.frame, which documents synonyms with multiple matching genes.}
-}
 }
 \keyword{datasets}

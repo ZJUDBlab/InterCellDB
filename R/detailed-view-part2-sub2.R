@@ -8,10 +8,7 @@
 #'
 #' @inheritParams Inside.DummyVEinfos
 #' @inheritParams Inside.DummyFgenes
-#' @param direction.A.to.B Logic. This parameter defined here is some bit different from that defined in \code{TrimVEinfos}. 
-#' If set NULL, it will be treated as TRUE, which means it only keeps the gene pairs with actions
-#' specified as the pattern "A to B"(either positive or negative or unspecified, etc), while if set FALSE, use gene pairs 
-#' with actions as "B to A". More things see details below.
+#' @inheritParams Inside.DummyDirectionAtoB
 #' @param colnames.to.cmp Character. The colnames to be used as evaluation params, currently only 2 params are supported.
 #' The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.
 #' @param range.to.use List. It specifies the user specified ranges for evaluation params.
@@ -33,14 +30,6 @@
 #'   \item p_val_adj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
 #' }
 #'
-#' For explaination on changed settings of parameter \code{direction.A.to.B}: 
-#'
-#' This function is meant to show the gene pairs between given cluster group (2 clusters), which means it doesn't care about the direction
-#' of actions of gene pairs. As a result, gene pairs with action effect being "undirected" will not be treated as 2 different records anymore. 
-#' To be illustrated clearly, here's the example, gene pairs "Adam17---App", which is undirected, will be kept as 2 records in a table like 
-#' Adam17***App and App***Adam17, so as to decribe its bi-directional attribute of the relation. In the situation of this function, "Adam17---App" 
-#' is one gene pairs existing between the given 2 clusters, and there is no need to have 2 records for describing their action effects. 
-#' Be aware of this setting, that's easy to understand why \code{direction.A.to.B} treats NULL as TRUE, and keeps the FALSE & TRUE as their original meanings. 
 #'
 #'
 #' @return
@@ -110,15 +99,25 @@ GetResult.PlotOnepairClusters.GeneCrosstalk <- function(
   tmp.ind.new3 <- match(c("ClusterName", "GeneName"), colnames(edges.fullinfos))
   colnames(edges.fullinfos)[tmp.ind.new3] <- c("to.cluster", "to.gene")
   edges.fullinfos <- edges.fullinfos[, c("from.cluster", "to.cluster", "from.gene", "to.gene")]
-  edges.fullinfos <- unique(edges.fullinfos)
   # restrict to only one direction
-  if (direction.A.to.B == TRUE || is.null(direction.A.to.B)) {
-    tmp.inds <- intersect(which(edges.fullinfos[, "from.cluster"] == act.A.clustername), which(edges.fullinfos[, "to.cluster"] == act.B.clustername))
-    edges.fullinfos <- edges.fullinfos[tmp.inds, ]
+  if (!is.null(direction.A.to.B)) {
+    if (direction.A.to.B == TRUE) {
+      tmp.inds <- intersect(which(edges.fullinfos[, "from.cluster"] == act.A.clustername), which(edges.fullinfos[, "to.cluster"] == act.B.clustername))
+      edges.fullinfos <- edges.fullinfos[tmp.inds, ]
+    } else {
+      tmp.inds <- intersect(which(edges.fullinfos[, "to.cluster"] == act.A.clustername), which(edges.fullinfos[, "from.cluster"] == act.B.clustername))
+      edges.fullinfos <- edges.fullinfos[tmp.inds, ]
+    }    
   } else {
-    tmp.inds <- intersect(which(edges.fullinfos[, "to.cluster"] == act.A.clustername), which(edges.fullinfos[, "from.cluster"] == act.B.clustername))
-    edges.fullinfos <- edges.fullinfos[tmp.inds, ]
+    # merge the bidirectional pairs, and from.cluster is set as act.A.clustername, to.cluster == act.B.clustername
+    tmp.inds.conv <- intersect(which(edges.fullinfos[, "from.cluster"] == act.A.clustername), which(edges.fullinfos[, "to.cluster"] == act.B.clustername))
+    tmp.edges.conv <- edges.fullinfos[tmp.inds.conv, ]
+    tmp.inds.rev <- intersect(which(edges.fullinfos[, "to.cluster"] == act.A.clustername), which(edges.fullinfos[, "from.cluster"] == act.B.clustername))
+    tmp.edges.rev <- edges.fullinfos[tmp.inds.rev, ReverseOddEvenCols(4)]
+    colnames(tmp.edges.rev) <- colnames(tmp.edges.conv)  # treat reverse one as the conv one, that is to remove the direction meanings of gene pairs
+    edges.fullinfos <- rbind(tmp.edges.conv, tmp.edges.rev)
   }
+  edges.fullinfos <- unique(edges.fullinfos)
   # compact on vertices.infos
   vertices.selinfos <- vertices.infos[, c(tmp.e2.col, colnames.to.cmp)]
   vertices.selinfos <- DoPartUnique(vertices.selinfos, match(tmp.e2.col, colnames(vertices.selinfos)))
