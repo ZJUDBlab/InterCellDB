@@ -19,17 +19,26 @@ DataPrep.RemapClustersMarkers <- function(
   genes.ref.db,
   warning.given = "markers"
 ) {
+  # pre-check for markers.all.from.Seurat
+  pre.check.colnames <- c("avg_logFC", "p_val_adj", "gene", "cluster")
+  if (sum(pre.check.colnames %in% colnames(markers.all.from.Seurat)) != length(pre.check.colnames)) {
+    stop("For marker gene list, column named ", paste0(pre.check.colnames, collapse = ", ", " must be present!"))
+  }
+
   # set each database
   entrez.db <- genes.ref.db$gene.ncbi.db
   map.synonyms.db <- genes.ref.db$gene.synonyms.db
   dup.synonyms.ref <- genes.ref.db$gene.dup.synonyms.db$Synonym.each  # character
+
   # force removing factors
   markers.all.from.Seurat$gene <- as.character(markers.all.from.Seurat$gene)
+  markers.all.from.Seurat$cluster <- as.character(markers.all.from.Seurat$cluster)
+
   # check if some genes are already authorized symbols
   inds.raw.match <- which(markers.all.from.Seurat$gene %in% entrez.db$Symbol_from_nomenclature_authority)
   markers.raw.match   <- markers.all.from.Seurat[inds.raw.match, ]
   markers.raw.unmatch <- markers.all.from.Seurat[setdiff(seq_len(nrow(markers.all.from.Seurat)), inds.raw.match), ]
-  ret.remap.from.synonyms <- ret.final.unmatch <- ret.dup.synonyms <- character()
+  ret.markers.all <- ret.remap.from.synonyms <- ret.final.unmatch <- ret.dup.synonyms <- character()
   if (nrow(markers.raw.unmatch) > 0) {  # some unmatches exist
     inds.map.match <- match(markers.raw.unmatch$gene, map.synonyms.db$Synonym.each)
     print(paste0("In unmatched ", nrow(markers.raw.unmatch), " genes, ", length(which(!is.na(inds.map.match))), " are remapped from synonyms!"))
@@ -42,20 +51,37 @@ DataPrep.RemapClustersMarkers <- function(
     tmp.gene.name.use.old <- markers.raw.unmatch$gene[which(!is.na(inds.map.match))]
     tmp.gene.name.use.new <- map.synonyms.db$Symbol_from_nomenclature_authority[inds.map.match][which(!is.na(inds.map.match))]
     markers.raw.unmatch$gene[which(!is.na(inds.map.match))] <- tmp.gene.name.use.new  # set those matched genes
-    # check if these remapped gene name are in dup.synonyms.ref
-    logic.ifinddup <- which(tmp.gene.name.use.old %in% dup.synonyms.ref)
-    if (length(logic.ifinddup) > 0)
-      warning("Synonyms of these (", length(logic.ifinddup), ") ", warning.given, 
-        " are duplicate with others, and here recommend to do mannual check-up. ", 
-        "Pairs with old~new gene names are given. \n: ",
-        paste0(paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~"), collapse = ",  "), "."
-      )
+    
     # for return values
     ret.remap.from.synonyms <- paste(tmp.gene.name.use.old, tmp.gene.name.use.new, sep = "~")
     ret.final.unmatch <- markers.raw.unmatch$gene[which(is.na(inds.map.match))]
-    ret.dup.synonyms <- paste(tmp.gene.name.use.old[logic.ifinddup], tmp.gene.name.use.new[logic.ifinddup], sep = "~")
+    
+    # new for markers
+    ret.markers.all <- rbind(markers.raw.match, markers.raw.unmatch)
+    # check if these remapped gene name are in dup.synonyms.ref
+    genes.if.dup.in.markers <- unlist(lapply(levels(factor(markers.all.from.Seurat$cluster)), 
+      markers.all = ret.markers.all, 
+      function(x, markers.all) {
+        tmp.genes <- markers.all$gene[which(markers.all$cluster == x)]
+        tmp.collects <- tapply(seq_along(tmp.genes), tmp.genes, length)
+        names(tmp.collects[which(tmp.collects > 1)])
+      }))
+    genes.if.dup.in.markers <- unique(as.character(genes.if.dup.in.markers))
+    # fetch result
+    ret.dup.synonyms <- as.character(unlist(lapply(genes.if.dup.in.markers,
+      remap.genes.new = tmp.gene.name.use.new, remap.genes.old = tmp.gene.name.use.old,
+      function(x, remap.genes.new, remap.genes.old) {
+        tmp.dup.genes <- unique(remap.genes.old[which(remap.genes.new == x)])
+        paste0("(", x, ") ~ ", paste0(tmp.dup.genes, collapse = "-"), "; ")
+      })))
+    if (length(ret.dup.synonyms) > 0)
+      warning("Synonyms of these (", length(ret.dup.synonyms), ") ", warning.given, 
+        " are duplicate with others, and here recommend to do mannual check-up. ", 
+        "Pairs with (new gene) ~ All old genes are given. \n: ",
+        paste0(ret.dup.synonyms), "."
+      )
   }
-  return(list(result = rbind(markers.raw.match, markers.raw.unmatch), 
+  return(list(result = ret.markers.all, 
     remapped.from.synonyms = ret.remap.from.synonyms, 
     unmatched = ret.final.unmatch, synonyms.dup = ret.dup.synonyms))
 }
@@ -82,7 +108,7 @@ DataPrep.RemapClustersMarkers <- function(
 #'
 #' @examples
 #' \dontrun{
-#'  DataPrep.AddClusterName(markers.all.from.Seurat,
+#'  DataPrep.ReplaceClusterName(markers.all.from.Seurat,
 #'    cluster.names.current = c(0, 1, 2),
 #'    cluster.names.replace = c("Astrocytes", "Microglia", "Endothelial cells"))
 #' }
@@ -91,7 +117,7 @@ DataPrep.RemapClustersMarkers <- function(
 #'
 #' @export
 #'
-DataPrep.AddClusterName <- function(
+DataPrep.ReplaceClusterName <- function(
   markers.all.from.Seurat,
   cluster.names.current,
   cluster.names.replace,

@@ -931,7 +931,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
     scale_fill_manual(name = "Exprs Change", values = this.updn.fill, breaks = names(this.updn.fill), aesthetics = "fill", 
       guide = guide_legend(override.aes = list(size = legend.show.fill.override.point.size),
         order = 1)) + 
-    scale_size_continuous(name = "LogFC", range = c(nodes.size.range[1], nodes.size.range[2]), 
+    scale_size_continuous(name = "Rel LogFC", range = c(nodes.size.range[1], nodes.size.range[2]), 
       breaks = seq(from = nodes.size.range[1], to = nodes.size.range[2], by = nodes.size.gap), 
       guide = guide_legend(override.aes = list(colour = legend.show.size.override.colour, 
         stroke = legend.show.size.override.stroke,

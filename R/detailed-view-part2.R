@@ -94,6 +94,10 @@ FindSpecialGenesInOnepairCluster <- function(
 			}
 		}
 	}  # else use the directly specified clusters
+	# further check if comparison of itself exist, which may cause error in downstream analysis
+	if (sum(this.pair.name %in% to.cmp.cluster.groups) > 0) {
+		stop("Cannot put the cluster group given in parameter 'VEinfos' in the parameter 'to.cmp.cluster.groups'.")
+	}
 
 	# set the uq.cnt range
 	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(to.cmp.cluster.groups, split = kClustersSplit, fixed = TRUE))))

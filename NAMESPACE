@@ -2,8 +2,8 @@
 
 export(AnalyzeClustersInteracts)
 export(CollectHierachyOnepairClusters)
-export(DataPrep.AddClusterName)
 export(DataPrep.RemapClustersMarkers)
+export(DataPrep.ReplaceClusterName)
 export(DoPartUnique)
 export(ExtractTargetOnepairClusters)
 export(FindSpecialGenesInOnepairCluster)
