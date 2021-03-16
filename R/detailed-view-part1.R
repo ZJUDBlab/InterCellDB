@@ -375,3 +375,160 @@ GetResult.SummaryOnepairClusters <- function(
   list(plot = plot.res, table = res.final.table)
 }
 
+
+
+
+
+
+# new added at 2021.03.15, consider deprecated at 2021.03.16
+# for collect mode
+# other mode means the given gene pairs has no mode
+#
+#
+# @param use.prioritized.mode if TRUE, \code{limits.action.mode} will be prioritized one-after-one to get exclusive collection
+#
+# @import dplyr
+# @import ggplot2
+# @import cowplot
+#
+PiePlot.action.mode <- function(
+  VEinfos,
+  limits.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
+  limits.action.mode = c(kpred.mode, "other"),
+  use.prioritized.mode = FALSE
+) {
+  # pre-check
+    # [TODO] check exprs.change
+    # [TODO] check action mode
+
+  # 
+  this.cluster.A <- VEinfos$cluster.name.A
+  this.cluster.B <- VEinfos$cluster.name.B
+  this.vertices <- VEinfos$vertices.infos
+  this.edges <- VEinfos$edges.infos
+  # collect mode infos
+  tmp.to.change.names <- c("ClusterName", "GeneName", "LogFC")
+  this.pie.df <- left_join(this.edges, this.vertices[, c("UID", "ClusterName", "GeneName", "LogFC")], by = c("from" = "UID"))
+  tmp.inds.from <- match(tmp.to.change.names, colnames(this.pie.df))
+  colnames(this.pie.df)[tmp.inds.from] <- paste("from", tmp.to.change.names, sep = ".")
+  this.pie.df <- left_join(this.pie.df, this.vertices[, c("UID", "ClusterName", "GeneName", "LogFC")], by = c("to" = "UID"))
+  tmp.inds.to <- match(tmp.to.change.names, colnames(this.pie.df))
+  colnames(this.pie.df)[tmp.inds.to] <- paste("to", tmp.to.change.names, sep = ".")
+  # adjust the columns
+  this.pie.df <- this.pie.df[, c("from.GeneName", "to.GeneName", "from.ClusterName", "to.ClusterName", "from.LogFC", "to.LogFC", "mode")]
+  # use conv and rev to align the clusters
+  tmp.conv.df <- this.pie.df[intersect(which(this.pie.df$from.ClusterName == this.cluster.A),
+    which(this.pie.df$to.ClusterName == this.cluster.B)), ]
+  tmp.rev.df <- this.pie.df[intersect(which(this.pie.df$to.ClusterName == this.cluster.A),
+    which(this.pie.df$from.ClusterName == this.cluster.B)), ]
+  tmp.rev.df <- tmp.rev.df[, c(ReverseOddEvenCols(6), 7:ncol(tmp.rev.df))]
+  colnames(tmp.rev.df) <- colnames(tmp.conv.df)
+  # merge the result
+  this.pie.df <- rbind(tmp.conv.df, tmp.rev.df)
+  this.pie.df <- DoPartUnique(this.pie.df, match(c("from.GeneName", "to.GeneName", "mode"), colnames(this.pie.df)))
+
+  # inside plot function
+  this.color.pal <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
+  names(this.color.pal) <- c(kpred.mode, "other")
+  inside.PiePlot.for.mode <- function(data, color.palette) {
+    gplot.sgp <- ggplot(data, aes(x = exprs.change, y = cnt, fill = mode))
+    gplot.sgp <- gplot.sgp + geom_col(position = "stack") +
+      scale_fill_manual(values = color.palette) + 
+      coord_polar(theta = "y") + 
+      theme(panel.background = element_blank(), plot.margin = margin(6, 0, 6, 0)) + 
+      scale_x_discrete(breaks = NULL) + 
+      scale_y_continuous(breaks = NULL)
+    # return
+    gplot.sgp
+  }
+
+  # result prototype
+  pie.plot.set <- vector(mode = "list", length = length(limits.exprs.change))
+  names(pie.plot.set) <- limits.exprs.change
+  #
+  pie.exc.collect.Xup <- which(this.pie.df$from.LogFC > 0)
+  pie.exc.collect.Xdn <- which(this.pie.df$from.LogFC <= 0)
+  pie.exc.collect.Yup <- which(this.pie.df$to.LogFC > 0)
+  pie.exc.collect.Ydn <- which(this.pie.df$to.LogFC <= 0)
+  for (i.exc in limits.exprs.change) {
+    this.exc.inds <- switch(i.exc,
+      "Xup.Yup" = intersect(pie.exc.collect.Xup, pie.exc.collect.Yup),
+      "Xup.Ydn" = intersect(pie.exc.collect.Xup, pie.exc.collect.Ydn),
+      "Xdn.Yup" = intersect(pie.exc.collect.Xdn, pie.exc.collect.Yup),
+      "Xdn.Ydn" = intersect(pie.exc.collect.Xdn, pie.exc.collect.Ydn),
+      stop("Undefined expression changing status! Please check given parameter 'limits.exprs.change'!"))
+    tmp.raw.df <- this.pie.df[this.exc.inds, ]
+    # use prioritized mode to cover others
+    if (use.prioritized.mode == TRUE) {
+      tmp.gpairs <- paste(tmp.raw.df$from.GeneName, tmp.raw.df$to.GeneName, sep = kGenesSplit)
+      tmp.inds.gpairs <- tapply(seq_along(tmp.gpairs), tmp.gpairs, function(x) { x })
+      tmp.mode.cnt.raw <- lapply(tmp.inds.gpairs, 
+        ref.df = tmp.raw.df, ref.mode.sets = limits.action.mode,
+        function(x, ref.df, ref.mode.sets) {
+          tmp.inds <- match(ref.mode.sets, ref.df[x, "mode"])
+          tmp.inds <- tmp.inds[which(!is.na(tmp.inds))]
+          c(ref.df[x[tmp.inds][1], "mode"], 
+            paste(ref.df$from.GeneName[x[1]], ref.df$to.GeneName[x[1]], sep = "->"))
+        })
+      tmp.mode.cnt.raw <- as.character(unlist(tmp.mode.cnt.raw))
+  print(tmp.mode.cnt.raw)
+      tmp.mode.cnt.collect <- tapply(seq_along(tmp.mode.cnt.raw), tmp.mode.cnt.raw, length)
+      if (length(tmp.mode.cnt.collect) > 0) {
+        pie.prior.set <- data.frame(mode = names(tmp.mode.cnt.collect), cnt = tmp.mode.cnt.collect, exprs.change = i.exc)
+        pie.prior.set <- pie.prior.set[which(pie.prior.set$mode %in% limits.action.mode), ]
+  print(pie.prior.set)
+        pie.plot.set[[i.exc]] <- inside.PiePlot.for.mode(pie.prior.set, this.color.pal)
+      }
+    } else {
+      tmp.mode.res <- tapply(seq_len(nrow(tmp.raw.df)), tmp.raw.df$mode, length)
+      if (length(tmp.mode.res) > 0) {
+        pie.res.set <- data.frame(mode = names(tmp.mode.res), cnt = tmp.mode.res, exprs.change = i.exc)
+        pie.res.set <- pie.res.set[which(pie.res.set$mode %in% limits.action.mode), ]
+        pie.plot.set[[i.exc]] <- inside.PiePlot.for.mode(pie.res.set, this.color.pal)
+      }
+    }
+  }
+
+  ## plot pie
+  # get legend
+  pie.legend <- get_legend(pie.plot.set[[1]] + 
+    guides(fill = guide_legend(title = "Action Mode")) + 
+    theme(legend.position = "right",
+      legend.key.size = unit(7, "mm"),
+      legend.title = element_text(size = 16),
+      legend.text = element_text(size = 12),
+      legend.box.margin = margin(0, 0, 0, 6)))
+  # add additional plot modification
+  for (i.exc in limits.exprs.change) {
+    if (!is.null(pie.plot.set[[i.exc]])) {
+      pie.plot.set[[i.exc]] <- pie.plot.set[[i.exc]] + 
+        xlab(NULL) + ylab(i.exc) + 
+        theme(legend.position = "none")
+    }
+  }
+  pie.plot.set[[1]] <- pie.plot.set[[1]] + 
+          xlab("interact pairs count") +  # add only 1 xlab
+          theme(plot.margin = margin(6, 0, 6, 10))
+  # grid the plots in one row
+  res.plot.no.legend <- plot_grid(plotlist = pie.plot.set, align = "vh", nrow = 1)
+  # result plot
+  relative.width <- 0.3
+  if (length(limits.exprs.change) > 2) {
+    relative.width <- 0.2
+  }
+  res.plot <- plot_grid(res.plot.no.legend, pie.legend, nrow = 1, rel_widths = c(1, relative.width))
+  # add joint caption
+  caption.label <- paste0("---symbols---\nX,Y: clusters that gene pairs from.\nX: ", 
+    this.cluster.A, ", Y: ", this.cluster.B)
+  caption.plot <- ggdraw() + 
+    draw_label(caption.label, size = 12, 
+      x = 0.5, hjust = 0.5,
+      y = 0.8, vjust = 1) + 
+   theme(plot.margin = margin(0, 0, 0, 0))
+  final.plot <- plot_grid(res.plot, caption.plot, ncol = 1, rel_heights = c(1, 0.2))      
+  
+  #end# return
+  return(list(plot = final.plot, table = this.pie.df))
+}
+
+

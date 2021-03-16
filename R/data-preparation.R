@@ -17,28 +17,31 @@
 DataPrep.RemapClustersMarkers <- function(
   markers.all.from.Seurat,
   genes.ref.db,
-  warning.given = "markers"
+  warning.given = "markers",
+  if.used.inside = FALSE
 ) {
-  # pre-check for markers.all.from.Seurat
-  pre.check.colnames <- c("avg_logFC", "p_val_adj", "gene", "cluster")
-  if (sum(pre.check.colnames %in% colnames(markers.all.from.Seurat)) != length(pre.check.colnames)) {
-    stop("For marker gene list, column named ", paste0(pre.check.colnames, collapse = ", ", " must be present!"))
-  }
+  if (if.used.inside == FALSE) {
+    # pre-check for markers.all.from.Seurat
+    pre.check.colnames <- c("avg_logFC", "p_val_adj", "gene", "cluster")
+    if (sum(pre.check.colnames %in% colnames(markers.all.from.Seurat)) != length(pre.check.colnames)) {
+      stop("For marker gene list, column named ", paste0(pre.check.colnames, collapse = ", ", " must be present!"))
+    }
+    # force removing factors
+    markers.all.from.Seurat$gene <- as.character(markers.all.from.Seurat$gene)
+    markers.all.from.Seurat$cluster <- as.character(markers.all.from.Seurat$cluster)
+  }  # if used inside, then don't need to check colnames 
 
   # set each database
   entrez.db <- genes.ref.db$gene.ncbi.db
   map.synonyms.db <- genes.ref.db$gene.synonyms.db
   dup.synonyms.ref <- genes.ref.db$gene.dup.synonyms.db$Synonym.each  # character
 
-  # force removing factors
-  markers.all.from.Seurat$gene <- as.character(markers.all.from.Seurat$gene)
-  markers.all.from.Seurat$cluster <- as.character(markers.all.from.Seurat$cluster)
-
   # check if some genes are already authorized symbols
   inds.raw.match <- which(markers.all.from.Seurat$gene %in% entrez.db$Symbol_from_nomenclature_authority)
   markers.raw.match   <- markers.all.from.Seurat[inds.raw.match, ]
   markers.raw.unmatch <- markers.all.from.Seurat[setdiff(seq_len(nrow(markers.all.from.Seurat)), inds.raw.match), ]
-  ret.markers.all <- ret.remap.from.synonyms <- ret.final.unmatch <- ret.dup.synonyms <- character()
+  ret.remap.from.synonyms <- ret.final.unmatch <- ret.dup.synonyms <- character()
+  ret.markers.all <- markers.raw.match
   if (nrow(markers.raw.unmatch) > 0) {  # some unmatches exist
     inds.map.match <- match(markers.raw.unmatch$gene, map.synonyms.db$Synonym.each)
     print(paste0("In unmatched ", nrow(markers.raw.unmatch), " genes, ", length(which(!is.na(inds.map.match))), " are remapped from synonyms!"))

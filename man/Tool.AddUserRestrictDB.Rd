@@ -4,7 +4,12 @@
 \alias{Tool.AddUserRestrictDB}
 \title{Add user-defined dataset}
 \usage{
-Tool.AddUserRestrictDB(user.def.db, genes.ref.db, warning.given = "genes")
+Tool.AddUserRestrictDB(
+  user.def.db,
+  genes.ref.db,
+  warning.given = "genes",
+  if.used.inside = TRUE
+)
 }
 \arguments{
 \item{user.def.db}{Data.frame. It should be a data.frame with at least 2 columns, whose 1st column is gene names, and the 2nd is 

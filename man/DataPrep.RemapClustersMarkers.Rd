@@ -7,7 +7,8 @@
 DataPrep.RemapClustersMarkers(
   markers.all.from.Seurat,
   genes.ref.db,
-  warning.given = "markers"
+  warning.given = "markers",
+  if.used.inside = FALSE
 )
 }
 \arguments{
