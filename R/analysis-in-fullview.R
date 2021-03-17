@@ -91,6 +91,26 @@ Inside.AnalyzeClustersInteracts <- function(
   if (length(tmp.ind.valid.cols) != length(tmp.precheck.cols)) {
     stop("columns: ", paste0(tmp.precheck.cols[-tmp.ind.valid.cols], collapse = ", "), " are NOT AVAILABLE.")
   }
+  # check restricted.* settings, restricted.gene.pairs !Prioritize! restricted.some.genes
+  if (!is.null(restricted.gene.pairs)) {  # using restricted gene pairs
+    if (is.data.frame(restricted.gene.pairs)) {  # repack pairs
+      # check validity if given data.frame
+      if (length(restricted.gene.pairs) != 2 || nrow(restricted.gene.pairs) == 0) {
+        stop("Given data.frame of gene pairs have no records in details. Please check given data again.")
+      }
+      # process with data.frame
+      tmp.df.a <- as.character(restricted.gene.pairs[, 1])
+      tmp.df.b <- as.character(restricted.gene.pairs[, 2])
+      tmp.mat.ab <- matrix(data = c(tmp.df.a, tmp.df.b), nrow = 2, byrow = TRUE)
+      restricted.gene.pairs <- as.character(tmp.mat.ab)
+    }
+    # check validity
+    if (length(restricted.gene.pairs) < 1 && length(restricted.gene.pairs) %% 2 != 0) {
+      stop("Given wrong list of gene pairs with non-even positive length!")
+    }
+    # priority of restricted.gene.pairs, overwrite restricted.some.genes
+    restricted.some.genes <- restricted.gene.pairs  # workflow merging, use with care
+  }
   # find all cluster, and target clusters
   fac.clusters <- levels(as.factor(markers.remapped.all[, "cluster"]))
   to.use.X.clusters <- subgroup.options$X.clusters
@@ -117,7 +137,11 @@ Inside.AnalyzeClustersInteracts <- function(
   this.inds.Y.clusters <- match(to.use.Y.clusters, fac.clusters)
 
   ## pre-subset of all reference database
-  presub.loc.genes <- presub.type.genes <- presub.mk.genes <- unique(markers.remapped.all$gene)
+  presub.restrict.genes <- presub.loc.genes <- presub.type.genes <- presub.mk.genes <- unique(markers.remapped.all$gene)
+  # pre-subset restricted (some genes or some gene pairs)
+  if (!is.null(restricted.some.genes)) {
+    presub.restrict.genes <- restricted.some.genes
+  }
   # pre-subset loc setting
   if (!is.null(subgroup.options[["X.Location"]]) && !is.null(subgroup.options[["Y.Location"]])) {
     presub.loc.set <- union(subgroup.options[["X.Location"]], subgroup.options[["Y.Location"]])
@@ -139,7 +163,7 @@ Inside.AnalyzeClustersInteracts <- function(
     presub.type.genes <- anno.type.ref[which(anno.type.ref$Keyword.Name %in% presub.type.set), "Gene.name"]
   }
   # get genes
-  presub.genes <- unique(Reduce(intersect, list(markers.remapped.all$gene, presub.loc.genes, presub.type.genes)))
+  presub.genes <- unique(Reduce(intersect, list(markers.remapped.all$gene, presub.restrict.genes, presub.loc.genes, presub.type.genes)))
   # subset the reference database
   pairs.ref <- pairs.ref[intersect(which(pairs.ref$inter.GeneName.A %in% presub.genes), which(pairs.ref$inter.GeneName.B %in% presub.genes)), ]
   anno.location.ref <- anno.location.ref[which(anno.location.ref$Gene.name %in% presub.genes), ]
@@ -175,25 +199,6 @@ Inside.AnalyzeClustersInteracts <- function(
       # all
       pairs.sp.ikab <- rbind(pairs.ia.kb, pairs.ib.ka)
       # pairs.sp.ikab <- DoPartUnique(pairs.sp.ikab, c(1,2))  # do part unique # delay this
-      if (!is.null(restricted.gene.pairs)) {  # using restricted gene pairs
-        if (is.data.frame(restricted.gene.pairs)) {  # repack pairs
-          # check validity if given data.frame
-          if (length(restricted.gene.pairs) != 2 || nrow(restricted.gene.pairs) == 0) {
-            stop("Given data.frame of gene pairs have no records in details. Please check given data again.")
-          }
-          # process with data.frame
-          tmp.df.a <- as.character(restricted.gene.pairs[, 1])
-          tmp.df.b <- as.character(restricted.gene.pairs[, 2])
-          tmp.mat.ab <- matrix(data = c(tmp.df.a, tmp.df.b), nrow = 2, byrow = TRUE)
-          restricted.gene.pairs <- as.character(tmp.mat.ab)
-        }
-        # check validity
-        if (length(restricted.gene.pairs) < 1 && length(restricted.gene.pairs) %% 2 != 0) {
-          stop("Given wrong list of gene pairs with non-even positive length!")
-        }
-        # priority of restricted.gene.pairs, overwrite restricted.some.genes
-        restricted.some.genes <- restricted.gene.pairs  # workflow merging, use with care
-      }
       if (!is.null(restricted.some.genes)) {  # using retricted genes
         df.ref.somegenes <- data.frame(part.genes = restricted.some.genes, indicator.A = 1, indicator.B = 1, stringsAsFactors = FALSE)
         pairs.sp.ikab <- left_join(pairs.sp.ikab, df.ref.somegenes[, c("part.genes", "indicator.A")], by = c("inter.GeneName.A" = "part.genes"))
@@ -511,7 +516,8 @@ AnalyzeClustersInteracts <- function(
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
   calculation.formula = FullView.Evaluation.func.default,
-  ind.colname.end.dual = 4
+  ind.colname.end.dual = 4,
+  verbose = TRUE
 ) {
   # CONST: user merge option 
   opt.sel.location.special <- c("All.Cytoplasm")  # This word will be interpreted to all cytoplasm-belonging locations
@@ -665,22 +671,24 @@ AnalyzeClustersInteracts <- function(
     }
   }
   # before running, print the selection used
-  cat(paste0("\n---Strategy Used---", 
-    "\n[Clusters in X] ", paste0(user.settings$X.clusters, collapse = ", "), 
-    "\n[Clusters in Y] ", paste0(user.settings$Y.clusters, collapse = ", "), 
-    "\n[exprs.change] ", paste0(user.settings$exprs.logfc, collapse = ", "), 
-    "\n[Location in X] ", ifelse(is.null(user.settings[["X.Location"]]), "-", paste0(user.settings[["X.Location"]], collapse = ", ")),  
-    "\n[Location score in X] ", ifelse(is.null(user.settings[["X.Location.score.limit"]]), "-", paste0(user.settings[["X.Location.score.limit"]], collapse = ", ")), 
-    "\n[Location in Y] ", ifelse(is.null(user.settings[["Y.Location"]]), "-", paste0(user.settings[["Y.Location"]], collapse = ", ")), 
-    "\n[Location score in Y] ", ifelse(is.null(user.settings[["Y.Location.score.limit"]]), "-", paste0(user.settings[["Y.Location.score.limit"]], collapse = ", ")), 
-    "\n[Type in X] ", ifelse(is.null(user.settings[["X.Type"]]), "-", paste0(user.settings[["X.Type"]], collapse = ", ")), 
-    "\n[Type in Y] ", ifelse(is.null(user.settings[["Y.Type"]]), "-", paste0(user.settings[["Y.Type"]], collapse = ", ")), 
-    "\n[Use user database] ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
-    "\n[Use user merge option] ", ifelse(!is.null(user.type.database), user.settings[["user.merge.option"]], "NOTUSED"),
-    "\n[Use some genes] ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
-    "\n[Use some gene pairs] ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
-    "\n"
-  ))
+  if (verbose == TRUE) {
+    cat(paste0("\n---Strategy Used---", 
+      "\n[Clusters in X] ", paste0(user.settings$X.clusters, collapse = ", "), 
+      "\n[Clusters in Y] ", paste0(user.settings$Y.clusters, collapse = ", "), 
+      "\n[exprs.change] ", paste0(user.settings$exprs.logfc, collapse = ", "), 
+      "\n[Location in X] ", ifelse(is.null(user.settings[["X.Location"]]), "-", paste0(user.settings[["X.Location"]], collapse = ", ")),  
+      "\n[Location score in X] ", ifelse(is.null(user.settings[["X.Location.score.limit"]]), "-", paste0(user.settings[["X.Location.score.limit"]], collapse = ", ")), 
+      "\n[Location in Y] ", ifelse(is.null(user.settings[["Y.Location"]]), "-", paste0(user.settings[["Y.Location"]], collapse = ", ")), 
+      "\n[Location score in Y] ", ifelse(is.null(user.settings[["Y.Location.score.limit"]]), "-", paste0(user.settings[["Y.Location.score.limit"]], collapse = ", ")), 
+      "\n[Type in X] ", ifelse(is.null(user.settings[["X.Type"]]), "-", paste0(user.settings[["X.Type"]], collapse = ", ")), 
+      "\n[Type in Y] ", ifelse(is.null(user.settings[["Y.Type"]]), "-", paste0(user.settings[["Y.Type"]], collapse = ", ")), 
+      "\n[Use user database] ", ifelse(!is.null(user.type.database), "TRUE", "FALSE"), 
+      "\n[Use user merge option] ", ifelse(!is.null(user.type.database), user.settings[["user.merge.option"]], "NOTUSED"),
+      "\n[Use some genes] ", ifelse(!is.null(restricted.some.genes), "TRUE", "FALSE"), 
+      "\n[Use some gene pairs] ", ifelse(!is.null(restricted.gene.pairs), "TRUE", "FALSE"),
+      "\n"
+    ))
+  }
   ### then run the analysis
   res <- Inside.AnalyzeClustersInteracts(fgenes.remapped.all, pairs.ref, 
             anno.location.ref, anno.type.ref, user.settings, 

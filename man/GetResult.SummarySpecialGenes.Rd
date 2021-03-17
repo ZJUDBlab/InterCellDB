@@ -15,14 +15,19 @@ GetResult.SummarySpecialGenes(
   select.by.method.decreasing = TRUE,
   show.topn.inside.onepair = +Inf,
   prioritize.cluster.groups = character(),
+  grid.plot.ncol = 1,
+  barplot.or.dotplot = FALSE,
   plot.font.size.base = 12,
+  axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
+  dot.colour.palette = scale_colour_gradientn(name = "Power", colours = c("#00809D",
+    "#EEEEEE", "#C30000"), values = c(0, 0.5, 1)),
+  dot.size = 5,
   facet.scales = "free_x",
   facet.space = "free_x",
   facet.text.x = element_text(size = 8, colour = "black"),
   facet.background = element_rect(fill = "lightgrey", colour = "white"),
   bar.colour = character(),
   bar.width = 0.8,
-  axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
   ...
 )
 }
@@ -54,7 +59,17 @@ only the top ranked some gene pairs will be finally shown in result. The default
 \item{prioritize.cluster.groups}{Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
 finally plotted from the most left-side to right, and as such, it is called prioritizing.}
 
+\item{grid.plot.ncol}{[TODO]}
+
+\item{barplot.or.dotplot}{[TODO]}
+
 \item{plot.font.size.base}{Numeric. It defines the font size of texts such as labels and titles.}
+
+\item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
+
+\item{dot.colour.palette}{[TODO]}
+
+\item{dot.size}{[TODO]}
 
 \item{facet.scales}{It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
 
@@ -68,8 +83,6 @@ finally plotted from the most left-side to right, and as such, it is called prio
 built-in 20 kinds of colours will be automatically used.}
 
 \item{bar.width}{Numeric. It defines the bar width.}
-
-\item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
 
 \item{...}{Other parameter that can be passed to select by method functions.}
 }

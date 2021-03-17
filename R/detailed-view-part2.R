@@ -43,7 +43,6 @@ FindSpecialGenesInOnepairCluster <- function(
 		stop("Please provide usable function in parameter formula.to.use.onLogFC!")
 	}
 	# pre-params
-	this.gp.sep <- kGenesSplit
 	involved.clusters.pair <- paste(VEinfos$cluster.name.A, VEinfos$cluster.name.B, sep = kClustersSplit)
 	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
 
@@ -72,7 +71,7 @@ FindSpecialGenesInOnepairCluster <- function(
 		stop("Given name of cluster pairs NOT exist!")
 	}
 	this.clusters.separate <- strsplit(this.pair.name, split = kClustersSplit, fixed = TRUE)[[1]]
-	this.pair.interacts <- inside.c.short.interacts(target.gene.pairs.df, this.gp.sep)
+	this.pair.interacts <- inside.c.short.interacts(target.gene.pairs.df, kGenesSplit)
 	# this.pair.logfc.mul <- inside.calc.upon.gp.logfc(target.gene.pairs.df, formula.to.use.onLogFC)
 	this.gene.pairs <- data.frame(gp.name = this.pair.interacts, 
 		gp.belongs = rep(this.pair.name, times = length(this.pair.interacts)), 
@@ -111,7 +110,7 @@ FindSpecialGenesInOnepairCluster <- function(
 	  # only those pairs occurs in target cluster group will be further analyzed
 	other.gene.pairs.df.list <- lapply(to.cmp.cluster.groups, 
 		all.pairs.interacts = all.pairs.interacts, tg.pairs = this.pair.interacts,
-		tmp.sep = this.gp.sep, formula.to.use.onLogFC = formula.to.use.onLogFC, 
+		tmp.sep = kGenesSplit, formula.to.use.onLogFC = formula.to.use.onLogFC, 
 		function(x, all.pairs.interacts, tg.pairs, tmp.sep, formula.to.use.onLogFC) {
 			tmp.pairs.df <- all.pairs.interacts[[x]]
 			tmp.pairs.interacts <- inside.c.short.interacts(tmp.pairs.df, tmp.sep)
@@ -262,7 +261,12 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' only the top ranked some gene pairs will be finally shown in result. The default value is +Inf, which preserves all result.
 #' @param prioritize.cluster.groups Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
 #' finally plotted from the most left-side to right, and as such, it is called prioritizing. 
+#' @param grid.plot.ncol [TODO]
+#' @param barplot.or.dotplot  [TODO]
 #' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
+#' @param axis.text.x.pattern It defines the axis text style in x-axis. 
+#' @param dot.colour.palette  [TODO]
+#' @param dot.size  [TODO]
 #' @param facet.scales It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
 #' @param facet.space It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
 #' @param facet.text.x It defines the facet labeling text on the top horizontal position. 
@@ -270,7 +274,7 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' @param bar.colour Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
 #' built-in 20 kinds of colours will be automatically used.
 #' @param bar.width Numeric. It defines the bar width.
-#' @param axis.text.x.pattern It defines the axis text style in x-axis. 
+
 #' @param ... Other parameter that can be passed to select by method functions.
 #'
 #'
@@ -300,14 +304,18 @@ GetResult.SummarySpecialGenes <- function(
 	show.topn.inside.onepair = +Inf,
 	prioritize.cluster.groups = character(),  # names put here will be showed in left and order as it is in here 
 	# plotting param
+	grid.plot.ncol = 1, 
+	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
+	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
+	dot.colour.palette = scale_colour_gradientn(name = "Power", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
+	dot.size = 5, 
 	facet.scales = "free_x", 
 	facet.space  = "free_x", 
 	facet.text.x = element_text(size = 8, colour = "black"), 
 	facet.background = element_rect(fill = "lightgrey", colour = "white"), 
-	bar.colour = character(), 
+	bar.colour = character(),  # [TODO] add option to select to use barplot or dotplot
 	bar.width = 0.8, 
-	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
 	...
 ) {
 	this.spgenes <- onepair.spgenes$for.plot.use
@@ -338,6 +346,7 @@ GetResult.SummarySpecialGenes <- function(
 			paste0(prioritize.cluster.groups[setdiff(seq_along(prioritize.cluster.groups), tmp.inds.valid.cluster.group)]),
 			", which will be automatically removed!")
 	}
+	prioritize.cluster.groups <- prioritize.cluster.groups[tmp.inds.valid.cluster.group]
 
 	# fetch selected gene pairs
 	inside.fetch.sel.genepairs <- function(
@@ -460,7 +469,7 @@ GetResult.SummarySpecialGenes <- function(
 		names(plot.data.uq.notm.list) <- paste("uq.cnt=", as.character(tmp.uq.cnt.valid.list), sep = ".")
 	}
 
-	inside.uq.single.plot <- function(
+	inside.uq.bar.plot <- function(
 		plot.data,
 		prioritize.cluster.groups,
 		bar.colour
@@ -519,6 +528,32 @@ GetResult.SummarySpecialGenes <- function(
 		return(this.plot)
 	}
 
+	inside.uq.dot.plot <- function(
+		plot.data,
+		prioritize.cluster.groups,
+		dot.colour.palette
+	) {
+		# before plot, get gene pairs ordered correctly
+		plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name))
+		# add additional re-order step, as dot plot is not the same as bar plot.
+		tmp.uq.label <- unique(plot.data$uq.label)
+		tmp.inds.prior <- match(prioritize.cluster.groups, tmp.uq.label)
+		tmp.uq.label.inferior <- tmp.uq.label[setdiff(seq_along(tmp.uq.label), tmp.inds.prior)]
+		tmp.align.uq.label <- c(tmp.uq.label[tmp.inds.prior], tmp.uq.label.inferior[order(tmp.uq.label.inferior)])
+		plot.data$uq.label <- factor(plot.data$uq.label, levels = tmp.align.uq.label)
+		# the plot
+		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.name))
+		this.plot <- this.plot + 
+			geom_point(aes(colour = uq.y.axis), size = dot.size) + 
+			dot.colour.palette + 
+			labs(x = "Cluster Groups", y = "Gene Pairs")
+		this.plot <- this.plot + 
+			theme_half_open(font_size = plot.font.size.base) + 
+			theme(axis.text.x = axis.text.x.pattern) + 
+			theme(legend.position = "right")  # remove the legends
+		return(this.plot)		
+	}
+
 	inside.gen.ret.table <- function(
 		ret.data
 	) {
@@ -538,19 +573,36 @@ GetResult.SummarySpecialGenes <- function(
 	}
 
 	## process: draw plots
-	if (show.uq.cnt.merged == TRUE) {
-		this.plot.mg <- inside.uq.single.plot(plot.data.uq.df, prioritize.cluster.groups, bar.colour)
-		return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
-	} else {
-		this.notm.plot.list <- list()
-		this.notm.ret.table.list <- list()
-		for (i.item in names(plot.data.uq.notm.list)) {
-			this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.single.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, bar.colour)))
-			this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
-		}
-		this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = 1)
+	if (barplot.or.dotplot == TRUE) {
+		if (show.uq.cnt.merged == TRUE) {
+			this.plot.mg <- inside.uq.bar.plot(plot.data.uq.df, prioritize.cluster.groups, bar.colour)
+			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
+		} else {
+			this.notm.plot.list <- list()
+			this.notm.ret.table.list <- list()
+			for (i.item in names(plot.data.uq.notm.list)) {
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.bar.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, bar.colour)))
+				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
+			}
+			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)
 
-		return(list(plot = this.notm.plot, table = this.notm.ret.table.list))
+			return(list(plot = this.notm.plot, table = this.notm.ret.table.list))
+		}
+	} else {
+		if (show.uq.cnt.merged == TRUE) {
+			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, dot.colour.palette)
+			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
+		} else {
+			this.notm.plot.list <- list()
+			this.notm.ret.table.list <- list()
+			for (i.item in names(plot.data.uq.notm.list)) {
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, dot.colour.palette)))
+				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
+			}
+			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)
+
+			return(list(plot = this.notm.plot, table = this.notm.ret.table.list))
+		}
 	}
 }
 

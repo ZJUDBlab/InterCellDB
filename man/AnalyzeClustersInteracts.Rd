@@ -26,7 +26,8 @@ AnalyzeClustersInteracts(
   sub.sel.X.user.type = NULL,
   sub.sel.Y.user.type = NULL,
   calculation.formula = FullView.Evaluation.func.default,
-  ind.colname.end.dual = 4
+  ind.colname.end.dual = 4,
+  verbose = TRUE
 )
 }
 \arguments{
