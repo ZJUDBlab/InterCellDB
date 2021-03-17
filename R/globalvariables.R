@@ -34,7 +34,7 @@ kClustersSplit <- "~"
 #'
 #' @export
 #'
-kGenesSplit <- "->"
+kGenesSplit <- "-~-"
 
 
 
