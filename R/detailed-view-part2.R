@@ -13,10 +13,12 @@
 #' @param to.cmp.cluster.groups.sel.strategy Character. It defines the pre-defined selection method for getting cluster groups, and 
 #' current strategy options are "inter-cross" and "all-other". It works only when parameter \code{to.cmp.cluster.groups} gets not to 
 #' specificly set the comparing cluster groups.
+#' @param extended.search [TODO]
 #' @param uq.cnt.range Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
 #' to exist in several cluster groups. 
 #' @param formula.to.use.onLogFC Function. It defines the function that calculate one LogFC of genes in every gene pairs, and the default 
 #' calculation formula is to sum them up. 
+#' @param formula.to.use.onPValAdj [TODO]
 #'
 #'
 #' @return List of length 2. With one named "res" saving all result and the other 
@@ -35,16 +37,21 @@ FindSpecialGenesInOnepairCluster <- function(
 	interact.pairs.acted,
 	to.cmp.cluster.groups = character(),  # should be a subset of interact.pairs.acted$name.allpairs
 	to.cmp.cluster.groups.sel.strategy = "inter-cross",
+	extended.search = FALSE, 
 	uq.cnt.range = c(1:100),
-	formula.to.use.onLogFC = Tool.formula.onLogFC.default
+	formula.to.use.onLogFC = Tool.formula.onLogFC.default,
+	formula.to.use.onPValAdj = Tool.formula.onPValAdj.default
 ) {
 	# pre-check
 	if (class(formula.to.use.onLogFC) != "function") {
 		stop("Please provide usable function in parameter formula.to.use.onLogFC!")
 	}
+	if (class(Tool.formula.onPValAdj.default) != "function") {
+		stop("Please provide usable function in parameter Tool.formula.onPValAdj.default!")
+	}
 	# pre-params
 	involved.clusters.pair <- paste(VEinfos$cluster.name.A, VEinfos$cluster.name.B, sep = kClustersSplit)
-	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
+	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)  # [TODO] seems wrong, lost other direction data
 
 	# calculate the multiply of fold change of interacting genes
 	inside.c.short.interacts <- function(
@@ -54,7 +61,7 @@ FindSpecialGenesInOnepairCluster <- function(
 		paste(tmp.pairs[, "inter.GeneName.A"], tmp.pairs[, "inter.GeneName.B"], sep = tmp.sep)
 	}
 	# calculate the logfc
-	inside.calc.upon.gp.logfc <- function(
+	inside.calc.upon.gp.std <- function(
 		tmp.pairs,
 		tmp.formula,
 		tmp.colnames = c("inter.LogFC.A", "inter.LogFC.B")
@@ -77,6 +84,8 @@ FindSpecialGenesInOnepairCluster <- function(
 		gp.belongs = rep(this.pair.name, times = length(this.pair.interacts)), 
 		gp.logfc.A = target.gene.pairs.df[, "inter.LogFC.A"], 
 		gp.logfc.B = target.gene.pairs.df[, "inter.LogFC.B"], 
+		gp.pvaladj.A = target.gene.pairs.df[, "inter.PValAdj.A"],
+		gp.pvaladj.B = target.gene.pairs.df[, "inter.PValAdj.B"], 
 		stringsAsFactors = FALSE)
 
 	# to compare pairs
@@ -93,13 +102,16 @@ FindSpecialGenesInOnepairCluster <- function(
 			}
 		}
 	}  # else use the directly specified clusters
+	# force to.cmp.cluster.groups to be unique
+	to.cmp.cluster.groups <- unique(to.cmp.cluster.groups)
+
 	# further check if comparison of itself exist, which may cause error in downstream analysis
 	if (sum(this.pair.name %in% to.cmp.cluster.groups) > 0) {
 		stop("Cannot put the cluster group given in parameter 'VEinfos' in the parameter 'to.cmp.cluster.groups'.")
 	}
 
 	# set the uq.cnt range
-	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(to.cmp.cluster.groups, split = kClustersSplit, fixed = TRUE))))
+	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(c(this.pair.name, to.cmp.cluster.groups), split = kClustersSplit, fixed = TRUE))))
 	uq.cnt.range <- uq.cnt.range[which(uq.cnt.range %in% seq_along(tmp.all.uq.clusters))]
 	if (length(uq.cnt.range) == 0) {
 		stop("Please specify available uq.cnt.range to continue the analysis!\nThe allowed values are ", 
@@ -107,11 +119,20 @@ FindSpecialGenesInOnepairCluster <- function(
 	}
 
 	# generate gene pairs to compare
-	  # only those pairs occurs in target cluster group will be further analyzed
+	this.tg.pairs <- this.pair.interacts
+	if (extended.search == TRUE) {
+		tmp.added.tg <- as.character(unlist(lapply(to.cmp.cluster.groups, 
+			all.pairs.interacts = all.pairs.interacts, tg.pairs = this.tg.pairs, tmp.sep = kGenesSplit,
+			function(x, all.pairs.interacts, tg.pairs, tmp.sep) {
+				inside.c.short.interacts(all.pairs.interacts[[x]], tmp.sep)
+			})))
+		this.tg.pairs <- unique(c(this.tg.pairs, tmp.added.tg))
+	}  # only those pairs occurs in target cluster group will be further analyzed
+
+	# fetch uq in cmp group
 	other.gene.pairs.df.list <- lapply(to.cmp.cluster.groups, 
-		all.pairs.interacts = all.pairs.interacts, tg.pairs = this.pair.interacts,
-		tmp.sep = kGenesSplit, formula.to.use.onLogFC = formula.to.use.onLogFC, 
-		function(x, all.pairs.interacts, tg.pairs, tmp.sep, formula.to.use.onLogFC) {
+		all.pairs.interacts = all.pairs.interacts, tg.pairs = this.tg.pairs, tmp.sep = kGenesSplit, 
+		function(x, all.pairs.interacts, tg.pairs, tmp.sep) {
 			tmp.pairs.df <- all.pairs.interacts[[x]]
 			tmp.pairs.interacts <- inside.c.short.interacts(tmp.pairs.df, tmp.sep)
 			tmp.inds.tg <- which(tmp.pairs.interacts %in% tg.pairs)
@@ -119,6 +140,8 @@ FindSpecialGenesInOnepairCluster <- function(
 				gp.belongs = rep(x, times = length(tmp.inds.tg)), 
 				gp.logfc.A = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.A"], 
 				gp.logfc.B = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.B"], 
+				gp.pvaladj.A = tmp.pairs.df[tmp.inds.tg, "inter.PValAdj.A"],
+				gp.pvaladj.B = tmp.pairs.df[tmp.inds.tg, "inter.PValAdj.B"],
 				stringsAsFactors = FALSE)
 			res.df
 		})
@@ -142,14 +165,16 @@ FindSpecialGenesInOnepairCluster <- function(
 	prog.bar.use.plot.collect <- progress::progress_bar$new(total = length(this.uq.indices))
 	prog.bar.use.plot.collect$tick(0)
 	tmp.diff.res.mat <- lapply(names(this.uq.indices), all.gp = this.all.gp.packed, 
-	diff.cnts = this.uq.cnts, diff.indices = this.uq.indices, formula.to.use = formula.to.use.onLogFC, 
+	diff.cnts = this.uq.cnts, diff.indices = this.uq.indices, 
+	formula.to.use = list(formula.to.use.onLogFC, formula.to.use.onPValAdj), 
 		function(x, all.gp, diff.cnts, diff.indices, formula.to.use) {
 			tmp.i <- which(names(diff.cnts) == x)  # must be the same as it is in diff.indices
 			tmp.cnt <- diff.cnts[tmp.i]
 			names(tmp.cnt) <- NULL  # remove the name
 			tmp.indices <- diff.indices[[tmp.i]]
-			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B")]
-			tmp.properties$gp.logfc.calc <- inside.calc.upon.gp.logfc(tmp.properties, formula.to.use, tmp.colnames = c("gp.logfc.A", "gp.logfc.B"))
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")]
+			tmp.properties$gp.logfc.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[1]], tmp.colnames = c("gp.logfc.A", "gp.logfc.B"))
+			tmp.properties$gp.pvaladj.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[2]], tmp.colnames = c("gp.pvaladj.A", "gp.pvaladj.B"))
 			tmp.properties <- tmp.properties[order(tmp.properties$gp.logfc.calc, decreasing = TRUE), ]
 			prog.bar.use.plot.collect$tick()  # tick
 			# return
@@ -167,14 +192,14 @@ FindSpecialGenesInOnepairCluster <- function(
 			tmp.indices <- diff.indices[[tmp.i]]
 			tmp.genepair <- names(diff.indices[tmp.i])  # get the gene pair name
 			tmp.gene.part <- strsplit(tmp.genepair, split = kGenesSplit, fixed = TRUE)[[1]]
-			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B")]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")]
 			tmp.clusters.prop.df <- Tool.SplitToGenDataFrame(tmp.properties[, "gp.belongs"], to.split.by = kClustersSplit, 
 				res.colnames = c("Cluster.G1", "Cluster.G2"))
 			tmp.res.df <- cbind(data.frame(gp.name = rep(tmp.genepair, times = nrow(tmp.properties)), 
 					inter.GeneName.A = rep(tmp.gene.part[1], times = nrow(tmp.properties)),
 					inter.GeneName.B = rep(tmp.gene.part[2], times = nrow(tmp.properties)),
 					stringsAsFactors = FALSE), 
-				tmp.properties$gp.belongs, tmp.clusters.prop.df, tmp.properties[, c("gp.logfc.A", "gp.logfc.B")], stringsAsFactors = FALSE)
+				tmp.properties[, "gp.belongs", drop = FALSE], tmp.clusters.prop.df, tmp.properties[, c("gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")], stringsAsFactors = FALSE)
 			prog.bar.for.res.collect$tick()
 			# result
 			tmp.res.df
@@ -214,8 +239,8 @@ Inside.select.genepairs.method.logfc.sum.default <- function(
 	tmp.tg.calc <- unlist(lapply(seq_along(this.spgenes), 
 		spgenes = this.spgenes, tg.gp.name = tmp.gp.name, 
 		function(x, spgenes, tg.gp.name) {
-		tmp.df <- spgenes[[x]]$uq.details
-		tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
+			tmp.df <- spgenes[[x]]$uq.details
+			tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
 		}))
 	# max -> min or min -> max
 	tmp.inds.sel <- order(tmp.tg.calc, decreasing = select.by.method.decreasing)
@@ -261,6 +286,9 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' only the top ranked some gene pairs will be finally shown in result. The default value is +Inf, which preserves all result.
 #' @param prioritize.cluster.groups Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
 #' finally plotted from the most left-side to right, and as such, it is called prioritizing. 
+#' @param display.conv.or.rev [TODO] Is the display of cluster interaction the same arrange as VEinfos(direction.A.to.B)
+#'   conv, the same, rev, the reverse format. For example, cluster.A -> cluster.B in VEinfo, so, if conv, display like cluster.A~cluster.B, or as cluster.B~cluster.A
+#'   gene pairs will be aligned as cluster order changed.
 #' @param grid.plot.ncol [TODO]
 #' @param barplot.or.dotplot  [TODO]
 #' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
@@ -303,12 +331,13 @@ GetResult.SummarySpecialGenes <- function(
 	select.by.method.decreasing = TRUE, 
 	show.topn.inside.onepair = +Inf,
 	prioritize.cluster.groups = character(),  # names put here will be showed in left and order as it is in here 
+	display.conv.or.rev = TRUE,
 	# plotting param
 	grid.plot.ncol = 1, 
 	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
 	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
-	dot.colour.palette = scale_colour_gradientn(name = "Power", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
+	dot.colour.palette = scale_colour_gradientn(name = "LogFC.Calc", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
 	dot.size = 5, 
 	facet.scales = "free_x", 
 	facet.space  = "free_x", 
@@ -395,7 +424,7 @@ GetResult.SummarySpecialGenes <- function(
 		tmp.spgenes <- all.spgenes[tmp.inds]
 		tmp.spgenes <- lapply(tmp.spgenes, topn = topn.it, function(x, topn) {
 			tmp.selrows <- ifelse(nrow(x$uq.details) > topn, topn, nrow(x$uq.details))
-			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.logfc.calc")])
+			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.logfc.calc", "gp.pvaladj.calc")])
 			})
 		# remove those with NO valid uq.cnt 
 		tmp.check.0row <- unlist(lapply(tmp.spgenes, function(x) { nrow(x$uq.details) }))
@@ -407,6 +436,7 @@ GetResult.SummarySpecialGenes <- function(
 		std.spgenes,
 		show.genepairs.order,  # ordered as it is in select.genepairs
 		prioritize.cluster.groups,
+		display.conv.or.rev,
 		std.width.col = 2,  # may be export as param, so as the gap
 		std.width.gap = 3
 	) {
@@ -436,9 +466,20 @@ GetResult.SummarySpecialGenes <- function(
 					uq.cnt = rep(tmp.n.items, times = tmp.ref.rows), 
 					uq.x.axis = tmp.coords.seq[seq_len(tmp.ref.rows)], 
 					uq.y.axis = std.spgenes[[x]]$uq.details$gp.logfc.calc[c(tmp.inds.prior, tmp.inds.inferior)],
+					uq.z.axis = std.spgenes[[x]]$uq.details$gp.pvaladj.calc[c(tmp.inds.prior, tmp.inds.inferior)],
 					stringsAsFactors = FALSE)
 				})
 		tmp.df.res <- bind_rows(tmp.df.list)
+
+		# re-align cluster orders, conv or rev
+		if (display.conv.or.rev == FALSE) {
+			uq.name.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.name"],
+				to.split.by = kGenesSplit, res.colnames = c("gene.A", "gene.B"))
+			uq.label.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.label"],
+				to.split.by = kClustersSplit, res.colnames = c("cluster.A", "cluster.B"))
+			tmp.df.res$uq.name <- paste(uq.name.split.df$gene.B, uq.name.split.df$gene.A, sep = kGenesSplit)
+			tmp.df.res$uq.label <- paste(uq.label.split.df$cluster.B, uq.label.split.df$cluster.A, sep = kClustersSplit)
+		}  # not change if set as conv
 		return(tmp.df.res)
 	}
 
@@ -451,7 +492,7 @@ GetResult.SummarySpecialGenes <- function(
 		}
 		tmp.sel.gpairs <- inside.fetch.sel.genepairs(plot.data.uq, VEinfos, select.genepairs, select.genepairs.method, select.by.method.pairs.limit, select.by.method.decreasing, ...)
 		plot.data.uq <- plot.data.uq[which(names(plot.data.uq) %in% tmp.sel.gpairs)]
-		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups)
+		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups, display.conv.or.rev)
 	} else {
 		plot.data.uq.notm.list <- list()
 		tmp.uq.cnt.valid.list <- integer()
@@ -462,7 +503,7 @@ GetResult.SummarySpecialGenes <- function(
 			if (length(tmp.spgenes) == 0) {
 				next  # not added to the result list
 			}
-			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups)
+			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups, display.conv.or.rev)
 			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
 			tmp.uq.cnt.valid.list <- c(tmp.uq.cnt.valid.list, iuq)
 		}
@@ -544,11 +585,13 @@ GetResult.SummarySpecialGenes <- function(
 		# the plot
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.name))
 		this.plot <- this.plot + 
-			geom_point(aes(colour = uq.y.axis), size = dot.size) + 
+			geom_point(aes(colour = uq.z.axis, size = uq.y.axis)) + 
 			dot.colour.palette + 
+			scale_size(name = "PValAdj.Calc") + 
 			labs(x = "Cluster Groups", y = "Gene Pairs")
 		this.plot <- this.plot + 
 			theme_half_open(font_size = plot.font.size.base) + 
+			theme_bw() + 
 			theme(axis.text.x = axis.text.x.pattern) + 
 			theme(legend.position = "right")  # remove the legends
 		return(this.plot)		
@@ -557,8 +600,8 @@ GetResult.SummarySpecialGenes <- function(
 	inside.gen.ret.table <- function(
 		ret.data
 	) {
-		ret.res <- ret.data[, c("uq.name", "uq.label", "uq.cnt", "uq.y.axis")]
-		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.logfc.calc")
+		ret.res <- ret.data[, c("uq.name", "uq.label", "uq.cnt", "uq.y.axis", "uq.z.axis")]
+		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.logfc.calc", "gp.pvaladj.calc")
 		ret1.genepairs.df <- Tool.SplitToGenDataFrame(ret.res[, "gene.pairs"], 
 			to.split.by = kGenesSplit, 
 			res.colnames = c("inter.GeneName.A", "inter.GeneName.B"))
@@ -567,7 +610,7 @@ GetResult.SummarySpecialGenes <- function(
 			res.colnames = c("Cluster.G1", "Cluster.G2"))
 		ret.res <- cbind(ret.res[, "gene.pairs", drop = FALSE], 
 			ret1.genepairs.df, ret.res[, "cluster.groups", drop = FALSE], 
-			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.logfc.calc")],
+			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.logfc.calc", "gp.pvaladj.calc")],
 			stringsAsFactors = FALSE)
 		return(ret.res)
 	}

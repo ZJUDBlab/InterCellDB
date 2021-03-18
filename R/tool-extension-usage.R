@@ -152,12 +152,12 @@ Tool.GenStdGenePairs.from.VEinfos <- function(
   vertices.infos <- VEinfos$vertices.infos
   edges.infos <- VEinfos$edges.infos
   #
-  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC")], by = c("from" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 2:0)] <- c("inter.Cluster.A", "inter.GeneName.A", "inter.LogFC.A")
-  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC")], by = c("to" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 2:0)] <- c("inter.Cluster.B", "inter.GeneName.B", "inter.LogFC.B")
+  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PValAdj")], by = c("from" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.A", "inter.GeneName.A", "inter.LogFC.A", "inter.PValAdj.A")
+  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PValAdj")], by = c("to" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.B", "inter.GeneName.B", "inter.LogFC.B", "inter.PValAdj.B")
   # form std data.frame
-  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B", "inter.Cluster.A", "inter.Cluster.B")
+  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B", "inter.PValAdj.A", "inter.PValAdj.B", "inter.Cluster.A", "inter.Cluster.B")
   tmp.res <- tmp.res[, match(align.colnames, colnames(tmp.res))]
   # result
   std.df <- DoPartUnique(tmp.res, 1:2)

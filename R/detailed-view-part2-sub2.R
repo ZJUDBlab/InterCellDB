@@ -4,7 +4,7 @@
 #'
 #' @description
 #' This function evaluates the importance of some specific gene pairs of one pair of clusters, 
-#' and the default evaluation params are LogFC and p_val_adj.
+#' and the default evaluation params are LogFC and PValAdj.
 #'
 #' @inheritParams Inside.DummyVEinfos
 #' @inheritParams Inside.DummyFgenes
@@ -27,7 +27,7 @@
 #' It calculates in default settings:
 #' \itemize{
 #'   \item LogFC: the log of fold changes, which indicates the relative gene expression.
-#'   \item p_val_adj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
+#'   \item PValAdj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
 #' }
 #'
 #'
@@ -51,8 +51,8 @@ GetResult.PlotOnepairClusters.GeneCrosstalk <- function(
   VEinfos,
   fgenes.remapped.all,
   direction.A.to.B = TRUE,
-  colnames.to.cmp = c("LogFC", "p_val_adj"),
-  range.to.use = list("LogFC" = c(-Inf, Inf), "p_val_adj" = c(-Inf, Inf)),
+  colnames.to.cmp = c("LogFC", "PValAdj"),
+  range.to.use = list("LogFC" = c(-Inf, Inf), "PValAdj" = c(-Inf, Inf)),
   formula.to.use = list(Tool.formula.onLogFC.default, Tool.formula.onPValAdj.default),
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
   axis.order.xy.decreasing = c(TRUE, TRUE),  # order direction

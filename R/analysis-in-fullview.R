@@ -86,7 +86,7 @@ Inside.AnalyzeClustersInteracts <- function(
   ind.colname.end.dual = 4
 ) {
   # check if the column named "cluster" exists, so as "gene" and "avg_logFC"
-  tmp.precheck.cols <- c("cluster", "gene", "avg_logFC")
+  tmp.precheck.cols <- c("cluster", "gene", "avg_logFC", "p_val_adj")
   tmp.ind.valid.cols <- which(tmp.precheck.cols %in% colnames(markers.remapped.all))
   if (length(tmp.ind.valid.cols) != length(tmp.precheck.cols)) {
     stop("columns: ", paste0(tmp.precheck.cols[-tmp.ind.valid.cols], collapse = ", "), " are NOT AVAILABLE.")
@@ -223,11 +223,14 @@ Inside.AnalyzeClustersInteracts <- function(
       #colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.A"
       #pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "exprs")], by = c("inter.GeneName.B" = "gene"))
       #colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.Exprs.B"
-      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "avg_logFC")], by = c("inter.GeneName.A" = "gene"))
-      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.LogFC.A"
-      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "avg_logFC")], by = c("inter.GeneName.B" = "gene"))
-      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab)] <- "inter.LogFC.B"
+      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.i[, c("gene", "avg_logFC", "p_val_adj")], by = c("inter.GeneName.A" = "gene"))
+      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab) - 1:0] <- c("inter.LogFC.A", "inter.PValAdj.A")
+      pairs.sp.ikab <- left_join(pairs.sp.ikab, markers.rall.k[, c("gene", "avg_logFC", "p_val_adj")], by = c("inter.GeneName.B" = "gene"))
+      colnames(pairs.sp.ikab)[ncol(pairs.sp.ikab) - 1:0] <- c("inter.LogFC.B", "inter.PValAdj.B")
       # rearrange the columns. Make dual-matched columns being in the front, and single-matched columns being in the back.
+      
+#[TODO] add Pval in, columns need to be re-arranged
+
       pairs.sp.ikab <- pairs.sp.ikab[, c(1:ind.colname.end.dual, (ncol(pairs.sp.ikab)-1):(ncol(pairs.sp.ikab)), (ind.colname.end.dual+1):(ncol(pairs.sp.ikab)-2))]
       ## do subgroup based on @param subgroup.options
       #1 - exprs change (based on logFC)

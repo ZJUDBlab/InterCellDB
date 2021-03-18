@@ -376,10 +376,10 @@ GenerateVEinfos <- function(
   vertices.all.infos$UID <- 1:nrow(vertices.all.infos)
   rownames(vertices.all.infos) <- NULL
   # change colnames in vertices.all
-  tmp.cols.change <- match(c("GO.Term.target", "avg_logFC"), colnames(vertices.all.infos))
-  colnames(vertices.all.infos)[tmp.cols.change] <- c("Location", "LogFC")
-  tmp.cols.first5 <- c("UID", "ClusterName", "GeneName", "Location", "LogFC")
-  vertices.all.infos <- vertices.all.infos[, c(tmp.cols.first5, setdiff(colnames(vertices.all.infos), tmp.cols.first5))]  # rearrange the columns
+  tmp.cols.change <- match(c("GO.Term.target", "avg_logFC", "p_val_adj"), colnames(vertices.all.infos))
+  colnames(vertices.all.infos)[tmp.cols.change] <- c("Location", "LogFC", "PValAdj")
+  tmp.cols.first6 <- c("UID", "ClusterName", "GeneName", "Location", "LogFC", "PValAdj")
+  vertices.all.infos <- vertices.all.infos[, c(tmp.cols.first6, setdiff(colnames(vertices.all.infos), tmp.cols.first6))]  # rearrange the columns
   # change colnames in apx.*
   colnames(vertices.A.apx.types) <- colnames(vertices.B.apx.types) <- c("GeneName", "Type")
 
