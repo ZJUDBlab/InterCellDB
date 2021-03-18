@@ -162,8 +162,16 @@ Tool.GenStdGenePairs.from.VEinfos <- function(
   # result
   std.df <- DoPartUnique(tmp.res, 1:2)
   # match cluster
-  std.df <- std.df[intersect(which(std.df$inter.Cluster.A == VEinfos$cluster.name.A), which(std.df$inter.Cluster.B == VEinfos$cluster.name.B)), ]
-  return(std.df)
+  # get conv ones
+  std.res.conv <- std.df[intersect(which(std.df$inter.Cluster.A == VEinfos$cluster.name.A), which(std.df$inter.Cluster.B == VEinfos$cluster.name.B)), ]
+  # get rev ones
+  std.res.rev <- std.df[intersect(which(std.df$inter.Cluster.A == VEinfos$cluster.name.B), which(std.df$inter.Cluster.B == VEinfos$cluster.name.A)), ]
+  std.res.rev <- std.res.rev[, ReverseOddEvenCols(length(align.colnames))]  # reverse all paired columns
+  colnames(std.res.rev) <- colnames(std.res.conv)
+  # get the result
+  std.res.all <- rbind(std.res.conv, std.res.rev)
+
+  return(std.res.all)
 }
 
 

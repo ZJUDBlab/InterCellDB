@@ -51,7 +51,7 @@ FindSpecialGenesInOnepairCluster <- function(
 	}
 	# pre-params
 	involved.clusters.pair <- paste(VEinfos$cluster.name.A, VEinfos$cluster.name.B, sep = kClustersSplit)
-	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)  # [TODO] seems wrong, lost other direction data
+	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
 
 	# calculate the multiply of fold change of interacting genes
 	inside.c.short.interacts <- function(
