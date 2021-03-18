@@ -9,8 +9,10 @@ FindSpecialGenesInOnepairCluster(
   interact.pairs.acted,
   to.cmp.cluster.groups = character(),
   to.cmp.cluster.groups.sel.strategy = "inter-cross",
+  extended.search = FALSE,
   uq.cnt.range = c(1:100),
-  formula.to.use.onLogFC = Tool.formula.onLogFC.default
+  formula.to.use.onLogFC = Tool.formula.onLogFC.default,
+  formula.to.use.onPValAdj = Tool.formula.onPValAdj.default
 )
 }
 \arguments{
@@ -25,11 +27,15 @@ FindSpecialGenesInOnepairCluster(
 current strategy options are "inter-cross" and "all-other". It works only when parameter \code{to.cmp.cluster.groups} gets not to 
 specificly set the comparing cluster groups.}
 
+\item{extended.search}{[TODO]}
+
 \item{uq.cnt.range}{Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
 to exist in several cluster groups.}
 
 \item{formula.to.use.onLogFC}{Function. It defines the function that calculate one LogFC of genes in every gene pairs, and the default 
 calculation formula is to sum them up.}
+
+\item{formula.to.use.onPValAdj}{[TODO]}
 }
 \value{
 List of length 2. With one named "res" saving all result and the other 

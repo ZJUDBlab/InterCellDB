@@ -8,8 +8,8 @@ GetResult.PlotOnepairClusters.GeneCrosstalk(
   VEinfos,
   fgenes.remapped.all,
   direction.A.to.B = TRUE,
-  colnames.to.cmp = c("LogFC", "p_val_adj"),
-  range.to.use = list(LogFC = c(-Inf, Inf), p_val_adj = c(-Inf, Inf)),
+  colnames.to.cmp = c("LogFC", "PValAdj"),
+  range.to.use = list(LogFC = c(-Inf, Inf), PValAdj = c(-Inf, Inf)),
   formula.to.use = list(Tool.formula.onLogFC.default, Tool.formula.onPValAdj.default),
   axis.order.xy = c("AlphaBet", "AlphaBet"),
   axis.order.xy.decreasing = c(TRUE, TRUE),
@@ -63,13 +63,13 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 }
 \description{
 This function evaluates the importance of some specific gene pairs of one pair of clusters, 
-and the default evaluation params are LogFC and p_val_adj.
+and the default evaluation params are LogFC and PValAdj.
 }
 \details{
 This function uses user-selected gene pairs, and uses evalution params to calculate the relative importance of each gene pair.
 It calculates in default settings:
 \itemize{
   \item LogFC: the log of fold changes, which indicates the relative gene expression.
-  \item p_val_adj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
+  \item PValAdj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
 }
 }

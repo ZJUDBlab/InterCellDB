@@ -15,12 +15,13 @@ GetResult.SummarySpecialGenes(
   select.by.method.decreasing = TRUE,
   show.topn.inside.onepair = +Inf,
   prioritize.cluster.groups = character(),
+  display.conv.or.rev = TRUE,
   grid.plot.ncol = 1,
   barplot.or.dotplot = FALSE,
   plot.font.size.base = 12,
   axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
-  dot.colour.palette = scale_colour_gradientn(name = "Power", colours = c("#00809D",
-    "#EEEEEE", "#C30000"), values = c(0, 0.5, 1)),
+  dot.colour.palette = scale_colour_gradientn(name = "LogFC.Calc", colours =
+    c("#00809D", "#EEEEEE", "#C30000"), values = c(0, 0.5, 1)),
   dot.size = 5,
   facet.scales = "free_x",
   facet.space = "free_x",
@@ -58,6 +59,10 @@ only the top ranked some gene pairs will be finally shown in result. The default
 
 \item{prioritize.cluster.groups}{Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
 finally plotted from the most left-side to right, and as such, it is called prioritizing.}
+
+\item{display.conv.or.rev}{[TODO] Is the display of cluster interaction the same arrange as VEinfos(direction.A.to.B)
+conv, the same, rev, the reverse format. For example, cluster.A -> cluster.B in VEinfo, so, if conv, display like cluster.A~cluster.B, or as cluster.B~cluster.A
+gene pairs will be aligned as cluster order changed.}
 
 \item{grid.plot.ncol}{[TODO]}
 
