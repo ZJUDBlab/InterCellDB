@@ -100,9 +100,10 @@ Tool.formula.onLogFC.default <- function(
 #'
 Tool.formula.onPValAdj.default <- function(
 	data.f, 
-	data.b
+	data.b,
+	pval.log.max = 1000
 ) {
-	default.max.replace <- 1000  # use 1000 as default maximum(e-999 are usual lowest limit), when all log(values) are infinite.
+	default.max.replace <- pval.log.max  # use 1000 as default maximum(e-999 are usual lowest limit), when all log(values) are infinite.
 	if (length(data.f) != length(data.b)) {
 		stop("Unexpected non-identical length data input!")
 	}

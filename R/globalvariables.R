@@ -61,7 +61,7 @@ kpred.exprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
 #'
 #' @export
 #'
-kpred.mode <- c("activation", "inhibition", "binding", "catalysis", "reaction", "expression", "ptmod")  # "phenotype", "other" not exist anymore
+kpred.mode <- c("activation", "inhibition", "binding", "catalysis", "reaction", "expression", "ptmod", "other")  # "phenotype", "other" not exist anymore
 
 
 

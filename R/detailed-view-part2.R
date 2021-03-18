@@ -64,9 +64,10 @@ FindSpecialGenesInOnepairCluster <- function(
 	inside.calc.upon.gp.std <- function(
 		tmp.pairs,
 		tmp.formula,
-		tmp.colnames = c("inter.LogFC.A", "inter.LogFC.B")
+		tmp.colnames = c("inter.LogFC.A", "inter.LogFC.B"),
+		...
 	) {
-		tmp.formula(tmp.pairs[, tmp.colnames[1]], tmp.pairs[, tmp.colnames[2]])
+		tmp.formula(tmp.pairs[, tmp.colnames[1]], tmp.pairs[, tmp.colnames[2]], ...)
 	}
 
 	# all pairs
@@ -158,7 +159,9 @@ FindSpecialGenesInOnepairCluster <- function(
 	tmp.inds.uq.valid <- this.uq.cnts %in% uq.cnt.range
 	this.uq.cnts <- this.uq.cnts[tmp.inds.uq.valid]
 	this.uq.indices <- this.uq.indices[tmp.inds.uq.valid]
-	# [TODO] further subset options
+	# other settings
+	tmp.pval.collect <- c(this.all.gp.packed$gp.pvaladj.A, this.all.gp.packed$gp.pvaladj.B)
+	this.minimum.pval.log10.abs <- abs(log10(min(tmp.pval.collect[which(tmp.pval.collect > 0)])))
 
 	# collect by gene pairs each
 	tmp.diff.res.mat <- vector(mode = "list", length = length(this.uq.indices))
@@ -167,14 +170,15 @@ FindSpecialGenesInOnepairCluster <- function(
 	tmp.diff.res.mat <- lapply(names(this.uq.indices), all.gp = this.all.gp.packed, 
 	diff.cnts = this.uq.cnts, diff.indices = this.uq.indices, 
 	formula.to.use = list(formula.to.use.onLogFC, formula.to.use.onPValAdj), 
-		function(x, all.gp, diff.cnts, diff.indices, formula.to.use) {
+	opt.PValAdj.replace = this.minimum.pval.log10.abs,
+		function(x, all.gp, diff.cnts, diff.indices, formula.to.use, opt.PValAdj.replace) {
 			tmp.i <- which(names(diff.cnts) == x)  # must be the same as it is in diff.indices
 			tmp.cnt <- diff.cnts[tmp.i]
 			names(tmp.cnt) <- NULL  # remove the name
 			tmp.indices <- diff.indices[[tmp.i]]
 			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")]
 			tmp.properties$gp.logfc.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[1]], tmp.colnames = c("gp.logfc.A", "gp.logfc.B"))
-			tmp.properties$gp.pvaladj.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[2]], tmp.colnames = c("gp.pvaladj.A", "gp.pvaladj.B"))
+			tmp.properties$gp.pvaladj.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[2]], tmp.colnames = c("gp.pvaladj.A", "gp.pvaladj.B"), pval.log.max = opt.PValAdj.replace)
 			tmp.properties <- tmp.properties[order(tmp.properties$gp.logfc.calc, decreasing = TRUE), ]
 			prog.bar.use.plot.collect$tick()  # tick
 			# return
@@ -293,8 +297,9 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' @param barplot.or.dotplot  [TODO]
 #' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
 #' @param axis.text.x.pattern It defines the axis text style in x-axis. 
+#' @param dot.range.to.use [TODO]
 #' @param dot.colour.palette  [TODO]
-#' @param dot.size  [TODO]
+#' @param dot.size.range  [TODO]
 #' @param facet.scales It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
 #' @param facet.space It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
 #' @param facet.text.x It defines the facet labeling text on the top horizontal position. 
@@ -337,8 +342,9 @@ GetResult.SummarySpecialGenes <- function(
 	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
 	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
-	dot.colour.palette = scale_colour_gradientn(name = "LogFC.Calc", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
-	dot.size = 5, 
+	dot.range.to.use = list("LogFC.Calc" = c(-Inf, +Inf), "PValAdj.Calc" = c(-Inf, +Inf)), 
+	dot.colour.palette = scale_colour_gradientn(name = "PValAdj.Calc", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
+	dot.size.range = c(2, 8), 
 	facet.scales = "free_x", 
 	facet.space  = "free_x", 
 	facet.text.x = element_text(size = 8, colour = "black"), 
@@ -572,10 +578,32 @@ GetResult.SummarySpecialGenes <- function(
 	inside.uq.dot.plot <- function(
 		plot.data,
 		prioritize.cluster.groups,
-		dot.colour.palette
+		dot.range.to.use,
+		dot.colour.palette,
+		dot.size.range
 	) {
+		# move the data range
+		#plot.data$uq.y.axis  # LogFC
+		#plot.data$uq.z.axis  # PValAdj
+		# get and recalc LogFC range
+		tmp.logfc.range <- dot.range.to.use[["LogFC.Calc"]]
+		tmp.logfc <- plot.data$uq.y.axis
+		tmp.logfc[which(tmp.logfc > tmp.logfc.range[2])] <- tmp.logfc.range[2]
+		tmp.logfc[which(tmp.logfc < tmp.logfc.range[1])] <- tmp.logfc.range[1]
+		# resize upon the LogFC result
+		#tmp.size.skew <- (max(tmp.logfc) - min(tmp.logfc)) / (dot.size.range[2] - dot.size.range[1])
+		#plot.data$plot.dot.size <- (tmp.logfc - min(tmp.logfc)) / tmp.size.skew + dot.size.range[1]
+		plot.data$plot.dot.size <- tmp.logfc
+
+		# get and recalc PValAdj range
+		tmp.pvaladj.range <- dot.range.to.use[["PValAdj.Calc"]]
+		tmp.pvaladj <- plot.data$uq.z.axis
+		tmp.pvaladj[which(tmp.pvaladj > tmp.pvaladj.range[2])] <- tmp.pvaladj.range[2]
+		tmp.pvaladj[which(tmp.pvaladj < tmp.pvaladj.range[1])] <- tmp.pvaladj.range[1]
+		plot.data$plot.dot.colour <- tmp.pvaladj
+
 		# before plot, get gene pairs ordered correctly
-		plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name))
+		plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name[order(plot.data$uq.name)]))
 		# add additional re-order step, as dot plot is not the same as bar plot.
 		tmp.uq.label <- unique(plot.data$uq.label)
 		tmp.inds.prior <- match(prioritize.cluster.groups, tmp.uq.label)
@@ -585,9 +613,9 @@ GetResult.SummarySpecialGenes <- function(
 		# the plot
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.name))
 		this.plot <- this.plot + 
-			geom_point(aes(colour = uq.z.axis, size = uq.y.axis)) + 
+			geom_point(aes(colour = plot.dot.colour, size = plot.dot.size)) + 
 			dot.colour.palette + 
-			scale_size(name = "PValAdj.Calc") + 
+			scale_size(name = "LogFC.Calc", range = dot.size.range) + 
 			labs(x = "Cluster Groups", y = "Gene Pairs")
 		this.plot <- this.plot + 
 			theme_half_open(font_size = plot.font.size.base) + 
@@ -633,13 +661,13 @@ GetResult.SummarySpecialGenes <- function(
 		}
 	} else {
 		if (show.uq.cnt.merged == TRUE) {
-			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, dot.colour.palette)
+			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, dot.range.to.use, dot.colour.palette, dot.size.range)
 			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 		} else {
 			this.notm.plot.list <- list()
 			this.notm.ret.table.list <- list()
 			for (i.item in names(plot.data.uq.notm.list)) {
-				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, dot.colour.palette)))
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, dot.range.to.use, dot.colour.palette, dot.size.range)))
 				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 			}
 			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)

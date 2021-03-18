@@ -455,7 +455,7 @@ GenerateVEinfos <- function(
       prog.bar.edge.collect$tick()
       bind_rows(tmp.act.res)
   })
-  edges.all.infos <- bind_rows(this.act.result)
+  edges.all.infos <- as.data.frame(bind_rows(this.act.result))
   #end# return
   VEinfos <- list(cluster.name.A = afterV.A.clustername, cluster.name.B = afterV.B.clustername,
     edges.infos = edges.all.infos, 
@@ -714,8 +714,8 @@ TrimVEinfos <- function(
   }
   #end# return
   VEinfos <- list(cluster.name.A = afterV.A.clustername, cluster.name.B = afterV.B.clustername,
-    edges.infos = edges.part.infos, 
-    vertices.infos = vertices.part.infos,
+    edges.infos = as.data.frame(edges.part.infos), 
+    vertices.infos = as.data.frame(vertices.part.infos),
     vertices.apx.type.A = vertices.A.apx.types,
     vertices.apx.type.B = vertices.B.apx.types
     )
