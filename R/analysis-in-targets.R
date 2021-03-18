@@ -514,7 +514,7 @@ TrimVEinfos <- function(
   sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
   sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"), 
   sel.mode.val = NULL, 
-  sel.action.effect.val = NULL,
+  sel.action.effect.val = NULL, 
   sel.mode.action.merge.option = "intersect" 
 ) {
   afterV.A.clustername <- VEinfos$cluster.name.A
