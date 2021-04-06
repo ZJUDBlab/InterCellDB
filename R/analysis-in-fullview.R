@@ -83,7 +83,8 @@ Inside.AnalyzeClustersInteracts <- function(
   restricted.some.genes = NULL,
   restricted.gene.pairs = NULL,
   calculation.formula = FullView.Evaluation.func.default,
-  ind.colname.end.dual = 4
+  ind.colname.end.dual = 4,
+  verbose = verbose
 ) {
   # check if the column named "cluster" exists, so as "gene" and "avg_logFC"
   tmp.precheck.cols <- c("cluster", "gene", "avg_logFC", "p_val_adj")
@@ -131,8 +132,10 @@ Inside.AnalyzeClustersInteracts <- function(
     cnt.allpairs = integer(),
     strength.allpairs = single()
   )
-  prog.bar.p.p <- progress::progress_bar$new(total = length(to.use.X.clusters) * length(to.use.Y.clusters))
-  prog.bar.p.p$tick(0)
+  if (verbose == TRUE) {
+    prog.bar.p.p <- progress::progress_bar$new(total = length(to.use.X.clusters) * length(to.use.Y.clusters))
+    prog.bar.p.p$tick(0)
+  }
   this.inds.X.clusters <- match(to.use.X.clusters, fac.clusters)
   this.inds.Y.clusters <- match(to.use.Y.clusters, fac.clusters)
 
@@ -368,7 +371,9 @@ Inside.AnalyzeClustersInteracts <- function(
       interact.pairs.all$cnt.allpairs <- c(interact.pairs.all$cnt.allpairs, nrow(pairs.subg.result))
       interact.pairs.all$strength.allpairs <- c(interact.pairs.all$strength.allpairs,
         calculation.formula(pairs.subg.result, c("inter.LogFC.A", "inter.LogFC.B")))
-      prog.bar.p.p$tick()
+      if (verbose == TRUE) {
+        prog.bar.p.p$tick()
+      }
     }
   }
   #end# return
@@ -410,6 +415,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param sub.sel.Y.user.type Like \code{sub.sel.X.user.type}.
 #' @param calculation.formula It defines the function to be used to calculate the power of interactions between clusters. 
 #' @param ind.colname.end.dual Integer. Use default value provided only when the pairs.ref database is modified by users.
+#' @param verbose [TODO]
 #'
 #' @details
 #' This function gives as much as possible freedom for users to choose to analyze a subset of interaction pairs.
@@ -700,7 +706,8 @@ AnalyzeClustersInteracts <- function(
             restricted.some.genes = restricted.some.genes,
             restricted.gene.pairs = restricted.gene.pairs,
             calculation.formula = calculation.formula,
-            ind.colname.end.dual = ind.colname.end.dual)
+            ind.colname.end.dual = ind.colname.end.dual,
+            verbose = verbose)
   #end# return value
   res
 }

@@ -393,7 +393,7 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   label.padding.itself = list(unit(0.25, "lines"), unit(0.25, "lines")),
   label.size.itself = c(0.25, 0.25),
   link.size = 0.6,
-  link.colour = c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF"), 
+  link.colour = c("#D70051", "#00913A", "#1296D4", "#956134", "#F46D42", "#0A0AFF", "#762A83", "#B5B5B6"),  # [TODO] bug on link.colour
   link.alpha = 1, 
   link.linetype = c("solid", "solid", "solid", "44"), 
   link.arrow.angle = c(20, 90, 60, 0), 
@@ -445,21 +445,21 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
   if (length(label.size.itself) < 1 || is.null(label.size.itself)) stop("Paramemter `label.size.itself` is invalid!")
   label.size.itself <- if (length(label.size.itself) == 1) rep(label.size.itself, times = 2) else label.size.itself[1:2]
   # check and set link colour
-  if (is.null(names(link.colour))) {
-    if (length(link.colour) != length(kpred.mode)) {
-      length(link.colour) <- length(kpred.mode)
-      link.colour[which(is.na(link.colour))] <- "grey"  # use grey to all other
-      warning("Given link colour are shorter than expected, and are automatically extended.")
-    }
-  } else {
-    template.link.colour <- c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF")
-    tmp.inds.link.col <- match(names(link.colour), kpred.mode)
-    tmp.link.colour <- link.colour[!is.na(tmp.inds.link.col)]  # get the valid ones
-    warning("Named link colour has some unvalid names: ", paste0(link.colour[is.na(tmp.inds.link.col)], collapse = ", "), 
-      ", which will be automatically replaced with default colour values.")
-    template.link.colour[match(names(tmp.link.colour), kpred.mode)] <- tmp.link.colour
-    link.colour <- template.link.colour
-  }
+#  if (is.null(names(link.colour))) {
+#    if (length(link.colour) != length(kpred.mode)) {
+#      length(link.colour) <- length(kpred.mode)
+#      link.colour[which(is.na(link.colour))] <- "grey"  # use grey to all other
+#      warning("Given link colour are shorter than expected, and are automatically extended.")
+#    }
+#  } else {
+#    template.link.colour <- c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF")
+#    tmp.inds.link.col <- match(names(link.colour), kpred.mode)
+#    tmp.link.colour <- link.colour[!is.na(tmp.inds.link.col)]  # get the valid ones
+#    warning("Named link colour has some unvalid names: ", paste0(link.colour[is.na(tmp.inds.link.col)], collapse = ", "), 
+#      ", which will be automatically replaced with default colour values.")
+#    template.link.colour[match(names(tmp.link.colour), kpred.mode)] <- tmp.link.colour
+#    link.colour <- template.link.colour
+#  }
   names(link.colour) <- kpred.mode  # set the names right
   
   # check given nodes.size.gap
@@ -1018,13 +1018,14 @@ GetResult.PlotOnepairClusters.CellPlot.SmallData <- function(
     link.colour.mode = link.colour, link.alpha.mode = link.alpha, 
     plot.lwd.L.mode = plot.lwd.L.mode, plot.grey.bg.L.mode = plot.grey.bg.L.mode, 
     function(x, tmp.legend.mode, link.colour.mode, link.alpha.mode, plot.lwd.L.mode, plot.grey.bg.L.mode) {
+        tmp.ind.col <- which(names(link.colour.mode) == tmp.legend.mode[x])
         this.L <- grobTree(
           plot.grey.bg.L.mode, 
           polylineGrob(x = c(.1, .9),
             y = c(.5, .5),
             id = c(1, 1)),
           gp = gpar(
-            col = link.colour.mode[x],
+            col = link.colour.mode[tmp.ind.col],
             alpha = link.alpha.mode, 
             lwd = plot.lwd.L.mode)
         )

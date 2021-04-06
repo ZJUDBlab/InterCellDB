@@ -56,7 +56,7 @@ kpred.exprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
 #'
 #' @description
 #' This is extracted from databases depicting mode of actions for functional usages.
-#'
+#' expression is transcriptional regulation.
 #'
 #'
 #' @export

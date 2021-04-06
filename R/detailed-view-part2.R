@@ -307,6 +307,7 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' @param bar.colour Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
 #' built-in 20 kinds of colours will be automatically used.
 #' @param bar.width Numeric. It defines the bar width.
+#' @param y.axis.order.use.alphabet [TODO]
 
 #' @param ... Other parameter that can be passed to select by method functions.
 #'
@@ -351,6 +352,7 @@ GetResult.SummarySpecialGenes <- function(
 	facet.background = element_rect(fill = "lightgrey", colour = "white"), 
 	bar.colour = character(),  # [TODO] add option to select to use barplot or dotplot
 	bar.width = 0.8, 
+	y.axis.order.use.alphabet = TRUE,
 	...
 ) {
 	this.spgenes <- onepair.spgenes$for.plot.use
@@ -603,7 +605,12 @@ GetResult.SummarySpecialGenes <- function(
 		plot.data$plot.dot.colour <- tmp.pvaladj
 
 		# before plot, get gene pairs ordered correctly
-		plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name[order(plot.data$uq.name)]))
+		if (y.axis.order.use.alphabet == TRUE) {
+			plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name[order(plot.data$uq.name)]))
+		} else {
+			plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name))
+		}
+		
 		# add additional re-order step, as dot plot is not the same as bar plot.
 		tmp.uq.label <- unique(plot.data$uq.label)
 		tmp.inds.prior <- match(prioritize.cluster.groups, tmp.uq.label)
