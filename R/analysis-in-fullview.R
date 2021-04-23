@@ -727,9 +727,11 @@ AnalyzeClustersInteracts <- function(
 #' @param show.clusters.in.y Vector. Clusters(use cluster names) that are chosen to show in y-axis by users.
 #' @param power.max.limit Numeric. Specify the upper limit of power, whose value is highly user-defined and data-dependent.
 #' @param power.min.limit Numeric. Specify the lower limit of power, like \code{power.max.limit}.
+#' @param plot.power.range [TODO] This will extend the range of actual value for plotting adjustment.
 #' @param hide.power.label Logic. If TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.
 #' @param cnt.max.limit Numeric. Specify the upper limit of count, whose value is highly user-defined and data-dependent.
 #' @param cnt.min.limit Numeric. Specify the lower limit of count, like \code{cnt.max.limit}.
+#' @param plot.cnt.range [TODO] This will extend the range of actual value for plotting adjustment
 #' @param hide.cnt.label Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.
 #' @param nodes.size.range Numeric. It specifies the range of sizes of the nodes in the graph.
 #' @param nodes.colour.seq Character. Given colours will be used to generate colour gradient for plotting.
@@ -796,11 +798,14 @@ GetResult.SummaryClustersInteracts <- function(
   interact.pairs.acted,
   show.clusters.in.x = NULL,
   show.clusters.in.y = NULL,
+  plot.cluster.group.method = "all",  # also support diagonal or diagonal-2
   power.max.limit = NULL,
   power.min.limit = NULL,
+  plot.power.range = NULL, 
   hide.power.label = FALSE,
   cnt.max.limit = NULL,
   cnt.min.limit = NULL,
+  plot.cnt.range = NULL, 
   hide.cnt.label = FALSE,
   nodes.size.range = c(1, 6),
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
@@ -830,27 +835,44 @@ GetResult.SummaryClustersInteracts <- function(
   fac.x.clusters <- fac.clusters$x.axis
   fac.y.clusters <- fac.clusters$y.axis
   if (!is.null(show.clusters.in.x) && length(show.clusters.in.x) != 0) {  # select part of clusters to be shown in x-axis
-    ind.m.x <- match(show.clusters.in.x, fac.x.clusters)
-    fac.x.clusters <- fac.x.clusters[ind.m.x[which(!is.na(ind.m.x))]]
+    fac.x.clusters <- intersect(show.clusters.in.x, fac.x.clusters)
     print(paste0("Reading clusters shown in X-axis: ", paste0(fac.x.clusters, collapse = ", "), "."))
   }
   if (!is.null(show.clusters.in.y) && length(show.clusters.in.y) != 0) {  # select part of clusters to be shown in y-axis
-    ind.m.y <- match(show.clusters.in.y, fac.y.clusters)
-    fac.y.clusters <- fac.y.clusters[ind.m.y[which(!is.na(ind.m.y))]]
+    fac.y.clusters <- intersect(show.clusters.in.y, fac.y.clusters)
     print(paste0("Reading clusters shown in Y-axis: ", paste0(fac.y.clusters, collapse = ", "), "."))
   }
   if (length(fac.x.clusters) < 1 || length(fac.y.clusters) < 1) {  # check
     stop("Error: X-Y plot needs at least one item in each axis!")
   }
   ### data process for selected part of data
-  col.x.data <- rep(fac.x.clusters, each = length(fac.y.clusters))
-  col.y.data <- rep(fac.y.clusters, times = length(fac.x.clusters))
-  names.part.data <- character()
-  for (i.ind in 1:length(col.x.data)) {
-    names.part.data <- append(names.part.data, paste0(col.x.data[i.ind], kClustersSplit, col.y.data[i.ind]))
+  inside.diagonal.selection <- function(vec.a, vec.b, identical.rm = FALSE) {
+    if (sum(levels(factor(vec.a)) != levels(factor((vec.b)))) != 0) {
+      stop("Diagonal method only allows clusters in x and y to be of same value range!")
+    }
+    vec.b <- rev(vec.b[match(vec.a, vec.b)])  # re-order to be the same order
+    res.va <- res.vb <- NULL
+    for (i in seq_along(vec.a)) {
+      tmp.len <- ifelse(identical.rm == FALSE, length(vec.a) - i + 1, length(vec.a) - i)
+      res.va <- c(res.va, rep(vec.a[i], times = tmp.len))
+      res.vb <- c(res.vb, vec.b[seq_len(tmp.len)])
+    }
+    return(list(xsel = res.va, ysel = res.vb))
   }
-  names.ref.data <- interact.pairs.acted$name.allpairs
-  ind.names.m <- match(names.part.data, names.ref.data)
+  select.cluster.groups <- switch(plot.cluster.group.method,
+    "all" = {
+        col.x.data <- rep(fac.x.clusters, each = length(fac.y.clusters))
+        col.y.data <- rep(fac.y.clusters, times = length(fac.x.clusters))
+        list(xsel = col.x.data, ysel = col.y.data)
+      },
+    "diagonal" = inside.diagonal.selection(fac.x.clusters, fac.y.clusters),
+    "diagonal-2" = inside.diagonal.selection(fac.x.clusters, fac.y.clusters, identical.rm = TRUE),
+    stop("Undefined method for selecting cluster groups. Please re-check the given parameter: plot.cluster.group.method")
+  )
+  col.x.data <- select.cluster.groups$xsel
+  col.y.data <- select.cluster.groups$ysel
+  names.part.data <- paste(col.x.data, col.y.data, sep = kClustersSplit)
+  ind.names.m <- match(names.part.data, interact.pairs.acted$name.allpairs)
   # ------
   # for cnt & power, use limit functions
   Limit.Max.inside <- function(x, eval.max) {
@@ -903,14 +925,27 @@ GetResult.SummaryClustersInteracts <- function(
   if (max(x.axis.text.len) > 4) {
     if.need.x.axis.rotate <- TRUE
   }
+  # limits range modification function
+  inside.limits.adj.func <- function(user.limits.adj) {
+    force(user.limits.adj)
+    function(limits) {
+      res.limits <- limits
+      if (!is.null(user.limits.adj)) {
+        res.limits <- user.limits.adj
+      }
+      return(res.limits)
+    }
+  }
   # plot process
   plot.res <- ggplot(pairs.plot.db, aes(x, y))
   plot.res <- plot.res + labs(x = plot.axis.x.name, y = plot.axis.y.name)
   plot.res <- plot.res + geom_point(aes(size = cnt.limit, colour = power.limit)) + 
-                         scale_x_discrete(limits = fac.x.clusters, breaks = fac.x.clusters) + 
-                         scale_y_discrete(limits = fac.y.clusters, breaks = fac.y.clusters) + 
-                         scale_size(name = "Count", range = nodes.size.range) + 
-                         scale_colour_gradientn(name = "Power", colours = nodes.colour.seq, values = nodes.colour.value.seq)
+                         scale_x_discrete(limits = unique(col.x.data), breaks = unique(col.x.data)) + 
+                         scale_y_discrete(limits = unique(col.y.data), breaks = unique(col.y.data)) + 
+                         scale_size(name = "Count", range = nodes.size.range,
+                          limits = inside.limits.adj.func(plot.cnt.range)) + 
+                         scale_colour_gradientn(name = "Power", colours = nodes.colour.seq, values = nodes.colour.value.seq,
+                          limits = inside.limits.adj.func(plot.power.range), na.value = NA)
   # add labels for those out of range ( > cnt.max.limit or < cnt.min.limit)
   part.on.cnt.db <- data.frame(x = pairs.plot.db$x, y = pairs.plot.db$y, cnt.orig = pairs.plot.db$cnt.orig, stringsAsFactors = FALSE)
   part.on.cnt.ex.max.db <- NULL
