@@ -181,8 +181,8 @@ DoPartUnique <- function(
 	xxpairs,
 	cols.select = c(1:2)
 ) {
-	if (sum(cols.select %in% c(1:ncol(xxpairs))) != length(cols.select)) {
-		stop("Columns selected are undefined! Please check again!")
+	if (!all(cols.select %in% seq_len(ncol(xxpairs))) {
+		stop("Some columns selected are undefined! Please check again!")
 	}
 	# rownames(xxpairs) <- NULL
 	tmp.uni <- xxpairs[, cols.select]
@@ -231,5 +231,40 @@ ReverseOddEvenCols <- function(
 
 
 
+
+
+#
+#
+#
+#
+#
+#
+#
+# Only 
+#
+FastAlignPairs <- function(xxpairs, ind.colname.end.dual, use.cols = c(1,2)) 
+{
+	inds.rev <- which(as.integer(xxpairs[, use.cols[1]]) >= as.integer(xxpairs[, use.cols[2]]))
+	xxpairs.result <- NULL
+	if (length(inds.rev) > 0) {
+		xxpairs.rev <- xxpairs[inds.rev, ]
+		xxpairs.conv <- xxpairs[-inds.rev, ]
+		if (ncol(xxpairs.rev) <= ind.colname.end.dual) {
+			if (ncol(xxpairs.rev) < ind.colname.end.dual) {
+				stop("Given database has less cols than given parameter: ", ind.colname.end.dual)
+			}
+			xxpairs.rev.rem <- xxpairs.rev[, c(ReverseOddEvenCols(ind.colname.end.dual))]
+		} else {
+			xxpairs.rev.rem <- xxpairs.rev[, c(ReverseOddEvenCols(ind.colname.end.dual), (ind.colname.end.dual+1):ncol(xxpairs.rev))]
+		}
+		colnames(xxpairs.rev.rem) <- colnames(xxpairs.conv)
+		xxpairs.result <- rbind(xxpairs.conv, xxpairs.rev.rem)
+	} else {
+		# do nothing and return	
+		xxpairs.result <- xxpairs
+	}
+	# return
+	xxpairs.result
+}
 
 
