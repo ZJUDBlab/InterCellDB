@@ -42,8 +42,8 @@ DataPrep.RemapClustersMarkers  <- function(
   # 1. cannot mapping from synonyms, keep still
   # 2. mapping from synonyms
   #
-  ret.d0.cannot.match <- ret.d1.map.to.diff <- character()
-  unmatch.map.results <- data.frame()
+  ret.d0.cannot.match <- ret.d1.map.to.diff <- ret.d2.diff.map.one <- ret.d3.map.to.exist <- character()
+  unmatch.map.results <- data.frame(unmatched = character(), match.res = character(), stringsAsFactors = FALSE)
   if (nrow(markers.raw.unmatch) > 0) {
     # 1> extract unmatch-able genes
     ret.d0.cannot.match <- setdiff(proc.unmatch.genes, map.synonyms.db$Synonym.each)

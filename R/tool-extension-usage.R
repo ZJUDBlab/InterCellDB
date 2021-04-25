@@ -33,7 +33,11 @@ Tool.AddUserRestrictDB <- function(
 	warning.given = "genes",
 	if.used.inside = TRUE
 ) {
+	if ("cluster" %in% colnames(user.def.db)) {
+		stop("Program internally use 'cluster' for some operations. Please rename columns of the raw data.")
+	}
 	colnames(user.def.db)[1] <- "gene"
+	user.def.db$cluster <- user.def.db[, 2]
 	user.def.db <- DataPrep.RemapClustersMarkers(user.def.db, genes.ref.db, warning.given, if.used.inside)$result
 	colnames(user.def.db)[1] <- "Gene.name"
 	# add GeneID

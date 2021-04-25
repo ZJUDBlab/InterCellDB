@@ -431,8 +431,15 @@ PiePlot.action.mode <- function(
   this.color.pal <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
   names(this.color.pal) <- c(kpred.mode, "other")
   inside.PiePlot.for.mode <- function(data, color.palette) {
-    gplot.sgp <- ggplot(data, aes(x = exprs.change, y = cnt, fill = mode))
-    gplot.sgp <- gplot.sgp + geom_col(position = "stack") +
+    #data <- data[order(data$exprs.change), ]
+    data <- data[order(data$mode), ]
+    data$cnt.percent <- data$cnt / sum(data$cnt) * 100
+    data$label.y <- cumsum(data$cnt.percent) - 0.5 * data$cnt.percent
+    data$label.y <- 100 - data$label.y
+    #
+    gplot.sgp <- ggplot(data, aes(x = ""))
+    gplot.sgp <- gplot.sgp + geom_bar(aes(y = cnt.percent, fill = mode), stat = "identity", position = "stack") + 
+      geom_text(aes(y = label.y, label = cnt)) +
       scale_fill_manual(values = color.palette) + 
       coord_polar(theta = "y") + 
       theme(panel.background = element_blank(), plot.margin = margin(6, 0, 6, 0)) + 
