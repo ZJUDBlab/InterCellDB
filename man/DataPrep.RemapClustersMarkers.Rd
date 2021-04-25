@@ -5,14 +5,15 @@
 \title{Remap gene symbols to their authorized genenames}
 \usage{
 DataPrep.RemapClustersMarkers(
-  markers.all.from.Seurat,
+  markers.all,
   genes.ref.db,
   warning.given = "markers",
   if.used.inside = FALSE
 )
 }
 \arguments{
-\item{markers.all.from.Seurat}{Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.}
+\item{markers.all}{Data.frame. Feature genes that are generated from \code{Seurat::FindAllMarkers()} or 
+similar functions in other packages.}
 
 \item{genes.ref.db}{List. It is taxonomy specific, which contains 3 parts:
 1. gene.ncbi.db            NCBI-gene database for specific species
@@ -21,7 +22,9 @@ DataPrep.RemapClustersMarkers(
 when match target synonym back to its authorized genename.}
 
 \item{warning.given}{Character. It substitutes a small part of the warning sentences. In 
-most cases, you just leave it out.}
+most cases, you just leave it still.}
+
+\item{if.used.inside}{Logic. If used inside, some process will not run.}
 }
 \description{
 Use species-specific reference database to remap genes to their authorized genenames

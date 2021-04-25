@@ -181,7 +181,7 @@ DoPartUnique <- function(
 	xxpairs,
 	cols.select = c(1:2)
 ) {
-	if (!all(cols.select %in% seq_len(ncol(xxpairs))) {
+	if (!all(cols.select %in% seq_len(ncol(xxpairs)))) {
 		stop("Some columns selected are undefined! Please check again!")
 	}
 	# rownames(xxpairs) <- NULL

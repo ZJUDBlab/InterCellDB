@@ -92,6 +92,8 @@ without any additional check.}
 \item{calculation.formula}{It defines the function to be used to calculate the power of interactions between clusters.}
 
 \item{ind.colname.end.dual}{Integer. Use default value provided only when the pairs.ref database is modified by users.}
+
+\item{verbose}{[TODO]}
 }
 \value{
 A list.

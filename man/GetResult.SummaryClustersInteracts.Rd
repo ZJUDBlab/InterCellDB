@@ -8,11 +8,14 @@ GetResult.SummaryClustersInteracts(
   interact.pairs.acted,
   show.clusters.in.x = NULL,
   show.clusters.in.y = NULL,
+  plot.cluster.group.method = "all",
   power.max.limit = NULL,
   power.min.limit = NULL,
+  plot.power.range = NULL,
   hide.power.label = FALSE,
   cnt.max.limit = NULL,
   cnt.min.limit = NULL,
+  plot.cnt.range = NULL,
   hide.cnt.label = FALSE,
   nodes.size.range = c(1, 6),
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
@@ -37,11 +40,15 @@ which is formatted data about target interaction pairs.}
 
 \item{power.min.limit}{Numeric. Specify the lower limit of power, like \code{power.max.limit}.}
 
+\item{plot.power.range}{[TODO] This will extend the range of actual value for plotting adjustment.}
+
 \item{hide.power.label}{Logic. If TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.}
 
 \item{cnt.max.limit}{Numeric. Specify the upper limit of count, whose value is highly user-defined and data-dependent.}
 
 \item{cnt.min.limit}{Numeric. Specify the lower limit of count, like \code{cnt.max.limit}.}
+
+\item{plot.cnt.range}{[TODO] This will extend the range of actual value for plotting adjustment}
 
 \item{hide.cnt.label}{Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.}
 

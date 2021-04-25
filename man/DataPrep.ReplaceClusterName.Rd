@@ -5,14 +5,14 @@
 \title{Replace cluster names for feature genes}
 \usage{
 DataPrep.ReplaceClusterName(
-  markers.all.from.Seurat,
+  markers.all,
   cluster.names.current,
   cluster.names.replace,
   colnames.cluster = "cluster"
 )
 }
 \arguments{
-\item{markers.all.from.Seurat}{Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.}
+\item{markers.all}{Data.frame. Feature genes that are from return value of \code{Seurat::FindAllMarkers()}.}
 
 \item{cluster.names.current}{Vector. It specifies the names of clusters used currently.}
 
@@ -31,7 +31,7 @@ must be the same, or the replacing will not be adequately applied.
 }
 \examples{
 \dontrun{
- DataPrep.ReplaceClusterName(markers.all.from.Seurat,
+ DataPrep.ReplaceClusterName(markers.all,
    cluster.names.current = c(0, 1, 2),
    cluster.names.replace = c("Astrocytes", "Microglia", "Endothelial cells"))
 }

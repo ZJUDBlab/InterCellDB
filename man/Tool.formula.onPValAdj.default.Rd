@@ -4,7 +4,7 @@
 \alias{Tool.formula.onPValAdj.default}
 \title{Formula on calculating p_val_adj}
 \usage{
-Tool.formula.onPValAdj.default(data.f, data.b)
+Tool.formula.onPValAdj.default(data.f, data.b, pval.log.max = 1000)
 }
 \arguments{
 \item{data.f}{vector. The operated data.}

@@ -20,15 +20,17 @@ GetResult.SummarySpecialGenes(
   barplot.or.dotplot = FALSE,
   plot.font.size.base = 12,
   axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
-  dot.colour.palette = scale_colour_gradientn(name = "LogFC.Calc", colours =
+  dot.range.to.use = list(LogFC.Calc = c(-Inf, +Inf), PValAdj.Calc = c(-Inf, +Inf)),
+  dot.colour.palette = scale_colour_gradientn(name = "PValAdj.Calc", colours =
     c("#00809D", "#EEEEEE", "#C30000"), values = c(0, 0.5, 1)),
-  dot.size = 5,
+  dot.size.range = c(2, 8),
   facet.scales = "free_x",
   facet.space = "free_x",
   facet.text.x = element_text(size = 8, colour = "black"),
   facet.background = element_rect(fill = "lightgrey", colour = "white"),
   bar.colour = character(),
   bar.width = 0.8,
+  y.axis.order.use.alphabet = TRUE,
   ...
 )
 }
@@ -72,9 +74,11 @@ gene pairs will be aligned as cluster order changed.}
 
 \item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
 
+\item{dot.range.to.use}{[TODO]}
+
 \item{dot.colour.palette}{[TODO]}
 
-\item{dot.size}{[TODO]}
+\item{dot.size.range}{[TODO]}
 
 \item{facet.scales}{It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
 
@@ -88,6 +92,8 @@ gene pairs will be aligned as cluster order changed.}
 built-in 20 kinds of colours will be automatically used.}
 
 \item{bar.width}{Numeric. It defines the bar width.}
+
+\item{y.axis.order.use.alphabet}{[TODO]}
 
 \item{...}{Other parameter that can be passed to select by method functions.}
 }

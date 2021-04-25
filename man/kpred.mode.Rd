@@ -5,12 +5,13 @@
 \alias{kpred.mode}
 \title{Predefined mode}
 \format{
-An object of class \code{character} of length 7.
+An object of class \code{character} of length 8.
 }
 \usage{
 kpred.mode
 }
 \description{
 This is extracted from databases depicting mode of actions for functional usages.
+expression is transcriptional regulation.
 }
 \keyword{datasets}
