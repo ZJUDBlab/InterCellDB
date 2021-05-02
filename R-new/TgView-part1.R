@@ -408,13 +408,13 @@ GetResult.PieActionEffect <- function(
 # @import ggplot2
 # @import cowplot
 #
-#' Give composition proportion of action effect
+#' Give composition proportion of action mode
 #'
 #' @description
 #' This function focuses on one interaction pair and its detailed information(expression changes, 
 #' gene-gene action mode), and get result from it.
 #'
-#' @inheritParams Inside.DummyVEinfos
+#' @param object [TODO]
 #' @param limits.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
 #' @param limits.action.mode Character. Select some action effects to be put in the result.
 #' @param use.prioritized.mode If TRUE, for one gene pair, it gets only one of belonging multiple mode to be reserved.
@@ -438,7 +438,7 @@ GetResult.PieActionEffect <- function(
 #'
 #' @export
 #'
-GetResult.PieActionMode <- function(
+GetResultPieActionMode <- function(
   VEinfos,
   limits.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
   limits.action.mode = kpred.mode,
@@ -454,6 +454,7 @@ GetResult.PieActionMode <- function(
   caption.label.hjust = 0.5,
   caption.label.vjust = 1
 ) {
+  VEinfos <- getTgVEInfo(object)
   # check expression change option
   not.valid.exprs <- setdiff(limits.exprs.change, kpred.exprs.change)
   if (length(not.valid.exprs) > 0) {
