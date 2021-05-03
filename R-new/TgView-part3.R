@@ -9,9 +9,6 @@
 #'
 #' @param object [TODO]
 #' @param to.cmp.cluster.groups Character. It defines the cluster groups to be compared. 
-#' @param to.cmp.cluster.groups.sel.strategy Character. It defines the pre-defined selection method for getting cluster groups, and 
-#' current strategy options are "inter-cross" and "all-other". It works only when parameter \code{to.cmp.cluster.groups} gets not to 
-#' specificly set the comparing cluster groups.
 #' @param extended.search [TODO]
 #' @param uq.cnt.range Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
 #' to exist in several cluster groups.
@@ -31,18 +28,22 @@
 AnalyzeInterSpecificity <- function(
 	object, 
 	to.cmp.cluster.groups = character(),  # should be a subset of interact.pairs.acted$name.allpairs
-	to.cmp.cluster.groups.sel.strategy = "inter-cross",
 	extended.search = FALSE, 
 	uq.cnt.range = c(1:100)
 ) {
 	interact.pairs.acted <- getFullViewResult(object)
 	VEinfos <- getTgVEInfo(object)
-	formula.to.use.onLogFC <- object@formulae$TgView.formula.onLogFC.default
-	formula.to.use.onPValAdj <- object@formulae$TgView.formula.onPVal.default
-	
-	# pre-params
-	involved.clusters.pair <- paste(VEinfos$cluster.name.A, VEinfos$cluster.name.B, sep = kClustersSplit)
-	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
+	formula.to.use.onLogFC <- object@formulae$TG.LOGFC
+	formula.to.use.onPValAdj <- object@formulae$TG.PVAL
+	kClustersSplit <- getGenePairSplit(object)
+	kGenesSplit <- getClusterSplit(object)
+
+	# check those cluster groups to compare
+	not.valid.cluster.groups <- setdiff(to.cmp.cluster.groups, interact.pairs.acted$name.allpairs)
+	if (length(not.valid.cluster.groups) > 0) {
+		warning("Given invalid cluster groups: ", paste0(not.valid.cluster.groups, collapse = ", ", ". "))
+	}
+	to.cmp.cluster.groups <- unique(intersect(to.cmp.cluster.groups, interact.pairs.acted$name.allpairs))
 
 	# calculate the multiply of fold change of interacting genes
 	inside.c.short.interacts <- function(
@@ -64,11 +65,14 @@ AnalyzeInterSpecificity <- function(
 	# all pairs
 	all.pairs.names <- interact.pairs.acted$name.allpairs
 	all.pairs.interacts <- interact.pairs.acted$data.allpairs
-	# this pair
-	this.pair.name <- involved.clusters.pair
+	# this pair (handle .mirror situation)
+	this.p.clusters <- getOrigClusterNameTgVEInfo(object)
+	this.pair.name <- paste(this.p.clusters$cluster.name.A, this.p.clusters$cluster.name.B, sep = kClustersSplit)
 	if ((this.pair.name %in% all.pairs.names) == FALSE) {
 		stop("Given name of cluster pairs NOT exist!")
 	}
+	target.gene.pairs.df <- all.pairs.interacts[[this.pair.name]]
+	
 	this.clusters.separate <- strsplit(this.pair.name, split = kClustersSplit, fixed = TRUE)[[1]]
 	this.pair.interacts <- inside.c.short.interacts(target.gene.pairs.df, kGenesSplit)
 	# this.pair.logfc.mul <- inside.calc.upon.gp.logfc(target.gene.pairs.df, formula.to.use.onLogFC)
@@ -76,30 +80,13 @@ AnalyzeInterSpecificity <- function(
 		gp.belongs = rep(this.pair.name, times = length(this.pair.interacts)), 
 		gp.logfc.A = target.gene.pairs.df[, "inter.LogFC.A"], 
 		gp.logfc.B = target.gene.pairs.df[, "inter.LogFC.B"], 
-		gp.pvaladj.A = target.gene.pairs.df[, "inter.PValAdj.A"],
-		gp.pvaladj.B = target.gene.pairs.df[, "inter.PValAdj.B"], 
+		gp.pvaladj.A = target.gene.pairs.df[, "inter.PVal.A"],
+		gp.pvaladj.B = target.gene.pairs.df[, "inter.PVal.B"], 
 		stringsAsFactors = FALSE)
-
-	# to compare pairs
-	if (length(to.cmp.cluster.groups) == 0) {  # only if no list is given then use the pre-defined strategy
-		if (to.cmp.cluster.groups.sel.strategy == "inter-cross") {
-			other.pairs.names.C <- setdiff(grep(paste0("^", this.clusters.separate[1]), all.pairs.names, value = TRUE), this.pair.name)
-			other.pairs.names.D <- setdiff(grep(paste0(this.clusters.separate[2], "$"), all.pairs.names, value = TRUE), this.pair.name)
-			to.cmp.cluster.groups <- unique(c(other.pairs.names.C, other.pairs.names.D))
-		} else {
-			if (to.cmp.cluster.groups.sel.strategy == "all-other") {
-				to.cmp.cluster.groups <- setdiff(all.pairs.names, this.pair.name)
-			} else {
-				stop("Undefined pre-defined strategy used: ", to.cmp.cluster.groups.sel.strategy)
-			}
-		}
-	}  # else use the directly specified clusters
-	# force to.cmp.cluster.groups to be unique
-	to.cmp.cluster.groups <- unique(to.cmp.cluster.groups)
 
 	# further check if comparison of itself exist, which may cause error in downstream analysis
 	if (sum(this.pair.name %in% to.cmp.cluster.groups) > 0) {
-		stop("Cannot put the cluster group given in parameter 'VEinfos' in the parameter 'to.cmp.cluster.groups'.")
+		to.cmp.cluster.groups <- setdiff(to.cmp.cluster.groups, this.pair.name)
 	}
 
 	# set the uq.cnt range
@@ -132,8 +119,8 @@ AnalyzeInterSpecificity <- function(
 				gp.belongs = rep(x, times = length(tmp.inds.tg)), 
 				gp.logfc.A = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.A"], 
 				gp.logfc.B = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.B"], 
-				gp.pvaladj.A = tmp.pairs.df[tmp.inds.tg, "inter.PValAdj.A"],
-				gp.pvaladj.B = tmp.pairs.df[tmp.inds.tg, "inter.PValAdj.B"],
+				gp.pvaladj.A = tmp.pairs.df[tmp.inds.tg, "inter.PVal.A"],
+				gp.pvaladj.B = tmp.pairs.df[tmp.inds.tg, "inter.PVal.B"],
 				stringsAsFactors = FALSE)
 			res.df
 		})
@@ -189,7 +176,7 @@ AnalyzeInterSpecificity <- function(
 			tmp.gene.part <- strsplit(tmp.genepair, split = kGenesSplit, fixed = TRUE)[[1]]
 			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")]
 			tmp.clusters.prop.df <- Tool.SplitToGenDataFrame(tmp.properties[, "gp.belongs"], to.split.by = kClustersSplit, 
-				res.colnames = c("Cluster.G1", "Cluster.G2"))
+				res.colnames = c("Cluster.X", "Cluster.Y"))
 			tmp.res.df <- cbind(data.frame(gp.name = rep(tmp.genepair, times = nrow(tmp.properties)), 
 					inter.GeneName.A = rep(tmp.gene.part[1], times = nrow(tmp.properties)),
 					inter.GeneName.B = rep(tmp.gene.part[2], times = nrow(tmp.properties)),
@@ -266,8 +253,7 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' This function is to summary special genes and their specific expressing attributes.
 #' 
 #'
-#' @param onepair.spgenes The result got from \code{FindSpecialGenesInOnepairCluster()}. 
-#' @inheritParams Inside.DummyVEinfos
+#' @param object [TODO]
 #' @param show.uq.cnt.range Integer. It defines the range of \code{uq.cnt} that is going to be used in downstream analysis, and 
 #' the default setting is to use all valid \code{uq.cnt}. 
 #' @param show.uq.cnt.merged Logic. If set TRUE, then gene pairs of different \code{uq.cnt} will be merged in analysis, or gene pairs 
@@ -318,9 +304,8 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' 
 #' @export
 #'
-GetResult.SummarySpecialGenes <- function(
-	onepair.spgenes,
-	VEinfos, 
+GetResultTgSpecificity <- function(
+	object,
 	show.uq.cnt.range = integer(), 
 	show.uq.cnt.merged = TRUE,  # merged shows different uq.cnt in one plot, or in several plots
 	select.genepairs = character(), 
@@ -335,8 +320,8 @@ GetResult.SummarySpecialGenes <- function(
 	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
 	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
-	dot.range.to.use = list("LogFC.Calc" = c(-Inf, +Inf), "PValAdj.Calc" = c(-Inf, +Inf)), 
-	dot.colour.palette = scale_colour_gradientn(name = "PValAdj.Calc", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
+	dot.range.to.use = list("LogFC" = c(-Inf, +Inf), "PVal" = c(-Inf, +Inf)), 
+	dot.colour.palette = scale_colour_gradientn(name = "PVal", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
 	dot.size.range = c(2, 8), 
 	facet.scales = "free_x", 
 	facet.space  = "free_x", 
@@ -347,6 +332,8 @@ GetResult.SummarySpecialGenes <- function(
 	y.axis.order.use.alphabet = TRUE,
 	...
 ) {
+	VEinfos <- getTgVEInfo(object)
+	onepair.spgenes <- getTgSpGenes(object)
 	this.spgenes <- onepair.spgenes$for.plot.use
 	## pre-check
 	this.property.valid.uq.cnt <- unique(as.integer(unlist(lapply(this.spgenes, function(x) { x$uq.cnt }))))
@@ -580,7 +567,7 @@ GetResult.SummarySpecialGenes <- function(
 		#plot.data$uq.y.axis  # LogFC
 		#plot.data$uq.z.axis  # PValAdj
 		# get and recalc LogFC range
-		tmp.logfc.range <- dot.range.to.use[["LogFC.Calc"]]
+		tmp.logfc.range <- dot.range.to.use[["LogFC"]]
 		tmp.logfc <- plot.data$uq.y.axis
 		tmp.logfc[which(tmp.logfc > tmp.logfc.range[2])] <- tmp.logfc.range[2]
 		tmp.logfc[which(tmp.logfc < tmp.logfc.range[1])] <- tmp.logfc.range[1]
@@ -590,7 +577,7 @@ GetResult.SummarySpecialGenes <- function(
 		plot.data$plot.dot.size <- tmp.logfc
 
 		# get and recalc PValAdj range
-		tmp.pvaladj.range <- dot.range.to.use[["PValAdj.Calc"]]
+		tmp.pvaladj.range <- dot.range.to.use[["PVal"]]
 		tmp.pvaladj <- plot.data$uq.z.axis
 		tmp.pvaladj[which(tmp.pvaladj > tmp.pvaladj.range[2])] <- tmp.pvaladj.range[2]
 		tmp.pvaladj[which(tmp.pvaladj < tmp.pvaladj.range[1])] <- tmp.pvaladj.range[1]
@@ -634,7 +621,7 @@ GetResult.SummarySpecialGenes <- function(
 			res.colnames = c("inter.GeneName.A", "inter.GeneName.B"))
 		ret2.clustergroup.df <- Tool.SplitToGenDataFrame(ret.res[, "cluster.groups"],
 			to.split.by = kClustersSplit, 
-			res.colnames = c("Cluster.G1", "Cluster.G2"))
+			res.colnames = c("Cluster.X", "Cluster.Y"))
 		ret.res <- cbind(ret.res[, "gene.pairs", drop = FALSE], 
 			ret1.genepairs.df, ret.res[, "cluster.groups", drop = FALSE], 
 			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.logfc.calc", "gp.pvaladj.calc")],

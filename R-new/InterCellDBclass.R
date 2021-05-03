@@ -106,9 +106,9 @@ TgView.formula.onPVal.default <- function(
 		tmp.f <- rep(default.max.replace, times = length(tmp.f))
 		tmp.b <- rep(default.max.replace, times = length(tmp.b))
 	} else {
-		max.f <- max(tmp.f[inds.tmp.f])  # if length(inds.tmp.f) == 0, max returns -Inf
+		max.f <- suppressWarnings(max(tmp.f[inds.tmp.f]))  # if length(inds.tmp.f) == 0, max returns -Inf
 		max.f	<- ifelse(is.infinite(max.f), default.max.replace, max.f)
-		max.b <- max(tmp.b[inds.tmp.b])  # if length(inds.tmp.b) == 0, max returns -Inf
+		max.b <- suppressWarnings(max(tmp.b[inds.tmp.b]))  # if length(inds.tmp.b) == 0, max returns -Inf
 		max.b	<- ifelse(is.infinite(max.b), default.max.replace, max.b)
 		tmp.f[which(is.infinite(tmp.f))] <- 10 * max.f
 		tmp.b[which(is.infinite(tmp.b))] <- 10 * max.b
@@ -744,6 +744,9 @@ setMethod(
 )
 
 
+
+
+
 # %%%%%%%%%%%%%%%%%%
 # Other functions
 # %%%%%%%%%%%%%%%%%%
@@ -850,7 +853,6 @@ FetchGeneOI.default <- function(
 	return(ret.gene.oi)
 }
 
-
 setGeneric(name = "FetchGeneOI", def = function(object, ...) {
 		standardGeneric("FetchGeneOI")
 	}
@@ -867,4 +869,9 @@ setMethod(
 		return(FetchGeneOI.default(object@database, ...))
 	}
 )
+
+
+
+
+
 

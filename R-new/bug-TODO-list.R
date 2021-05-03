@@ -19,3 +19,8 @@
 # 1. color palette的问题，要和action effect统一
 # 2. etc
 
+# TgView-part3.R
+
+# GetResultTgSpecificity 需要修改
+# 主要是目前的参数太多太乱了，难以理解
+# select.genepairs 参数需要重新设计

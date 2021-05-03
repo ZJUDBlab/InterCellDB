@@ -1,6 +1,5 @@
 
 
-
 #' Collect gene pairs by expression change and action effects
 #' 
 #' @description

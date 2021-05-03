@@ -1,7 +1,5 @@
 
 
-
-
 #' Extract one pair of interaction
 #'
 #' @description
@@ -465,14 +463,28 @@ GenerateVEinfos <- function(
 		vertices.apx.type.A = vertices.A.apx.types,
 		vertices.apx.type.B = vertices.B.apx.types
 		)
+	return(VEinfos)
+}
+
+
+# as .mirror for A-A cluster group, sometimes it is need to removed it 
+getOrigClusterNameTgVEInfo <- function(
+	object
+) {
+	this.veinfos <- object@tg.veinfo
+	cluster.name.B <- this.veinfos$cluster.name.B
+	ind.match <- grep("mirror$", cluster.name.B)
+	if (length(ind.match) > 0) {
+		cluster.name.B <- strsplit(cluster.name.B, split = ".mirror", fixed = TRUE)[[1]][1]
+	}
+	list(cluster.name.A = this.veinfos$cluster.name.A, cluster.name.B = cluster.name.B)
 }
 
 
 
 
 
-
-# This file is to fetch interactions in given 2-cell groups
+# This function is to fetch interactions in given 2-cell groups
 FetchInterOI <- function(
 	object,
 	cluster.x,
@@ -723,7 +735,8 @@ SelectInterSubset <- function(
 
 		# recheck if nrow() > 0
 		if (nrow(edges.part.infos) == 0) {
-			stop("No given subset of interactions between cluster: ", afterV.A.clustername, " and cluster: ", afterV.B.clustername, "!")  # afterV.B.clustername is not used for displaying warnings
+			tmp.warn.names <- getOrigClusterNameTgVEInfo(object)
+			stop("No given subset of interactions between cluster: ", tmp.warn.names$cluster.name.A, " and cluster: ", tmp.warn.names$cluster.name.B, "!")
 		}
 		part.select.vertices <- unique(c(levels(factor(edges.part.infos[, "from"])), levels(factor(edges.part.infos[, "to"]))))
 		vertices.part.infos <- vertices.all.infos[match(part.select.vertices, vertices.all.infos[, "UID"]), ]

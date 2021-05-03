@@ -1,6 +1,5 @@
 
 
-
 #' Analyze interaction network in full view
 #'
 #' @description
@@ -325,6 +324,7 @@ GetResultFullView <- function(
 	plot.axis.y.name = "clusters-y"
 ) {
 	interact.pairs.acted <- getFullViewResult(object)
+	kClustersSplit <- getClusterSplit(object)
 	# param user settings
 	default.label.power.options <- list(hjust = "middle", vjust = "top", nudge.x = 0, nudge.y = -0.3, size = 2)
 	default.label.cnt.options <- list(hjust = "left", vjust = "center", nudge.x = 0.3, nudge.y = 0, size = 2)
@@ -537,4 +537,58 @@ GetResultFullView <- function(
 # Other functions
 # %%%%%%%%%%%%%%%%%%
 
+
+FetchClusterGroups <- function(
+	object,
+	use.former = FALSE,
+	cluster.former = character(),  # to X
+	use.latter = FALSE,
+	cluster.latter = character()  # to Y
+) {
+	this.fullview <- getFullViewResult(object)
+	this.allowed.names <- this.fullview$name.allpairs
+	this.former.allowed <- this.fullview$list.clusters$x.axis
+	this.latter.allowed <- this.fullview$list.clusters$y.axis
+
+	# pre-check
+	if ((use.former == FALSE && length(cluster.former) > 0) ||
+		  (use.former == TRUE && length(cluster.former) == 0)) {
+		stop("To fetch the cluster relating to former, please set `use.former` = TRUE, and give valid clusters in `cluster.former`.")
+	}
+	if ((use.latter == FALSE && length(cluster.latter) > 0) ||
+		  (use.latter == TRUE && length(cluster.latter) == 0)) {
+		stop("To fetch the cluster relating to latter, please set `use.latter` = TRUE, and give valid clusters in `cluster.latter`.")
+	}
+
+	res.cg <- character()
+	if (use.former == TRUE) {
+		not.valid.cluster.X <- setdiff(cluster.former, this.former.allowed)
+		if (length(not.valid.cluster.X) > 0) {
+			warning("Given undefined clusters in X: ", paste0(not.valid.cluster.X, collapse = ", "), ". ")
+		}
+		cluster.former <- unique(intersect(cluster.former, this.former.allowed))
+		former.res.list <- lapply(cluster.former, ref.names = this.allowed.names, function(x, ref.names) {
+				grep(paste0("^", x), ref.names, value = TRUE)
+			}
+		)
+		res.cg <- c(res.cg, as.character(unlist(former.res.list)))
+	}
+
+	if (use.latter == TRUE) {
+		not.valid.cluster.Y <- setdiff(cluster.latter, this.latter.allowed)
+		if (length(not.valid.cluster.Y) > 0) {
+			warning("Given undefined clusters in Y: ", paste0(not.valid.cluster.Y, collapse = ", "), ". ")
+		}
+		cluster.latter <- unique(intersect(cluster.latter, this.latter.allowed))
+		latter.res.list <- lapply(cluster.latter, ref.names = this.allowed.names, function(x, ref.names) {
+				grep(paste0(x, "$"), ref.names, value = TRUE)
+			}
+		)
+		res.cg <- c(res.cg, as.character(unlist(latter.res.list)))
+	}
+
+	res.cg <- unique(res.cg)
+	print(paste("Fetch", length(res.cg), "cluster groups."))
+	return(res.cg)
+}
 

@@ -62,11 +62,8 @@ GetResultTgCrosstalk <- function(
   fgenes.remapped.all <- object@fgenes
   formula.to.use <- object@formulae[c("TG.LOGFC", "TG.PVAL")]
   # pre-check
-  if (length(colnames.to.cmp) < length(formula.to.use)) {
-    warning("Formulae given too many, the last ones will not be used!")
-  }
-  if (length(colnames.to.cmp) > length(formula.to.use)) {
-    stop("Items to be compared are not given sufficient formulae!")
+  if (!all(colnames.to.cmp %in% c("LogFC", "PVal"))) {
+    stop("Invalid colnames detected, only 'LogFC' and 'PVal' are supported yet.")
   }
   tmp.range.not.valid <- setdiff(names(range.to.use), colnames.to.cmp)
   if (length(tmp.range.not.valid) != 0) {
@@ -131,7 +128,7 @@ GetResultTgCrosstalk <- function(
   for (i in 1:length(colnames.to.cmp)) {
     tmp.colname <- colnames.to.cmp[i]
     tmp.sel.cols <- paste(c("from", "to"), tmp.colname, sep = ".")
-    tmp.res <- formula.to.use[[i]](packed.infos[, tmp.sel.cols[1]], packed.infos[, tmp.sel.cols[2]])
+    tmp.res <- formula.to.use[[tmp.colname]](packed.infos[, tmp.sel.cols[1]], packed.infos[, tmp.sel.cols[2]])
     tmp.res <- as.numeric(tmp.res)
     tmp.res.coln <- paste("res", tmp.colname, sep = ".")
     # use max and min limit
