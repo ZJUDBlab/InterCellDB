@@ -8,8 +8,6 @@
 #' @param markers.all Data.frame. Feature genes that are generated from \code{Seurat::FindAllMarkers()} or 
 #' similar functions in other packages.
 #' @inheritParams Inside.DummyGenesRefDB
-#' @param warning.given Character. It substitutes a small part of the warning sentences. In 
-#' most cases, you just leave it still.
 #' @param if.used.inside Logic. If used inside, some process will not run.
 #'
 #'
@@ -19,14 +17,11 @@
 DataPrep.RemapClustersMarkers  <- function(
   markers.all,
   genes.ref.db,
-  warning.given = "markers",
   if.used.inside = FALSE
 ) {
-  if (if.used.inside == FALSE) {
-    # force removing factors
-    markers.all$gene <- as.character(markers.all$gene)
-    markers.all$cluster <- as.character(markers.all$cluster)
-  }
+  # force character
+  markers.all$gene <- as.character(markers.all$gene)
+  markers.all$cluster <- as.character(markers.all$cluster)
 
   # set each database
   entrez.db <- genes.ref.db$gene.ncbi.db
@@ -49,7 +44,7 @@ DataPrep.RemapClustersMarkers  <- function(
     ret.d0.cannot.match <- setdiff(proc.unmatch.genes, map.synonyms.db$Synonym.each)
     
     # short warning
-    if (length(ret.d0.cannot.match) > 0) {
+    if (length(ret.d0.cannot.match) > 0 && if.used.inside == FALSE) {
       print(paste0("Get ", length(ret.d0.cannot.match), 
         " genes cannot be mapped from synonyms.",
         " See return value `$unmapping.genes`."))
@@ -64,7 +59,7 @@ DataPrep.RemapClustersMarkers  <- function(
     inds.dups <- sapply(check.non.identical, function(x) { ifelse(length(x) > 1, TRUE, FALSE) })
     # short warning
     ret.d1.warning <- names(check.non.identical)[inds.dups]
-    if (length(ret.d1.warning) > 0) {
+    if (length(ret.d1.warning) > 0 && if.used.inside == FALSE) {
       print(paste0("Get ", length(ret.d1.warning), 
         " synonyms that cannot be mapped to unified authorized genes.",
         " See return value `$one.synonym.map.to.some.genes`."))  
@@ -90,7 +85,7 @@ DataPrep.RemapClustersMarkers  <- function(
         all.map.dups[[x]]
       }
     ))))
-    if (length(ret.d2.warning) > 0) {
+    if (length(ret.d2.warning) > 0 && if.used.inside == FALSE) {
       print(paste0("Get ", length(ret.d2.warning), 
         " synonyms that get overlap mapping genes with at least one other.",
         " See return value `$some.synonyms.map.to.one.gene`."))  
@@ -113,7 +108,7 @@ DataPrep.RemapClustersMarkers  <- function(
         all.map.dups[[which(names(all.map.dups) == x)]]
       }
     )))
-    if (length(ret.d3.warning) > 0) {
+    if (length(ret.d3.warning) > 0 && if.used.inside == FALSE) {
       print(paste0("Get ", length(ret.d3.warning), 
         " synonyms that get mapping to existing authorized genes.",
         " See return value `$synonyms.map.to.exist.gene`."))
