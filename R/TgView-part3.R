@@ -270,22 +270,21 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' @param display.conv.or.rev [TODO] Is the display of cluster interaction the same arrange as VEinfos(direction.A.to.B)
 #'   conv, the same, rev, the reverse format. For example, cluster.A -> cluster.B in VEinfo, so, if conv, display like cluster.A~cluster.B, or as cluster.B~cluster.A
 #'   gene pairs will be aligned as cluster order changed.
-#' @param grid.plot.ncol [TODO]
+#' @param grid.plot.ncol [TODO]show.uq.cnt.merged = FALSE, then it will be used
 #' @param barplot.or.dotplot  [TODO]
 #' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
 #' @param axis.text.x.pattern It defines the axis text style in x-axis. 
-#' @param dot.range.to.use [TODO]
-#' @param dot.colour.palette  [TODO]
-#' @param dot.size.range  [TODO]
-#' @param facet.scales It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
-#' @param facet.space It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
-#' @param facet.text.x It defines the facet labeling text on the top horizontal position. 
-#' @param facet.background It defines the background style of labellers in facet way.
+#' @param bar.facet.scales It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
+#' @param bar.facet.space It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
+#' @param bar.facet.text.x It defines the facet labeling text on the top horizontal position. 
+#' @param bar.facet.background It defines the background style of labellers in facet way.
 #' @param bar.colour Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
 #' built-in 20 kinds of colours will be automatically used.
 #' @param bar.width Numeric. It defines the bar width.
-#' @param y.axis.order.use.alphabet [TODO]
-
+#' @param dot.range.to.use [TODO]
+#' @param dot.colour.palette  [TODO]
+#' @param dot.size.range  [TODO]
+#' @param dot.y.order.in.alphabet [TODO]
 #' @param ... Other parameter that can be passed to select by method functions.
 #'
 #'
@@ -319,16 +318,16 @@ GetResultTgSpecificity <- function(
 	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
 	axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
+	bar.facet.scales = "free_x", 
+	bar.facet.space  = "free_x", 
+	bar.facet.text.x = element_text(size = 8, colour = "black"), 
+	bar.facet.background = element_rect(fill = "lightgrey", colour = "white"), 
+	bar.colour = character(),  # [TODO] add option to select to use barplot or dotplot
+	bar.width = 0.8, 
 	dot.range.to.use = list("LogFC" = c(-Inf, +Inf), "PVal" = c(-Inf, +Inf)), 
 	dot.colour.palette = scale_colour_gradientn(name = "PVal", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
 	dot.size.range = c(2, 8), 
-	facet.scales = "free_x", 
-	facet.space  = "free_x", 
-	facet.text.x = element_text(size = 8, colour = "black"), 
-	facet.background = element_rect(fill = "lightgrey", colour = "white"), 
-	bar.colour = character(),  # [TODO] add option to select to use barplot or dotplot
-	bar.width = 0.8, 
-	y.axis.order.use.alphabet = TRUE,
+	dot.y.order.in.alphabet = TRUE,
 	...
 ) {
 	VEinfos <- getTgVEInfo(object)
@@ -426,6 +425,7 @@ GetResultTgSpecificity <- function(
 		std.width.col = 2,  # may be export as param, so as the gap
 		std.width.gap = 3
 	) {
+print(std.spgenes)
 		#[NOTE]# x-axis coords go from 0 -> +Inf, y-axis use the original value
 		tmp.order.df <- data.frame(orig.ind = seq_along(std.spgenes), 
 			new.ind = match(names(std.spgenes), show.genepairs.order), 
@@ -456,7 +456,7 @@ GetResultTgSpecificity <- function(
 					stringsAsFactors = FALSE)
 				})
 		tmp.df.res <- bind_rows(tmp.df.list)
-
+print(tmp.df.res)
 		# re-align cluster orders, conv or rev
 		if (display.conv.or.rev == FALSE) {
 			uq.name.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.name"],
@@ -537,7 +537,7 @@ GetResultTgSpecificity <- function(
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.y.axis))
 		this.plot <- this.plot + 
 			geom_col(aes(fill = uq.label), width = bar.width) + 
-			facet_grid(cols = vars(uq.name.align), scales = facet.scales, space = facet.space) + 
+			facet_grid(cols = vars(uq.name.align), scales = bar.facet.scales, space = bar.facet.space) + 
 			scale_x_discrete(breaks = plot.data$uq.label, 
 				limits = tiny.cg.prior,   # function to change the limit
 				labels = plot.data$uq.label) + 
@@ -549,8 +549,8 @@ GetResultTgSpecificity <- function(
 		this.plot <- this.plot + 
 			theme_half_open(font_size = plot.font.size.base) + 
 			theme(axis.text.x = axis.text.x.pattern,
-				strip.text.x = facet.text.x,
-				strip.background = facet.background) + 
+				strip.text.x = bar.facet.text.x,
+				strip.background = bar.facet.background) + 
 			theme(legend.position = "none")  # remove the legends
 		return(this.plot)
 	}
@@ -583,7 +583,7 @@ GetResultTgSpecificity <- function(
 		plot.data$plot.dot.colour <- tmp.pvaladj
 
 		# before plot, get gene pairs ordered correctly
-		if (y.axis.order.use.alphabet == TRUE) {
+		if (dot.y.order.in.alphabet == TRUE) {
 			plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name[order(plot.data$uq.name)]))
 		} else {
 			plot.data$uq.name <- factor(plot.data$uq.name, levels = unique(plot.data$uq.name))

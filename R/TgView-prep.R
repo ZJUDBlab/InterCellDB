@@ -285,7 +285,7 @@ GenerateMapDetailOnepairClusters <- function(
 #'
 #' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
 #' @inheritParams Inside.DummyFgenes 
-#' @param direction.x.to.y [TODO]
+#' @param direction.X.to.Y [TODO]
 #' @param if.ignore.location Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
 #'
@@ -317,7 +317,7 @@ GenerateMapDetailOnepairClusters <- function(
 GenerateVEinfos <- function(
 	onepair.gmoc,
 	fgenes.remapped.all,
-	direction.x.to.y = NULL,
+	direction.X.to.Y = NULL,
 	if.ignore.location = FALSE
 ) {
 	### generate vertices list and edges list
@@ -421,32 +421,32 @@ GenerateVEinfos <- function(
 					this.row <- act.infos[j, ]
 					rownames(this.row) <- NULL
 					if (this.row["actionid"] == 1) {  # for undirected one, give two directed edge and special symbol representing those
-						if (is.null(direction.x.to.y) || direction.x.to.y == TRUE) {
+						if (is.null(direction.X.to.Y) || direction.X.to.Y == TRUE) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "undirected", this.row["score"]))  
 						}
-						if (is.null(direction.x.to.y) || !direction.x.to.y) {
+						if (is.null(direction.X.to.Y) || !direction.X.to.Y) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "undirected", this.row["score"]))
 						}
 					} else {
 						if (this.row["actionid"] < 2 || this.row["actionid"] > 7) {
 							stop(paste0("Undefined actionid from @param onepair.gmoc$actions.detailed[[", i, "]]!"))
 						}
-						if (this.row["actionid"] == 2 && (is.null(direction.x.to.y) || direction.x.to.y == TRUE)) {
+						if (this.row["actionid"] == 2 && (is.null(direction.X.to.Y) || direction.X.to.Y == TRUE)) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "positive", this.row["score"]))
 						} 
-						if (this.row["actionid"] == 3 && (is.null(direction.x.to.y) || !direction.x.to.y)) {
+						if (this.row["actionid"] == 3 && (is.null(direction.X.to.Y) || !direction.X.to.Y)) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "positive", this.row["score"]))
 						}
-						if (this.row["actionid"] == 4 && (is.null(direction.x.to.y) || direction.x.to.y == TRUE)) {
+						if (this.row["actionid"] == 4 && (is.null(direction.X.to.Y) || direction.X.to.Y == TRUE)) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "negative", this.row["score"]))
 						}
-						if (this.row["actionid"] == 5 && (is.null(direction.x.to.y) || !direction.x.to.y)) {
+						if (this.row["actionid"] == 5 && (is.null(direction.X.to.Y) || !direction.X.to.Y)) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "negative", this.row["score"]))
 						}
-						if (this.row["actionid"] == 6 && (is.null(direction.x.to.y) || direction.x.to.y == TRUE)) {
+						if (this.row["actionid"] == 6 && (is.null(direction.X.to.Y) || direction.X.to.Y == TRUE)) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.A.UID, act.B.UID, this.row["mode"], "unspecified", this.row["score"]))
 						}
-						if (this.row["actionid"] == 7 && (is.null(direction.x.to.y) || !direction.x.to.y)) {
+						if (this.row["actionid"] == 7 && (is.null(direction.X.to.Y) || !direction.X.to.Y)) {
 							tmp.act.res <- c(tmp.act.res, gen.edges.vei.inside(act.B.UID, act.A.UID, this.row["mode"], "unspecified", this.row["score"]))
 						}
 					}
@@ -497,7 +497,7 @@ FetchInterOI <- function(
 	object <- setTgActionPairs(object, GenerateMapDetailOnepairClusters(tg.inter, object@database@actions.db))
 	object <- setTgVEInfo(object, 
 		GenerateVEinfos(getTgActionPairs(object), object@fgenes, 
-			direction.x.to.y = NULL,  # keep all in default setting
+			direction.X.to.Y = NULL,  # keep all in default setting
 			if.ignore.location)
 	)
 
@@ -515,7 +515,7 @@ FetchInterOI <- function(
 #' This function is to further select subset of interactions in given 2-cell group.
 #'
 #' @param object [TODO]
-#' @param direction.x.to.y [TODO]
+#' @param direction.X.to.Y [TODO]
 #' @param sel.exprs.change Character. It selects the expression change status that gene pairs can be. It has total 4 options:
 #' "Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn", which are defined in global variables \code{kexprs.change}.
 #' @param sel.some.genes.X Character. It selects some genes in cluster A(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.A} to fetch that).
@@ -548,7 +548,7 @@ FetchInterOI <- function(
 #'
 SelectInterSubset <- function(
 	object, 
-	direction.x.to.y = NULL, 
+	direction.X.to.Y = NULL, 
 	sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"), 
 	sel.some.genes.X = NULL, 
 	sel.some.genes.Y = NULL, 
@@ -681,12 +681,12 @@ SelectInterSubset <- function(
 	tmp.inds.cluster.vA <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
 	tmp.inds.cluster.vB <- which(vertices.all.infos$ClusterName == afterV.B.clustername) 
 	edges.sel3.infos <- edges.sel2.infos
-	if (!is.null(direction.x.to.y) && direction.x.to.y == TRUE) {
+	if (!is.null(direction.X.to.Y) && direction.X.to.Y == TRUE) {
 		tmp.from.matches <- which(edges.sel3.infos$from %in% vertices.all.infos[tmp.inds.cluster.vA, "UID"])
 		tmp.to.matches <- which(edges.sel3.infos$to %in% vertices.all.infos[tmp.inds.cluster.vB, "UID"])
 		edges.sel3.infos <- edges.sel3.infos[intersect(tmp.from.matches, tmp.to.matches), ]
 	}
-	if (!is.null(direction.x.to.y) && !direction.x.to.y) {
+	if (!is.null(direction.X.to.Y) && !direction.X.to.Y) {
 		tmp.from.matches <- which(edges.sel3.infos$from %in% vertices.all.infos[tmp.inds.cluster.vB, "UID"])
 		tmp.to.matches <- which(edges.sel3.infos$to %in% vertices.all.infos[tmp.inds.cluster.vA, "UID"])
 		edges.sel3.infos <- edges.sel3.infos[intersect(tmp.from.matches, tmp.to.matches), ]

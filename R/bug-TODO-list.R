@@ -9,19 +9,19 @@
 # 目标： 避免后续出现意想不到的错误。
 
 
-# TgView-part2.R
+# TgView-part2.R [TODO]
 
 # 修改参数plot.x.to.y
 # 考虑新增一个参数，让画图的X和Y轴  和 选取需要呈现的 X.to.Y的方向性分离
 
 
-# TgView-part1.R
+# TgView-part1.R DONE
 
 # GetResultPieActionMode 需要修改
 # 1. color palette的问题，要和action effect统一
 # 2. etc
 
-# TgView-part3.R
+# TgView-part3.R DONE
 
 # GetResultTgSpecificity 需要修改
 # 主要是目前的参数太多太乱了，难以理解

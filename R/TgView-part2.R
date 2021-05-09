@@ -7,7 +7,7 @@
 #' and the default evaluation params are LogFC and PValAdj.
 #'
 #' @param object [TODO]
-#' @param plot.x.to.y [TODO]
+#' @param plot.X.to.Y [TODO] if TRUE, X will be original X in fullview , Y will be original Y in fullview.
 #' @param colnames.to.cmp Character. The colnames to be used as evaluation params, currently only 2 params are supported.
 #' The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.
 #' @param range.to.use List. It specifies the user specified ranges for evaluation params.
@@ -47,7 +47,7 @@
 #'
 GetResultTgCrosstalk <- function(
   object,
-  plot.x.to.y = TRUE,
+  plot.X.to.Y = TRUE,
   colnames.to.cmp = c("LogFC", "PVal"),
   range.to.use = list("LogFC" = c(-Inf, Inf), "PVal" = c(-Inf, Inf)),
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
@@ -97,8 +97,8 @@ GetResultTgCrosstalk <- function(
   colnames(edges.fullinfos)[tmp.ind.new3] <- c("to.cluster", "to.gene")
   edges.fullinfos <- edges.fullinfos[, c("from.cluster", "to.cluster", "from.gene", "to.gene")]
   # restrict to only one direction
-  if (!is.null(plot.x.to.y)) {
-    if (plot.x.to.y == TRUE) {
+  if (!is.null(plot.X.to.Y)) {
+    if (plot.X.to.Y == TRUE) {
       tmp.inds <- intersect(which(edges.fullinfos[, "from.cluster"] == act.A.clustername), which(edges.fullinfos[, "to.cluster"] == act.B.clustername))
       edges.fullinfos <- edges.fullinfos[tmp.inds, ]
     } else {

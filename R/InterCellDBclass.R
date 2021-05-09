@@ -488,7 +488,7 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object, new.inter.fullview) {
 		if (!is.null(object@inter.fullview) && length(object@inter.fullview) != 0) {
-			print("Overwrite existed result on network analysis. ")
+			warning("Overwrite existed result on network analysis. ")
 		}
 		object@inter.fullview <- new.inter.fullview
 		return(object)

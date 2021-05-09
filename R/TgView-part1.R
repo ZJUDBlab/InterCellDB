@@ -149,6 +149,12 @@ AnalyzeInterInAction <- function(
 #' @param legend.key.size The size of keys in legend. 
 #' @param legend.text.size It sets size of legend text.
 #' @param legend.box.margin It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.
+#' @param show.note [TODO]
+#' @param note.label.size [TODO]
+#' @param note.lineheight [TODO]
+#' @param note.postion.xy [TODO]
+#' @param note.hjust [TODO]
+#' @param note.vjust [TODO]
 #'
 #'
 #' @import dplyr ggplot2
@@ -165,7 +171,13 @@ GetResultPieActionMode <- function(
 	legend.title.size = element_text(size = 14),
 	legend.key.size = unit(7, "mm"),
 	legend.text.size = element_text(size = 12),
-	legend.box.margin = margin(0, 0, 0, 6)
+	legend.box.margin = margin(0, 0, 0, 6),
+	show.note = TRUE,
+	note.label.size = 3,
+	note.lineheight = 1,
+	note.postion.xy = c(0.5, 0.5),
+	note.hjust = 0.5,
+	note.vjust = 0.5
 ) {
 	VEinfos <- getTgVEInfo(object)
 	ActionComp <- getTgActionComp(object)
@@ -266,25 +278,47 @@ GetResultPieActionMode <- function(
 	# merged legend
 	dummy.plot.for.legend <- ggplot(data = plot.data.mode.result) + 
 		geom_bar(aes(x = action.mode, y = interact.cnt, fill = action.mode), stat = "identity", position = "stack") + 
-		color.action.mode
-	res.legend <- get_legend(dummy.plot.for.legend + 
+		color.action.mode + 
 		guides(fill = guide_legend(title = legend.title)) +
 		theme(legend.position = "right", 
 			legend.key.size = legend.key.size,
 			legend.title = legend.title.size,
 			legend.text = legend.text.size,
-			legend.box.margin = legend.box.margin)
-		)
+			legend.box.margin = legend.box.margin
+		)	
+	dummy.plot.obj <- ggplotGrob(dummy.plot.for.legend)
+	dummy.the.legend <- dummy.plot.obj$grobs[[which(sapply(dummy.plot.obj$grobs, function(x) x$name) == "guide-box")]]
 
-	res.plot <- plot_grid(plotlist = c(plot.mode.list, list(res.legend)), nrow = 1, 
-								rel_widths = c(rep(4, times = length(plot.mode.list)), 1 * length(plot.mode.list))
-							)
+	res.plot <- arrangeGrob(grobs = c(plot.mode.list, list(dummy.the.legend)), nrow = 1, 
+		widths = c(rep(4, times = length(plot.mode.list)), 1 * length(plot.mode.list))
+	)
 
-	print(paste0("Generating plot for composition of action mode for gene pairs between ", ActionComp$clusters.name$cluster.X,
-		"(X) and ", ActionComp$clusters.name$cluster.Y, "(Y). Genes from X are denoted as A, while those from Y as B."))
+	if (show.note == TRUE) {
+		note.text.it <- paste0("X,Y: clusters that gene pairs from.\nX: ", 
+			ActionComp$clusters.name$cluster.X, ", Y: ", ActionComp$clusters.name$cluster.Y,
+			"\nA: genes from cluster X, B: genes from cluster Y.")
+		note.text.df <- data.frame(x = c(0, 0, 1, 1, note.postion.xy[1]),
+			y = c(0, 1, 1, 0, note.postion.xy[2]),
+			label = c("", "", "", "", note.text.it),
+			stringsAsFactors = FALSE)
+
+		text.ggplot <- ggplot(note.text.df) + 
+			geom_text(aes(x = x, y = y, label = label),
+				size = note.label.size,
+				lineheight = note.lineheight,
+				hjust = note.hjust,
+				vjust = note.vjust) + 
+			theme_void()
+
+		res.plot <- arrangeGrob(res.plot, ggplotGrob(text.ggplot), ncol = 1,
+			heights = c(4, 1))
+	}
+
+	#print(paste0("Generating plot for composition of action mode for gene pairs between ", ActionComp$clusters.name$cluster.X,
+	#	"(X) and ", ActionComp$clusters.name$cluster.Y, "(Y). Genes from X are denoted as A, while those from Y as B."))
 	
 	#end# return
-	return(list(plot = res.plot, table = c(list(plot.data.mode.result), collect.mode.result)))
+	return(list(plot = NULL, grid.plot = res.plot, table = c(list(plot.data.mode.result), collect.mode.result)))
 }
 
 
@@ -304,6 +338,12 @@ GetResultPieActionMode <- function(
 #' @param legend.key.size The size of keys in legend. It should be in unit format, see \code{?unit} for further help.
 #' @param legend.text.size It sets the attributes of legend annotation texts, and should be \code{element_text()}.
 #' @param legend.box.margin It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.
+#' @param show.note [TODO]
+#' @param note.label.size [TODO]
+#' @param note.lineheight [TODO]
+#' @param note.postion.xy [TODO]
+#' @param note.hjust [TODO]
+#' @param note.vjust [TODO]
 #'
 #' @return A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
@@ -337,7 +377,13 @@ GetResultPieActionEffect <- function(
 	legend.title.size = element_text(size = 14),
 	legend.key.size = unit(7, "mm"),
 	legend.text.size = element_text(size = 12),
-	legend.box.margin = margin(0, 0, 0, 6)
+	legend.box.margin = margin(0, 0, 0, 6),
+	show.note = TRUE,
+	note.label.size = 3,
+	note.lineheight = 1,
+	note.postion.xy = c(0.5, 0.5),
+	note.hjust = 0.5,
+	note.vjust = 0.5
 ) {
 	VEinfos <- getTgVEInfo(object)
 	ActionComp <- getTgActionComp(object)
@@ -377,6 +423,17 @@ GetResultPieActionEffect <- function(
 		}
 		collect.effect.result[[i.exc]] <- DoPartUnique(collect.effect.result[[i.exc]], 
 			match(c("former.GeneName", "latter.GeneName", "action.effect", "act.id"), colnames(collect.effect.result[[i.exc]])))
+	}
+
+	# check plot parameters
+	if ((is.numeric(note.postion.xy) || is.integer(note.postion.xy)) 
+		&& length(note.postion.xy) == 2) {
+		if (note.postion.xy[[1]] > 1 || note.postion.xy[[2]] > 1
+		 || note.postion.xy[[1]] < 0 || note.postion.xy[[2]] < 0) {
+			stop("Please give 2 numeric number within 0~1 for parameter `note.postion.xy`.")
+		}
+	} else {
+		stop("Please give 2 numeric number within 0~1 for parameter `note.postion.xy`.")
 	}
 
 	# plot data preparation
@@ -440,23 +497,45 @@ GetResultPieActionEffect <- function(
 	# merged legend
 	dummy.plot.for.legend <- ggplot(data = plot.data.effect.result) + 
 		geom_bar(aes(x = action.effect, y = interact.cnt, fill = action.effect), stat = "identity", position = "stack") + 
-		color.ext.action.effect
-	res.legend <- get_legend(dummy.plot.for.legend + 
+		color.ext.action.effect + 
 		guides(fill = guide_legend(title = legend.title)) +
 		theme(legend.position = "right", 
 			legend.key.size = legend.key.size,
 			legend.title = legend.title.size,
 			legend.text = legend.text.size,
-			legend.box.margin = legend.box.margin)
-		)
+			legend.box.margin = legend.box.margin
+		)	
+	dummy.plot.obj <- ggplotGrob(dummy.plot.for.legend)
+	dummy.the.legend <- dummy.plot.obj$grobs[[which(sapply(dummy.plot.obj$grobs, function(x) x$name) == "guide-box")]]
 
-	res.plot <- plot_grid(plotlist = c(plot.effect.list, list(res.legend)), nrow = 1, 
-								rel_widths = c(rep(4, times = length(plot.effect.list)), 1 * length(plot.effect.list))
-							)
+	res.plot <- arrangeGrob(grobs = c(plot.effect.list, list(dummy.the.legend)), nrow = 1, 
+		widths = c(rep(4, times = length(plot.effect.list)), 1 * length(plot.effect.list))
+	)
 
-	print(paste0("Generating plot for composition of action effect for gene pairs between ", ActionComp$clusters.name$cluster.X,
-		"(X) and ", ActionComp$clusters.name$cluster.Y, "(Y). Genes from X are denoted as A, while those from Y as B."))
+	if (show.note == TRUE) {
+		note.text.it <- paste0("X,Y: clusters that gene pairs from.\nX: ", 
+			ActionComp$clusters.name$cluster.X, ", Y: ", ActionComp$clusters.name$cluster.Y,
+			"\nA: genes from cluster X, B: genes from cluster Y.")
+		note.text.df <- data.frame(x = c(0, 0, 1, 1, note.postion.xy[1]),
+			y = c(0, 1, 1, 0, note.postion.xy[2]),
+			label = c("", "", "", "", note.text.it),
+			stringsAsFactors = FALSE)
+
+		text.ggplot <- ggplot(note.text.df) + 
+			geom_text(aes(x = x, y = y, label = label),
+				size = note.label.size,
+				lineheight = note.lineheight,
+				hjust = note.hjust,
+				vjust = note.vjust) + 
+			theme_void()
+
+		res.plot <- arrangeGrob(res.plot, ggplotGrob(text.ggplot), ncol = 1,
+			heights = c(4, 1))
+	}
+
+	#print(paste0("Generating plot for composition of action effect for gene pairs between ", ActionComp$clusters.name$cluster.X,
+	#	"(X) and ", ActionComp$clusters.name$cluster.Y, "(Y). Genes from X are denoted as A, while those from Y as B."))
 	
 	# return
-	return(list(plot = res.plot, table = c(list(plot.data.effect.result), collect.effect.result)))
+	return(list(plot = NULL, grid.plot = res.plot, table = c(list(plot.data.effect.result), collect.effect.result)))
 }
