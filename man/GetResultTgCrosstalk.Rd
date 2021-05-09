@@ -6,7 +6,7 @@
 \usage{
 GetResultTgCrosstalk(
   object,
-  plot.x.to.y = TRUE,
+  plot.X.to.Y = TRUE,
   colnames.to.cmp = c("LogFC", "PVal"),
   range.to.use = list(LogFC = c(-Inf, Inf), PVal = c(-Inf, Inf)),
   axis.order.xy = c("AlphaBet", "AlphaBet"),
@@ -21,7 +21,7 @@ GetResultTgCrosstalk(
 \arguments{
 \item{object}{[TODO]}
 
-\item{plot.x.to.y}{[TODO]}
+\item{plot.X.to.Y}{[TODO] if TRUE, X will be original X in fullview , Y will be original Y in fullview.}
 
 \item{colnames.to.cmp}{Character. The colnames to be used as evaluation params, currently only 2 params are supported.
 The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.}

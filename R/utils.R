@@ -391,7 +391,7 @@ Tool.FindGenesFromGO <- function(
 #' This function generates gene pairs in standard format(in data frame), 
 #' and gets these pairs easier to be compared with others.
 #'
-#' @inheritParams Inside.DummyVEinfos
+#' @param VEinfos [TODO]
 #'
 #' @details
 #' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 

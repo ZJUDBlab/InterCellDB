@@ -7,16 +7,19 @@
 GenerateVEinfos(
   onepair.gmoc,
   fgenes.remapped.all,
-  direction.x.to.y = NULL,
-  if.ignore.annos = FALSE
+  direction.X.to.Y = NULL,
+  if.ignore.location = FALSE
 )
 }
 \arguments{
 \item{onepair.gmoc}{List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.}
 
-\item{direction.x.to.y}{[TODO]}
+\item{fgenes.remapped.all}{Data.frame. Informations about feature genes(markers), prefer using return value of 
+\code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.}
 
-\item{if.ignore.annos}{Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+\item{direction.X.to.Y}{[TODO]}
+
+\item{if.ignore.location}{Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 be treated as the same, and only one row information will be reserved.}
 }
 \value{

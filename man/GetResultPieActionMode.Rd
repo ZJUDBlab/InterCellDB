@@ -6,19 +6,20 @@
 \usage{
 GetResultPieActionMode(
   object,
-  limits.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
-  limits.action.mode = NULL,
-  color.action.mode = NULL,
+  limits.exprs.change = kexprs.change,
+  limits.action.mode = kpred.mode,
+  color.action.mode = kpred.color.mode,
   legend.title = "Action Mode",
-  legend.title.size = element_text(size = 16),
+  legend.title.size = element_text(size = 14),
   legend.key.size = unit(7, "mm"),
   legend.text.size = element_text(size = 12),
   legend.box.margin = margin(0, 0, 0, 6),
-  caption.label.size = 12,
-  caption.label.x = 0.5,
-  caption.label.y = 0.8,
-  caption.label.hjust = 0.5,
-  caption.label.vjust = 1
+  show.note = TRUE,
+  note.label.size = 3,
+  note.lineheight = 1,
+  note.postion.xy = c(0.5, 0.5),
+  note.hjust = 0.5,
+  note.vjust = 0.5
 )
 }
 \arguments{
@@ -38,20 +39,17 @@ GetResultPieActionMode(
 
 \item{legend.box.margin}{It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.}
 
-\item{caption.label.size}{It sets the size of caption label.}
+\item{show.note}{[TODO]}
 
-\item{caption.label.x}{It sets the position of caption label in x-axis.}
+\item{note.label.size}{[TODO]}
 
-\item{caption.label.y}{It sets the position of caption label in y-axis.}
+\item{note.lineheight}{[TODO]}
 
-\item{caption.label.hjust}{It sets the alignment type of caption label in horizontal level, see \code{vignette("ggplot2-specs")}
-for further help.}
+\item{note.postion.xy}{[TODO]}
 
-\item{caption.label.vjust}{It sets the alignment type of caption label in vertical level, see \code{vignette("ggplot2-specs")}
-for further help.}
+\item{note.hjust}{[TODO]}
 
-\item{use.prioritized.mode}{If TRUE, for one gene pair, it gets only one of belonging multiple mode to be reserved.
-Or, use all mode with no priority.}
+\item{note.vjust}{[TODO]}
 }
 \description{
 This function focuses on one interaction pair and its detailed information(expression changes, 

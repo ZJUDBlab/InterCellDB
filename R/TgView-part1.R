@@ -362,7 +362,7 @@ GetResultPieActionMode <- function(
 #'
 #'
 #'
-#' @import scales colour_ramp
+#' @importFrom scales colour_ramp
 #' @import ggplot2
 #' @importFrom cowplot draw_label get_legend ggdraw plot_grid
 #'

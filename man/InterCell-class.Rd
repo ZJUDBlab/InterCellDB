@@ -25,12 +25,11 @@ P val for regarding one gene as differentially expressed one.}
 
 \item{\code{tg.action.pairs}}{This is used to store the intermediate result of action properties and gene pairs.}
 
-\item{\code{tg.veinfo}}{This is used to store the intermediate result of intercellular communication (for one interacting 2-cell group).}
+\item{\code{tg.veinfo}}{This is used to store the intermediate result of one intercellular communication (for one interacting 2-cell group).}
 
-\item{\code{tg.spgenes}}{This is used to store the selected gene pairs and all their participating interacitons.}
+\item{\code{tg.action.comp}}{This is used to store the result of analyzing composition of action mode and action effect in one interacellular communication.}
 
-\item{\code{pred.action}}{This stores the pre-defined action modes and action effects, and terms beyond definitions in this parameter will 
-be regarded as invalid ones.}
+\item{\code{tg.spgenes}}{This is used to store the selected gene pairs and all their participating interacitons in one intercellular communication.}
 
 \item{\code{tool.vars}}{This stores several variables to be used embedded in program.}
 

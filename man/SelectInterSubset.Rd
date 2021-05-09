@@ -6,7 +6,7 @@
 \usage{
 SelectInterSubset(
   object,
-  direction.x.to.y = NULL,
+  direction.X.to.Y = NULL,
   sel.exprs.change = c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn"),
   sel.some.genes.X = NULL,
   sel.some.genes.Y = NULL,
@@ -21,7 +21,7 @@ SelectInterSubset(
 \arguments{
 \item{object}{[TODO]}
 
-\item{direction.x.to.y}{[TODO]}
+\item{direction.X.to.Y}{[TODO]}
 
 \item{sel.exprs.change}{Character. It selects the expression change status that gene pairs can be. It has total 4 options:
 "Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn", which are defined in global variables \code{kexprs.change}.}

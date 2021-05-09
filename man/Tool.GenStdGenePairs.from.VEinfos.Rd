@@ -6,6 +6,9 @@
 \usage{
 Tool.GenStdGenePairs.from.VEinfos(VEinfos)
 }
+\arguments{
+\item{VEinfos}{[TODO]}
+}
 \description{
 This function generates gene pairs in standard format(in data frame), 
 and gets these pairs easier to be compared with others.

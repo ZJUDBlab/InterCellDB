@@ -19,17 +19,17 @@ GetResultTgSpecificity(
   barplot.or.dotplot = FALSE,
   plot.font.size.base = 12,
   axis.text.x.pattern = element_text(angle = 90, vjust = 0.5, hjust = 1),
+  bar.facet.scales = "free_x",
+  bar.facet.space = "free_x",
+  bar.facet.text.x = element_text(size = 8, colour = "black"),
+  bar.facet.background = element_rect(fill = "lightgrey", colour = "white"),
+  bar.colour = character(),
+  bar.width = 0.8,
   dot.range.to.use = list(LogFC = c(-Inf, +Inf), PVal = c(-Inf, +Inf)),
   dot.colour.palette = scale_colour_gradientn(name = "PVal", colours = c("#00809D",
     "#EEEEEE", "#C30000"), values = c(0, 0.5, 1)),
   dot.size.range = c(2, 8),
-  facet.scales = "free_x",
-  facet.space = "free_x",
-  facet.text.x = element_text(size = 8, colour = "black"),
-  facet.background = element_rect(fill = "lightgrey", colour = "white"),
-  bar.colour = character(),
-  bar.width = 0.8,
-  y.axis.order.use.alphabet = TRUE,
+  dot.y.order.in.alphabet = TRUE,
   ...
 )
 }
@@ -62,7 +62,7 @@ finally plotted from the most left-side to right, and as such, it is called prio
 conv, the same, rev, the reverse format. For example, cluster.A -> cluster.B in VEinfo, so, if conv, display like cluster.A~cluster.B, or as cluster.B~cluster.A
 gene pairs will be aligned as cluster order changed.}
 
-\item{grid.plot.ncol}{[TODO]}
+\item{grid.plot.ncol}{[TODO]show.uq.cnt.merged = FALSE, then it will be used}
 
 \item{barplot.or.dotplot}{[TODO]}
 
@@ -70,26 +70,26 @@ gene pairs will be aligned as cluster order changed.}
 
 \item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
 
-\item{dot.range.to.use}{[TODO]}
+\item{bar.facet.scales}{It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
 
-\item{dot.colour.palette}{[TODO]}
+\item{bar.facet.space}{It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
 
-\item{dot.size.range}{[TODO]}
+\item{bar.facet.text.x}{It defines the facet labeling text on the top horizontal position.}
 
-\item{facet.scales}{It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
-
-\item{facet.space}{It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
-
-\item{facet.text.x}{It defines the facet labeling text on the top horizontal position.}
-
-\item{facet.background}{It defines the background style of labellers in facet way.}
+\item{bar.facet.background}{It defines the background style of labellers in facet way.}
 
 \item{bar.colour}{Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
 built-in 20 kinds of colours will be automatically used.}
 
 \item{bar.width}{Numeric. It defines the bar width.}
 
-\item{y.axis.order.use.alphabet}{[TODO]}
+\item{dot.range.to.use}{[TODO]}
+
+\item{dot.colour.palette}{[TODO]}
+
+\item{dot.size.range}{[TODO]}
+
+\item{dot.y.order.in.alphabet}{[TODO]}
 
 \item{...}{Other parameter that can be passed to select by method functions.}
 }
