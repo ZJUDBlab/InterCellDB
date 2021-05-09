@@ -9,19 +9,6 @@ proc.index.colname.end.dual <- 8
 # For utility, illustrate the expression change options
 kexprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
 
-# [inside usage]
-# For utility, use global value to give the definition
-kaction.id.mapped <- c(
-	"A---B", # #1, undirected, others are directed
-	"A-->B", # #2
-	"A<--B", # #3
-	"A--|B", # #4
-	"A|--B", # #5
-	"A--oB", # #6
-	"Ao--B"  # #7
-	# "undefined for (> 6) and all other(< 0)"
-)
-
 
 
 #' [TODO]
@@ -43,9 +30,43 @@ CheckSpeciesValidity <- function(
 
 
 
-# %%%%%%%%%%%%%%%%%%%%%
+CheckParamStd <- function(
+	input.opt,
+	allowed.opt,
+	opt.name = "opt",
+	stop.on.zero = FALSE
+) {
+	not.valid.opt <- setdiff(input.opt, allowed.opt)
+	if (length(not.valid.opt) > 0) {
+		warning("Given undefined ", opt.name, ": ", paste0(not.valid.opt, collapse = ", ", ". "))
+	}
+	input.opt <- intersect(input.opt, allowed.opt)
+	if (stop.on.zero == TRUE && length(input.opt) == 0) {
+		stop("No valid ", opt.name, " is selected!")
+	}
+	return(input.opt)
+}
+
+
+
+TransActionEffectToActId <- function(
+	action.effect
+) {
+	ret.act.ids <- as.character(unlist(lapply(action.effect, function(x) {
+		ret <- switch(x, 
+			"positive" = c("A-->B", "A<--B"),
+			"negative" = c("A--|B", "A|--B"),
+			"unspecified" = c("A--oB", "Ao--B"),
+			"undirected" = "A---B",
+			stop("Undefined action effect!")
+		)
+	})))
+	return(ret.act.ids)
+}
+
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # more common used tool function
-# %%%%%%%%%%%%%%%%%%%%%
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #' split character to be data.frame
 #' 
@@ -196,9 +217,18 @@ ReverseOddEvenCols <- function(
 #
 # [TODO]
 #
-FastAlignPairs <- function(xxpairs, ind.colname.end.dual, use.cols = c(1,2)) 
-{
-	inds.rev <- which(as.integer(xxpairs[, use.cols[1]]) >= as.integer(xxpairs[, use.cols[2]]))
+FastAlignPairs <- function(
+	xxpairs, 
+	ind.colname.end.dual, 
+	use.cols = c(1,2),
+	use.class = "integer"
+) {
+	inds.rev <- switch(use.class, 
+		"integer" = which(as.integer(xxpairs[, use.cols[1]]) >= as.integer(xxpairs[, use.cols[2]])),
+		"character" = which(as.character(xxpairs[, use.cols[1]]) >= as.character(xxpairs[, use.cols[2]])),
+		"numeric" = which(as.numeric(xxpairs[, use.cols[1]]) >= as.numeric(xxpairs[, use.cols[2]])),
+		stop("Unspported type of input!")
+	)
 	xxpairs.result <- NULL
 	if (length(inds.rev) > 0) {
 		xxpairs.rev <- xxpairs[inds.rev, ]
@@ -223,9 +253,9 @@ FastAlignPairs <- function(xxpairs, ind.colname.end.dual, use.cols = c(1,2))
 
 
 
-# %%%%%%%%%%%%%%%%%%%%%
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Tool function for specific purpose
-# %%%%%%%%%%%%%%%%%%%%%
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #' Find genes annotated in specific GO terms
 #' 

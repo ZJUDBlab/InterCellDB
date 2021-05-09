@@ -1,5 +1,7 @@
 
-
+# 【NOTE】
+# 参数整理，例如 kpred.mode这种已知所有可能的参数，在函数的参数设置中需要都直接给全。
+# 不要加设额外的NULL handle部分了。
 
 # TgView-prep.R DONE
 

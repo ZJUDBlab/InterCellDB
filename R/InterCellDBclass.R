@@ -29,6 +29,22 @@ kpred.color.mode <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#B
 kpred.action.effect <- c("positive", "negative", "unspecified", "undirected")
 kpred.color.effect <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7")
 
+#' Predefined extended action effect
+#'
+#' @description
+#' This depicts action effect and direction of action together.
+#'
+kpred.ext.action.effect <- c(
+	"A---B", # #1, undirected, others are directed
+	"A-->B", # #2
+	"A<--B", # #3
+	"A--|B", # #4
+	"A|--B", # #5
+	"A--oB", # #6
+	"Ao--B"  # #7
+	# "undefined for (> 7) and all other(< 0)"
+)
+kpred.color.ext.effect <- c("#8DD3C7", "#FB8072", "#FF5740", "#B3DE69", "#81EF48", "#80B1D3", "#6B6AEA")
 
 
 #' Formula Used in Network Analysis
@@ -172,10 +188,9 @@ InterCellDBPack <- setClass(
 #' @slot formulae The default formulae to be used in analysis. 
 #' @slot inter.fullview This is used to store the result of network analysis. 
 #' @slot tg.action.pairs This is used to store the intermediate result of action properties and gene pairs.  
-#' @slot tg.veinfo This is used to store the intermediate result of intercellular communication (for one interacting 2-cell group).
-#' @slot tg.spgenes This is used to store the selected gene pairs and all their participating interacitons.
-#' @slot pred.action This stores the pre-defined action modes and action effects, and terms beyond definitions in this parameter will 
-#' be regarded as invalid ones.
+#' @slot tg.veinfo This is used to store the intermediate result of one intercellular communication (for one interacting 2-cell group).
+#' @slot tg.action.comp This is used to store the result of analyzing composition of action mode and action effect in one interacellular communication.
+#' @slot tg.spgenes This is used to store the selected gene pairs and all their participating interacitons in one intercellular communication.
 #' @slot tool.vars This stores several variables to be used embedded in program. 
 #' @slot misc The not important intermediate result will be put in this parameter as well as some 
 #' pre-defined settings. 
@@ -193,8 +208,9 @@ InterCell <- setClass(
 		inter.fullview = "list", 
 		tg.action.pairs = "list", 
 		tg.veinfo = "list", 
+		tg.action.comp = "list",
 		tg.spgenes = "list", 
-		pred.action = "list", 
+		#pred.action = "list", pred.action This stores the pre-defined action modes and action effects, and terms beyond definitions in this parameter will be regarded as invalid ones.
 		tool.vars = "list", 
 		misc = "list" 
 	)
@@ -218,18 +234,18 @@ setValidity("InterCellDBPack", validInterCellDBPackObject)
 # and all checked ones should set its initial value in the first time, or get errors
 validInterCellObject <- function(object) {
 	# check pred.action
-	if (length(object@pred.action$action.mode) == 0 || !all(object@pred.action$action.mode %in% kpred.mode)) {
-		return(paste0("Using undefined action mode: ", paste0(setdiff(object@pred.action$action.mode, kpred.mode), collapse = ", ")))
-	}
-	if (length(object@pred.action$action.mode) != length(object@pred.action$color.mode)) {
-		return(paste0("Using different length of 'action.mode' and its used color 'color.mode'!"))
-	}
-	if (length(object@pred.action$action.effect) == 0 || !all(object@pred.action$action.effect %in% kpred.action.effect)) {
-		return(paste0("Using undefined action effect: ", paste0(setdiff(object@pred.action$action.effect, kpred.action.effect), collapse = ", ")))
-	}
-	if (length(object@pred.action$action.effect) != length(object@pred.action$color.effect)) {
-		return(paste0("Using different length of 'action.effect' and its used color 'color.effect'!"))
-	}
+	# if (length(object@pred.action$action.mode) == 0 || !all(object@pred.action$action.mode %in% kpred.mode)) {
+	# 	return(paste0("Using undefined action mode: ", paste0(setdiff(object@pred.action$action.mode, kpred.mode), collapse = ", ")))
+	# }
+	# if (length(object@pred.action$action.mode) != length(object@pred.action$color.mode)) {
+	# 	return(paste0("Using different length of 'action.mode' and its used color 'color.mode'!"))
+	# }
+	# if (length(object@pred.action$action.effect) == 0 || !all(object@pred.action$action.effect %in% kpred.action.effect)) {
+	# 	return(paste0("Using undefined action effect: ", paste0(setdiff(object@pred.action$action.effect, kpred.action.effect), collapse = ", ")))
+	# }
+	# if (length(object@pred.action$action.effect) != length(object@pred.action$color.effect)) {
+	# 	return(paste0("Using different length of 'action.effect' and its used color 'color.effect'!"))
+	# }
 
 	# check k***Split
 	if (length(object@tool.vars$gene.pair.split) != 1) {
@@ -372,14 +388,24 @@ CreateDBPackObject <- function(
 #' @description
 #' This function analyzes count and power of interaction pairs among all given clusters.
 #'
-#' @param DEG.table
+#' @param DEG.table A table on differentially expressed genes and their belonging cell clusters.
 #' @inheritParams InsideParam.species
-#' @param cluster.split The letters used to split 2 cell clusters in one interaction. It can be modified later by 
-#' using \code{setClusterSplit}. 
-#' @param gene.pair.split The letters used to split 2 gene partners in one gene pair. It can be modified later by 
-#' using \code{setGenePairSplit}.
+#' @param cluster.split The letters used to split 2 cell clusters in one interaction. It can also be modified later by 
+#' using \code{setClusterSplit} if not decided yet.
+#' @param gene.pair.split The letters used to split 2 gene partners in one gene pair. It can also be modified later by 
+#' using \code{setGenePairSplit} if not decided yet.
 #'
 #' @details
+#' The parameter \code{DEG.table} is recommended to be generated by \pkg{Seurat}. Other packages are also applicable, if
+#' they work with scRNA-seq, cell clustering and calculation on cluster-specific differentially expressed genes. The input 
+#' format of \code{DEG.table} should be one data.frame with 4 required columns that are named 'cluster', 'gene', 'LogFC', 'PVal'.
+#' \itemize{
+#'   \item{cluster}: the cell cluster.
+#'   \item{gene}: differentially expressed genes, which are grouped by their belonging clusters.
+#'   \item{LogFC}: the fold change of genes.
+#'   \item{PVal}: the P value for gene being calculated as differentially expressed gene.
+#' }
+#'
 #' To represent one interaction, like interaction between 'Myeloid cell' and 'T cell', 
 #' it will be looked like 'Myeloid cell~T cell' if \code{cluster.split = "~"}.
 #' To represent oen gene pair, like gene pair of IL6 and IL6R,
@@ -417,8 +443,8 @@ CreateInterCellObject <- function(
 		Class = "InterCell",
 		fgenes = DEG.align.res$result,
 		database = DBPack.obj,
-		pred.action = list(action.mode = kpred.mode, action.effect = kpred.action.effect,
-			color.mode = kpred.color.mode, color.effect = kpred.color.effect),
+		#pred.action = list(action.mode = kpred.mode, action.effect = kpred.action.effect,
+		#	color.mode = kpred.color.mode, color.effect = kpred.color.effect),
 		tool.vars = list(gene.pair.split = gene.pair.split, cluster.split = cluster.split), 
 		misc = list(musthave.colnames = kmusthave.colnames)
 	)
@@ -437,7 +463,17 @@ CreateInterCellObject <- function(
 # Accessor Function
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+#' Using FullView Result
+#' 
+#' The \code{setFullViewResult} function is to \bold{set} the result of network analysis.
+#'
+#' @rdname FullViewResult-InterCell
+#' @export
+#'
+setGeneric(name = "setFullViewResult", def = function(object, ...) {
+	standardGeneric("setFullViewResult")
+	}
+)
 #' @param new.inter.fullview A new result of network analysis.
 #'
 #' @examples
@@ -445,39 +481,71 @@ CreateInterCellObject <- function(
 #'   setFullViewResult(object, some.new.fullview.result)
 #' }
 #'
-#' @rdname FullViewResult
+#' @rdname FullViewResult-InterCell
 #'
 setMethod(
 	f = "setFullViewResult",
 	signature = "InterCell",
 	definition = function(object, new.inter.fullview) {
 		if (!is.null(object@inter.fullview) && length(object@inter.fullview) != 0) {
-			print("Overwrite existed fullview result [ TODO] name alignment")
+			print("Overwrite existed result on network analysis. ")
 		}
 		object@inter.fullview <- new.inter.fullview
 		return(object)
 	}
 )
 
+#' Using FullView Result
+#'
+#' The \code{getFullViewResult} function is to \bold{get} the result of network analysis.
+#'
+#' @rdname FullViewResult-InterCell
+#' @export
+#'
+setGeneric(name = "getFullViewResult", def = function(object, ...) {
+	standardGeneric("getFullViewResult")
+	}
+)
 
-#' @rdname FullViewResult
+#' @examples
+#' \dontrun{
+#'   getFullViewResult(object)
+#' }
+#' @rdname FullViewResult-InterCell
 #'
 setMethod(
 	f = "getFullViewResult",
 	signature = "InterCell",
 	definition = function(object) {
 		if (is.null(object@inter.fullview) || length(object@inter.fullview) == 0) {
-			stop("FullView not run [TODO] name alignment")
+			stop("Network analysis is not performed yet. ")
 		}
 		return(object@inter.fullview)
 	}
 )
 
-
+#' Using TargetView Action Pairs
+#' 
+#' The \code{setTgActionPairs} function is to \bold{set} the result of intercellular analysis 
+#' on action properties for one interaction between 2 cell clusters.
+#'
+#' @rdname TgActionPairs-InterCell
+#' @export
+#'
 setGeneric(name = "setTgActionPairs", def = function(object, ...) {
 	standardGeneric("setTgActionPairs")
 	}
 )
+
+#' @param new.action.pairs A new result of intercellular analysis on action properties
+#'
+#' @examples
+#' \dontrun{
+#'   setTgActionPairs(object, some.new.tg.action.pairs)
+#' }
+#'
+#' @rdname FullViewResult-InterCell
+#'
 setMethod(
 	f = "setTgActionPairs",
 	signature = "InterCell",
@@ -486,10 +554,26 @@ setMethod(
 		return(object)
 	}
 )
+
+#' Using TargetView Action Pairs
+#' 
+#' The \code{getTgActionPairs} function is to \bold{get} the result of intercellular analysis 
+#' on action properties for one interaction between 2 cell clusters.
+#'
+#' @rdname TgActionPairs-InterCell
+#' @export
+#'
 setGeneric(name = "getTgActionPairs", def = function(object, ...) {
 	standardGeneric("getTgActionPairs")
 	}
 )
+
+#' @examples
+#' \dontrun{
+#'   getTgActionPairs(object)
+#' }
+#' @rdname TgActionPairs-InterCell
+#'
 setMethod(
 	f = "getTgActionPairs",
 	signature = "InterCell",
@@ -501,11 +585,28 @@ setMethod(
 	}
 )
 
-
+#' Using TargetView VEinfo
+#' 
+#' The \code{setTgVEInfo} function is to \bold{set} the result of intercellular analysis
+#' on detailed gene pairs (forming the interaction network) for one interaction between 2 cell clusters.
+#'
+#' @rdname TgVEInfo-InterCell
+#' @export
+#'
 setGeneric(name = "setTgVEInfo", def = function(object, ...) {
 	standardGeneric("setTgVEInfo")
 	}
 )
+
+#' @param new.veinfo A new result of intercellular analysis on detailed gene pairs.
+#'
+#' @examples
+#' \dontrun{
+#'   setTgVEInfo(object, some.new.veinfo)
+#' }
+#'
+#' @rdname TgVEInfo-InterCell
+#'
 setMethod(
 	f = "setTgVEInfo",
 	signature = "InterCell",
@@ -514,10 +615,26 @@ setMethod(
 		return(object)
 	}
 )
+
+#' Using TargetView VEinfo
+#'
+#' The \code{getTgVEInfo} function is to \bold{get} the result of intercellular analysis
+#' on detailed gene pairs (forming the interaction network) for one interaction between 2 cell clusters.
+#'
+#' @rdname TgVEInfo-InterCell
+#' @export
+#'
 setGeneric(name = "getTgVEInfo", def = function(object, ...) {
 	standardGeneric("getTgVEInfo")
 	}
 )
+
+#' @examples
+#' \dontrun{
+#'   getTgVEInfo(object)
+#' }
+#' @rdname TgVEInfo-InterCell
+#'
 setMethod(
 	f = "getTgVEInfo",
 	signature = "InterCell",
@@ -530,10 +647,90 @@ setMethod(
 )
 
 
+#' Using TargetView Action Composition
+#' 
+#' The \code{setTgActionComp} function is to \bold{set} the result of intercellular analysis
+#' on composition of action mode and action effect for one interaction between 2 cell clusters.
+#'
+#' @rdname TgActionComp-InterCell
+#' @export
+#'
+setGeneric(name = "setTgActionComp", def = function(object, ...) {
+	standardGeneric("setTgActionComp")
+	}
+)
+
+#' @param new.action.comp A new result of intercellular analysis on composition of action mode and action effect.
+#'
+#' @examples
+#' \dontrun{
+#'   setTgActionComp(object, some.new.action.comp)
+#' }
+#'
+#' @rdname TgActionComp-InterCell
+#'
+setMethod(
+	f = "setTgActionComp",
+	signature = "InterCell",
+	definition = function(object, new.action.comp) {
+		object@tg.action.comp <- new.action.comp
+		return(object)
+	}
+)
+
+#' Using TargetView Action Composition
+#'
+#' The \code{getTgActionComp} function is to \bold{get} the result of intercellular analysis
+#' on composition of action mode and action effect for one interaction between 2 cell clusters.
+#'
+#' @rdname TgActionComp-InterCell
+#' @export
+#'
+setGeneric(name = "getTgActionComp", def = function(object, ...) {
+	standardGeneric("getTgActionComp")
+	}
+)
+
+#' @examples
+#' \dontrun{
+#'   getTgActionComp(object)
+#' }
+#' @rdname TgActionComp-InterCell
+#'
+setMethod(
+	f = "getTgActionComp",
+	signature = "InterCell",
+	definition = function(object) {
+		if (is.null(object@tg.action.comp) || length(object@tg.action.comp) == 0) {
+			stop("TgActionComp not run [TODO] name alignment")
+		}
+		return(object@tg.action.comp)
+	}
+)
+
+
+#' Using TargetView Pair Specificity
+#' 
+#' The \code{setTgSpGenes} function is to \bold{set} the result of intercellular analysis
+#' on gene pair specificity for one interaction between 2 cell clusters.
+#'
+#' @rdname TgSpGenes-InterCell
+#' @export
+#'
 setGeneric(name = "setTgSpGenes", def = function(object, ...) {
 	standardGeneric("setTgSpGenes")
 	}
 )
+
+#' @param new.spgenes A new result of intercellular analysis on gene pair specificity.
+#'
+#' @examples
+#' \dontrun{
+#'   setTgSpGenes(object, some.new.spgenes)
+#' }
+#'
+#' @rdname TgSpGenes-InterCell
+#'
 setMethod(
 	f = "setTgSpGenes",
 	signature = "InterCell",
@@ -542,10 +739,26 @@ setMethod(
 		return(object)
 	}
 )
+
+#' Using TargetView Pair Specificity
+#'
+#' The \code{getTgSpGenes} function is to \bold{get} the result of intercellular analysis
+#' on gene pair specificity for one interaction between 2 cell clusters.
+#'
+#' @rdname TgSpGenes-InterCell
+#' @export
+#'
 setGeneric(name = "getTgSpGenes", def = function(object, ...) {
 	standardGeneric("getTgSpGenes")
 	}
 )
+
+#' @examples
+#' \dontrun{
+#'   getTgSpGenes(object)
+#' }
+#' @rdname TgSpGenes-InterCell
+#'
 setMethod(
 	f = "getTgSpGenes",
 	signature = "InterCell",
@@ -558,11 +771,28 @@ setMethod(
 )
 
 
-# for @tool.vars$gene.pair.split
+#' Using Gene Pair Split
+#' 
+#' The \code{setGenePairSplit} function is to \bold{set} the gene pair split, 
+#' which is either one charater or string, and used to split 2 gene partners in one gene pair. 
+#'
+#' @rdname GenePairSplit-InterCell
+#' @export
+#'
 setGeneric(name = "setGenePairSplit", def = function(object, ...) {
 		standardGeneric("setGenePairSplit")
 	}
 )
+
+#' @param new.gene.pair.split A new gene pair split, which is either one character or string.
+#'
+#' @examples
+#' \dontrun{
+#'   setGenePairSplit(object, some.new.gene.pair.split)
+#' }
+#'
+#' @rdname GenePairSplit-InterCell
+#'
 setMethod(
 	f = "setGenePairSplit", 
 	signature = "InterCell",
@@ -580,10 +810,27 @@ setMethod(
 		return(object)
 	}
 )
+
+
+#' Using Gene Pair Split
+#' 
+#' The \code{getGenePairSplit} function is to \bold{get} the gene pair split, 
+#' which is either one charater or string, and used to split 2 gene partners in one gene pair. 
+#'
+#' @rdname GenePairSplit-InterCell
+#' @export
+#'
 setGeneric(name = "getGenePairSplit", def = function(object) {
 		standardGeneric("getGenePairSplit")
 	}
 )
+
+#' @examples
+#' \dontrun{
+#'   getGenePairSplit(object)
+#' }
+#' @rdname GenePairSplit-InterCell
+#'
 setMethod(
 	f = "getGenePairSplit", 
 	signature = "InterCell",
@@ -592,11 +839,28 @@ setMethod(
 	}
 )
 
-# for @tool.vars$cluster.split
+#' Using Cluster Group Split
+#' 
+#' The \code{setClusterSplit} function is to \bold{set} the cluster group split, 
+#' which is either one charater or string, and used to split 2 cell clusters in one interaction.
+#'
+#' @rdname ClusterSplit-InterCell
+#' @export
+#'
 setGeneric(name = "setClusterSplit", def = function(object, ...) {
 		standardGeneric("setClusterSplit")
 	}
 )
+
+#' @param new.cluster.split A new cluster group split, which is either one character or string.
+#'
+#' @examples
+#' \dontrun{
+#'   setClusterSplit(object, some.new.cluster.split)
+#' }
+#'
+#' @rdname ClusterSplit-InterCell
+#'
 setMethod(
 	f = "setClusterSplit", 
 	signature = "InterCell",
@@ -614,10 +878,26 @@ setMethod(
 		return(object)
 	}
 )
+
+#' Using Cluster Group Split
+#'
+#' The \code{getClusterSplit} function is to \bold{set} the cluster group split, 
+#' which is either one charater or string, and used to split 2 cell clusters in one interaction.
+#'
+#' @rdname ClusterSplit-InterCell
+#' @export
+#'
 setGeneric(name = "getClusterSplit", def = function(object) {
 		standardGeneric("getClusterSplit")
 	}
 )
+
+#' @examples
+#' \dontrun{
+#'   getClusterSplit(object)
+#' }
+#' @rdname ClusterSplit-InterCell
+#'
 setMethod(
 	f = "getClusterSplit", 
 	signature = "InterCell",

@@ -96,13 +96,13 @@ Inside.CollectActionMapping <- function(
 		# get final offset
 		if.op <- (ifconv + ifa.act) %% 2
 		if (onerow.info["action"] == "") {
-			res.actionid <- match("A--oB", kaction.id.mapped) + if.op
+			res.actionid <- match("A--oB", kpred.ext.action.effect) + if.op
 		} else {
 			if (onerow.info["action"] == "activation") {  # the database record positive actions in "activation"
-				res.actionid <- match("A-->B", kaction.id.mapped) + if.op
+				res.actionid <- match("A-->B", kpred.ext.action.effect) + if.op
 			} else {
 				if (onerow.info["action"] == "inhibition") {  # the database record negative actions in "inhibition"
-					res.actionid <- match("A--|B", kaction.id.mapped) + if.op
+					res.actionid <- match("A--|B", kpred.ext.action.effect) + if.op
 				} else {
 					stop("Exception: database is broken by mannually modification, as undefined values appear in column('action')!")
 				}
@@ -285,8 +285,8 @@ GenerateMapDetailOnepairClusters <- function(
 #'
 #' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
 #' @inheritParams Inside.DummyFgenes 
-#' @param direction.x.to.y
-#' @param if.ignore.annos Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+#' @param direction.x.to.y [TODO]
+#' @param if.ignore.location Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
 #'
 #' @details
@@ -318,7 +318,7 @@ GenerateVEinfos <- function(
 	onepair.gmoc,
 	fgenes.remapped.all,
 	direction.x.to.y = NULL,
-	if.ignore.annos = FALSE
+	if.ignore.location = FALSE
 ) {
 	### generate vertices list and edges list
 	list.interact.pairs <- onepair.gmoc$actions.detailed
@@ -370,7 +370,7 @@ GenerateVEinfos <- function(
 	}
 	vertices.all.infos <- rbind(vertices.A.pack.df, vertices.B.pack.df)
 	# do unique if locations and types are not cared
-	if (if.ignore.annos == TRUE) {
+	if (if.ignore.location == TRUE) {
 		vertices.all.infos <- DoPartUnique(vertices.all.infos, cols.select = match(c("GeneName", "ClusterName"), colnames(vertices.all.infos)))
 	}
 	vertices.all.infos$UID <- 1:nrow(vertices.all.infos)
@@ -489,18 +489,16 @@ FetchInterOI <- function(
 	object,
 	cluster.x,
 	cluster.y,
-	if.ignore.annos = FALSE
+	if.ignore.location = FALSE
 ) {
-	# check cluster.x cluster.y
-
-
+	# check cluster.x cluster.y are embeded in `ExtractTargetOnepairClusters()`
 	# process
 	tg.inter <- ExtractTargetOnepairClusters(getFullViewResult(object), cluster.x, cluster.y)
 	object <- setTgActionPairs(object, GenerateMapDetailOnepairClusters(tg.inter, object@database@actions.db))
 	object <- setTgVEInfo(object, 
 		GenerateVEinfos(getTgActionPairs(object), object@fgenes, 
 			direction.x.to.y = NULL,  # keep all in default setting
-			if.ignore.annos)
+			if.ignore.location)
 	)
 
 	# return
@@ -695,10 +693,10 @@ SelectInterSubset <- function(
 	}
 
 	# as it plot either directed or undirected graphs, new definition of action effects are given as below
-	# for "A---B",              given type: "undirected"  --- kaction.id.mapped[1]
-	# for "A-->B" or "A<--B",   given type: "positive"  --- kaction.id.mapped[c(2,3)]
-	# for "A--|B" or "A|--B",   given type: "negative"  --- kaction.id.mapped[c(4,5)]
-	# for "A--oB" or "Ao--B",   given type: "unspecified" --- kaction.id.mapped[c(6,7)]
+	# for "A---B",              given type: "undirected"  --- kpred.ext.action.effect[1]
+	# for "A-->B" or "A<--B",   given type: "positive"  --- kpred.ext.action.effect[c(2,3)]
+	# for "A--|B" or "A|--B",   given type: "negative"  --- kpred.ext.action.effect[c(4,5)]
+	# for "A--oB" or "Ao--B",   given type: "unspecified" --- kpred.ext.action.effect[c(6,7)]
 	#
 	### select target edges.part.infos and vertices.part.infos by mode & action.effect
 	## check if valid, sel.mode.val, sel.action.effect.val

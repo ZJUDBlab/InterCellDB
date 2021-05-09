@@ -395,7 +395,7 @@ Inside.AnalyzeClustersInteracts <- function(
 #' @param user.type.database Data.frame. It specifies one special data.frame that contains user-defined informations.
 #' For generating such database, see \code{Tool.AddUserRestrictDB} for help. 
 #' @param restricted.some.genes Character. Analysis will be restricted in interaction pairs that contain
-#' at least one genes given in this parameter.
+#' at least one genes given in this parameter. [TODO] BUG: actually intersected tareget line: 145-169
 #' @param restricted.gene.pairs Character or data.frame. Analysis will be restricted in given gene pairs(i.e. interaction pairs). 
 #' The given format is explained in the below, see details for help.
 #' @param sub.sel.X.clusters Character. It specifies part of clusters(in X axis) to be put in analysis.
