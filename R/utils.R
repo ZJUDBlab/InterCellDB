@@ -15,6 +15,8 @@ kexprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
 #'
 #' [TODO]
 #'
+#' @param species [TODO]
+#'
 #' @export
 #'
 CheckSpeciesValidity <- function(

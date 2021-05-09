@@ -101,6 +101,7 @@ TgView.formula.onLogFC.default <- function(
 #' specified when creating \code{\link{InterCell}} object. 
 #' @param data.b vector. The PVal values for another list of gene partners, which is 
 #' one-by-one matched to those in parameter \code{data.f}.
+#' @param pval.log.max [TODO]
 #'
 TgView.formula.onPVal.default <- function(
 	data.f, 
@@ -268,15 +269,14 @@ setValidity("InterCell", validInterCellObject)
 
 
 
-# initialize \code{InterCellDBPack-class}
 setMethod(
 	f = "initialize",
 	signature = c("InterCellDBPack"),
 	definition = function(.Object, ...) {
-		.Object <- callNextMethod(.Object, ...)
+		.Object <- methods::callNextMethod(.Object, ...)
 		.Object@accessory.db <- list(Uniprot.key.map = Uniprot.key.map.list)
 		.Object@misc <- list(TAKEN = "nothing yet")
-		validObject(.Object)
+		methods::validObject(.Object)
 		return(.Object)
 	}
 )
@@ -286,13 +286,13 @@ setMethod(
 	f = "initialize",
 	signature = c("InterCell"),
 	definition = function(.Object, ...) {
-		.Object <- callNextMethod(.Object, ...)
+		.Object <- methods::callNextMethod(.Object, ...)
 		.Object@formulae <- list(FULLVIEW = FullView.formula.Evaluation.default,
 			TG.LOGFC = TgView.formula.onLogFC.default,
 			TG.PVAL = TgView.formula.onPVal.default)
 		#.Object@pred.action <- list(action.mode = kpred.mode, action.effect = kpred.action.effect)
 		#.Object@tool.vars <- list(gene.pair.split = "-~-", cluster.split = "~")
-		validObject(.Object)
+		methods::validObject(.Object)
 		return(.Object)
 	}
 )
@@ -336,6 +336,8 @@ setMethod(
 #' @inheritParams InsideParam.species
 #'
 #' @return A InterCellDBPack object.
+#'
+#' @import methods
 #'
 #' @export
 #'
@@ -417,6 +419,8 @@ CreateDBPackObject <- function(
 #'
 #' @return A InterCell object. 
 #'
+#' @importFrom methods new show callNextMethod validObject
+#'
 #' @export
 #'
 CreateInterCellObject <- function(
@@ -467,6 +471,9 @@ CreateInterCellObject <- function(
 #' 
 #' The \code{setFullViewResult} function is to \bold{set} the result of network analysis.
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname FullViewResult-InterCell
 #' @export
 #'
@@ -499,6 +506,9 @@ setMethod(
 #'
 #' The \code{getFullViewResult} function is to \bold{get} the result of network analysis.
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname FullViewResult-InterCell
 #' @export
 #'
@@ -528,6 +538,9 @@ setMethod(
 #' 
 #' The \code{setTgActionPairs} function is to \bold{set} the result of intercellular analysis 
 #' on action properties for one interaction between 2 cell clusters.
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgActionPairs-InterCell
 #' @export
@@ -560,6 +573,9 @@ setMethod(
 #' The \code{getTgActionPairs} function is to \bold{get} the result of intercellular analysis 
 #' on action properties for one interaction between 2 cell clusters.
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname TgActionPairs-InterCell
 #' @export
 #'
@@ -589,6 +605,9 @@ setMethod(
 #' 
 #' The \code{setTgVEInfo} function is to \bold{set} the result of intercellular analysis
 #' on detailed gene pairs (forming the interaction network) for one interaction between 2 cell clusters.
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgVEInfo-InterCell
 #' @export
@@ -621,6 +640,9 @@ setMethod(
 #' The \code{getTgVEInfo} function is to \bold{get} the result of intercellular analysis
 #' on detailed gene pairs (forming the interaction network) for one interaction between 2 cell clusters.
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname TgVEInfo-InterCell
 #' @export
 #'
@@ -651,6 +673,9 @@ setMethod(
 #' 
 #' The \code{setTgActionComp} function is to \bold{set} the result of intercellular analysis
 #' on composition of action mode and action effect for one interaction between 2 cell clusters.
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgActionComp-InterCell
 #' @export
@@ -683,6 +708,9 @@ setMethod(
 #' The \code{getTgActionComp} function is to \bold{get} the result of intercellular analysis
 #' on composition of action mode and action effect for one interaction between 2 cell clusters.
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname TgActionComp-InterCell
 #' @export
 #'
@@ -713,6 +741,9 @@ setMethod(
 #' 
 #' The \code{setTgSpGenes} function is to \bold{set} the result of intercellular analysis
 #' on gene pair specificity for one interaction between 2 cell clusters.
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgSpGenes-InterCell
 #' @export
@@ -745,6 +776,9 @@ setMethod(
 #' The \code{getTgSpGenes} function is to \bold{get} the result of intercellular analysis
 #' on gene pair specificity for one interaction between 2 cell clusters.
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname TgSpGenes-InterCell
 #' @export
 #'
@@ -775,6 +809,9 @@ setMethod(
 #' 
 #' The \code{setGenePairSplit} function is to \bold{set} the gene pair split, 
 #' which is either one charater or string, and used to split 2 gene partners in one gene pair. 
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname GenePairSplit-InterCell
 #' @export
@@ -817,6 +854,9 @@ setMethod(
 #' The \code{getGenePairSplit} function is to \bold{get} the gene pair split, 
 #' which is either one charater or string, and used to split 2 gene partners in one gene pair. 
 #'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
+#'
 #' @rdname GenePairSplit-InterCell
 #' @export
 #'
@@ -843,6 +883,9 @@ setMethod(
 #' 
 #' The \code{setClusterSplit} function is to \bold{set} the cluster group split, 
 #' which is either one charater or string, and used to split 2 cell clusters in one interaction.
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname ClusterSplit-InterCell
 #' @export
@@ -883,6 +926,9 @@ setMethod(
 #'
 #' The \code{getClusterSplit} function is to \bold{set} the cluster group split, 
 #' which is either one charater or string, and used to split 2 cell clusters in one interaction.
+#'
+#' @param object [TODO]
+#' @param ... Parameters passed to other methods.
 #'
 #' @rdname ClusterSplit-InterCell
 #' @export

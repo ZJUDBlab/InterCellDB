@@ -330,6 +330,8 @@ GetResultTgSpecificity <- function(
 	dot.y.order.in.alphabet = TRUE,
 	...
 ) {
+	kGenesSplit <- getGenePairSplit(object)
+	kClustersSplit <- getClusterSplit(object)
 	VEinfos <- getTgVEInfo(object)
 	onepair.spgenes <- getTgSpGenes(object)
 	this.spgenes <- onepair.spgenes$for.plot.use
@@ -425,7 +427,6 @@ GetResultTgSpecificity <- function(
 		std.width.col = 2,  # may be export as param, so as the gap
 		std.width.gap = 3
 	) {
-print(std.spgenes)
 		#[NOTE]# x-axis coords go from 0 -> +Inf, y-axis use the original value
 		tmp.order.df <- data.frame(orig.ind = seq_along(std.spgenes), 
 			new.ind = match(names(std.spgenes), show.genepairs.order), 
@@ -456,7 +457,7 @@ print(std.spgenes)
 					stringsAsFactors = FALSE)
 				})
 		tmp.df.res <- bind_rows(tmp.df.list)
-print(tmp.df.res)
+
 		# re-align cluster orders, conv or rev
 		if (display.conv.or.rev == FALSE) {
 			uq.name.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.name"],

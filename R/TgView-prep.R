@@ -34,7 +34,8 @@
 ExtractTargetOnepairClusters <- function(
 	interact.pairs.acted,
 	cluster.name.C,
-	cluster.name.D
+	cluster.name.D,
+	kClustersSplit
 ) {
 	if (!(cluster.name.C %in% as.character(unlist(interact.pairs.acted$list.clusters)) &&
 			cluster.name.D %in% as.character(unlist(interact.pairs.acted$list.clusters)))) {  # check if given cluster.name.* are in clusters.name list
@@ -491,9 +492,11 @@ FetchInterOI <- function(
 	cluster.y,
 	if.ignore.location = FALSE
 ) {
+	kClustersSplit <- getClusterSplit(object)
+	fullview.result <- getFullViewResult(object)
 	# check cluster.x cluster.y are embeded in `ExtractTargetOnepairClusters()`
 	# process
-	tg.inter <- ExtractTargetOnepairClusters(getFullViewResult(object), cluster.x, cluster.y)
+	tg.inter <- ExtractTargetOnepairClusters(fullview.result, cluster.x, cluster.y, kClustersSplit)
 	object <- setTgActionPairs(object, GenerateMapDetailOnepairClusters(tg.inter, object@database@actions.db))
 	object <- setTgVEInfo(object, 
 		GenerateVEinfos(getTgActionPairs(object), object@fgenes, 

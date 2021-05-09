@@ -1,6 +1,13 @@
 # This file documents all datasets in this pacakge.
 # written in 2020.03.28
 
+globalVariables(c("Uniprot.key.map.list",
+	"genes.human.ref.db", "anno.location.human.ref.db", "anno.type.human.ref.db", 
+	"go.human.ref.db", "pairs.human.db", "actions.human.ref.db",
+	"genes.mouse.ref.db", "anno.location.mouse.ref.db", "anno.type.mouse.ref.db", 
+	"go.mouse.ref.db", "pairs.mouse.db", "actions.mouse.ref.db")
+)
+
 ### Small Tools
 
 #' Merged Uniprot Keywords

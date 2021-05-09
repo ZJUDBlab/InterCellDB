@@ -333,8 +333,7 @@ GetResultPieActionMode <- function(
 #' @param limits.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
 #' @param limits.ext.action.effect [TODO]
 #' @param color.ext.action.effect [TODO]
-#' @param color.rev.action.effect [TODO]
-#' @param legend.title It sets the attributes of legend title, and should be \code{element_text()}.
+#' @param legend.title.size It sets the attributes of legend title, and should be \code{element_text()}.
 #' @param legend.key.size The size of keys in legend. It should be in unit format, see \code{?unit} for further help.
 #' @param legend.text.size It sets the attributes of legend annotation texts, and should be \code{element_text()}.
 #' @param legend.box.margin It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.
@@ -363,6 +362,7 @@ GetResultPieActionMode <- function(
 #'
 #'
 #' @importFrom scales colour_ramp
+#' @importFrom gridExtra arrangeGrob
 #' @import ggplot2
 #' @importFrom cowplot draw_label get_legend ggdraw plot_grid
 #'

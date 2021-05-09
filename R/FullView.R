@@ -14,6 +14,7 @@
 #' @param sel.genes.option [TODO]
 #' @param sel.gene.pairs [TODO] data.frame
 #' @param force.process [TODO]
+#' @param verbose [TODO]
 #'
 #' @details
 #'
@@ -252,6 +253,7 @@ AnalyzeInterInFullView <- function(
 #' @param object [TODO] 
 #' @param show.clusters.in.x Vector. Clusters(use cluster names) that are chosen to show in x-axis by users.
 #' @param show.clusters.in.y Vector. Clusters(use cluster names) that are chosen to show in y-axis by users.
+#' @param plot.cluster.group.method [TODO]
 #' @param power.max.limit Numeric. Specify the upper limit of power, whose value is highly user-defined and data-dependent.
 #' @param power.min.limit Numeric. Specify the lower limit of power, like \code{power.max.limit}.
 #' @param plot.power.range [TODO] This will extend the range of actual value for plotting adjustment.
