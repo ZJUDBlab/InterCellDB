@@ -35,6 +35,8 @@ GetResultFullView(
 
 \item{show.clusters.in.y}{Vector. Clusters(use cluster names) that are chosen to show in y-axis by users.}
 
+\item{plot.cluster.group.method}{[TODO]}
+
 \item{power.max.limit}{Numeric. Specify the upper limit of power, whose value is highly user-defined and data-dependent.}
 
 \item{power.min.limit}{Numeric. Specify the lower limit of power, like \code{power.max.limit}.}

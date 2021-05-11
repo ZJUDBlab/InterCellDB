@@ -39,8 +39,8 @@ one of the participated genes. The 2 required column names need to be specified 
 \item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
 and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.}
 
-\item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
-please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.}
+\item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.mode}, or
+please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.mode}.}
 
 \item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
 please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.}
@@ -53,7 +53,7 @@ This function is to further select subset of interactions in given 2-cell group.
 }
 \details{
 The whole list of mode or action.effect is defined as global variable that is given within the package.
-kpred.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
+kpred.action.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
 As the action database given now is not completed well, it is recommended to select upon
 action.effect, while leaving all different modes preserved.
 }

@@ -7,7 +7,7 @@ Authors@R: c(person("Jin Ziyang", "Developer", role = c("aut", "cre"), email = "
   person("Shi Ligen", "Developer", role = c("aut", "rev"), email = "slg0904@163.com"),
   person("Zhang Xiaotao", "Developer", role = c("aut", "dtc"), email = "zhangxiaotao@zju.edu.cn"))
 Depends: R (>= 3.6.0)
-Imports: cowplot, ggplot2, grid, gtable, progress, RColorBrewer, GO.db (>= 3.8.2), dplyr, graphics, scales, utils
+Imports: cowplot, ggplot2, grid, gridExtra, gtable, progress, RColorBrewer, GO.db (>= 3.8.2), dplyr, graphics, methods, scales, utils
 Description: This tool provides databases covering human and mouse, and provides bunches of functions intended to serve for data analysis of scRNA-seq. Its databases collect a variety of data source, including STRING, NCBI-gene, COMPARTMENTS, GO, Uniprot, etc. Its function on analysis starts from fullview of cell-cell-interaction to specific interactions between specific clusters and intends to find a small subset of important gene pairs.
 License: GPL (>= 2)
 LazyData: true

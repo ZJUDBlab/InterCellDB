@@ -16,6 +16,10 @@ getGenePairSplit(object)
 \S4method{getGenePairSplit}{InterCell}(object)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+
 \item{new.gene.pair.split}{A new gene pair split, which is either one character or string.}
 }
 \description{

@@ -322,8 +322,8 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param label.padding.itself Numeric. It defines the padding size of label.
 #' @param label.size.itself Numeric. It defines the size of label itself(includes padding, etc).
 #' @param link.size Numeric. Size of link width.
-#' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.mode}. Otherwise, named vector could be provided 
-#' with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}.
+#' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.mode}. Otherwise, named vector could be provided 
+#' with the desired colours corresponding to some of \code{InterCellDB::kpred.action.mode}.
 #' @param link.alpha Numeric. Alpha of links.
 #' @param link.linetype Character. Linetype of links.
 #' @param link.arrow.angle Numeric. Angle of link arrow.
@@ -447,21 +447,21 @@ GetResultTgCellPlot <- function(
   label.size.itself <- if (length(label.size.itself) == 1) rep(label.size.itself, times = 2) else label.size.itself[1:2]
   # check and set link colour
 #  if (is.null(names(link.colour))) {
-#    if (length(link.colour) != length(kpred.mode)) {
-#      length(link.colour) <- length(kpred.mode)
+#    if (length(link.colour) != length(kpred.action.mode)) {
+#      length(link.colour) <- length(kpred.action.mode)
 #      link.colour[which(is.na(link.colour))] <- "grey"  # use grey to all other
 #      warning("Given link colour are shorter than expected, and are automatically extended.")
 #    }
 #  } else {
 #    template.link.colour <- c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF")
-#    tmp.inds.link.col <- match(names(link.colour), kpred.mode)
+#    tmp.inds.link.col <- match(names(link.colour), kpred.action.mode)
 #    tmp.link.colour <- link.colour[!is.na(tmp.inds.link.col)]  # get the valid ones
 #    warning("Named link colour has some unvalid names: ", paste0(link.colour[is.na(tmp.inds.link.col)], collapse = ", "), 
 #      ", which will be automatically replaced with default colour values.")
-#    template.link.colour[match(names(tmp.link.colour), kpred.mode)] <- tmp.link.colour
+#    template.link.colour[match(names(tmp.link.colour), kpred.action.mode)] <- tmp.link.colour
 #    link.colour <- template.link.colour
 #  }
-  names(link.colour) <- kpred.mode  # set the names right
+  names(link.colour) <- kpred.action.mode  # set the names right
   
   # check given nodes.size.gap
   if (length(nodes.size.gap) != 1 || nodes.size.gap > abs(nodes.size.range[2] - nodes.size.range[1])) {
@@ -971,8 +971,8 @@ GetResultTgCellPlot <- function(
   show.mode.val <- levels(factor(edges.infos$mode))
   show.action.effect.val <- levels(factor(edges.infos$action.effect))
   # check if global variables cover all action modes and effects
-  if (sum(show.mode.val %in% kpred.mode) != length(show.mode.val)) {
-    warning("Database changes with new action mode: ", paste0(setdiff(show.mode.val, kpred.mode), collapse = ", "), "!")
+  if (sum(show.mode.val %in% kpred.action.mode) != length(show.mode.val)) {
+    warning("Database changes with new action mode: ", paste0(setdiff(show.mode.val, kpred.action.mode), collapse = ", "), "!")
   }
   if (sum(show.action.effect.val %in% kpred.action.effect) != length(show.action.effect.val)) {
     warning("Database changes with new action effect: ", paste0(setdiff(show.action.effect.val, kpred.action.effect), collapse = ", "), "!")
@@ -1013,7 +1013,7 @@ GetResultTgCellPlot <- function(
         fill = "lightgrey",
         alpha = 0.4)
     )
-  tmp.legend.mode <- kpred.mode[which(kpred.mode %in% show.mode.val)]
+  tmp.legend.mode <- kpred.action.mode[which(kpred.action.mode %in% show.mode.val)]
   LT.m.mode.list <- lapply(seq_along(tmp.legend.mode), 
     tmp.legend.mode = tmp.legend.mode, 
     link.colour.mode = link.colour, link.alpha.mode = link.alpha, 

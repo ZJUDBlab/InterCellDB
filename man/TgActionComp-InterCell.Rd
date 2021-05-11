@@ -16,6 +16,10 @@ getTgActionComp(object, ...)
 \S4method{getTgActionComp}{InterCell}(object)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+
 \item{new.action.comp}{A new result of intercellular analysis on composition of action mode and action effect.}
 }
 \description{

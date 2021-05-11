@@ -16,6 +16,10 @@ getTgVEInfo(object, ...)
 \S4method{getTgVEInfo}{InterCell}(object)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+
 \item{new.veinfo}{A new result of intercellular analysis on detailed gene pairs.}
 }
 \description{

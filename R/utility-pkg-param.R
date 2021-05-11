@@ -1,4 +1,34 @@
 
+#' Description of parameter object for InterCell-class
+#'
+#' @description
+#' Use to provide the same parameter description for object (InterCell-class).
+#'
+#' @param db.object A \code{InterCellDBPack} object, which is created by \code{\link{CreateDBPackObject}}.
+#'
+InsideObjectDBPack <- function(
+	db.object
+) {
+	NULL
+}
+
+
+
+#' Description of parameter object for InterCell-class
+#'
+#' @description
+#' Use to provide the same parameter description for object (InterCell-class).
+#'
+#' @param object A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.
+#'
+InsideObjectInterCell <- function(
+	object
+) {
+	NULL
+}
+
+
+
 #' Description of parameter species
 #'
 #' @description
@@ -12,8 +42,6 @@ InsideParam.species <- function(
 ) {
 	NULL
 }
-
-
 
 #'
 #' Description of parameter fgenes.remapped.all

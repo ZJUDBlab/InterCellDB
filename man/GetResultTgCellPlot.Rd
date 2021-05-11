@@ -120,8 +120,8 @@ the latter corresponds to the right part of graph.}
 
 \item{link.size}{Numeric. Size of link width.}
 
-\item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.mode}. Otherwise, named vector could be provided 
-with the desired colours corresponding to some of \code{InterCellDB::kpred.mode}.}
+\item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.mode}. Otherwise, named vector could be provided 
+with the desired colours corresponding to some of \code{InterCellDB::kpred.action.mode}.}
 
 \item{link.alpha}{Numeric. Alpha of links.}
 

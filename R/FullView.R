@@ -69,7 +69,7 @@ AnalyzeInterInFullView <- function(
 		# check if it is standardized data.frame
 		std.colnames.1t4 <- c("inter.GeneID.A", "inter.GeneID.B", "inter.GeneName.A", "inter.GeneName.B")
 		if (!identical(colnames(sel.gene.pairs)[1:4], std.colnames.1t4)) {
-			stop("Non-standardized table of gene pairs are given, please use `[TODO] <function>` firstly to get standardized one!")
+			stop("Non-standardized table of gene pairs are given, please use function `FormatCustomGenePairs` first to get standardized one!")
 		}
 	}
 	if (!is.null(sel.some.genes.X)) {
@@ -135,10 +135,19 @@ AnalyzeInterInFullView <- function(
 		strength.allpairs = single()
 	)
 
+	##  perform network analysis
+	# if prog.bar shown
 	if (verbose == TRUE) {
 		prog.bar.fv <- progress::progress_bar$new(total = length(sel.clusters.X) * length(sel.clusters.Y))
 		prog.bar.fv$tick(0)
 	}
+	# the used gene pairs 
+	used.proc.pairs.db <- object@database@pairs.db
+	if (!is.null(sel.gene.pairs)) {
+		used.proc.pairs.db <- sel.gene.pairs
+	}
+
+	# the process
 	for (ix in sel.clusters.X) {
 		for (jy in sel.clusters.Y) {
 			interact.name <- paste0(ix, object@tool.vars$cluster.split, jy)
@@ -148,23 +157,21 @@ AnalyzeInterInFullView <- function(
 			genes.Y <- fgenes.t.Y$gene
 
 			# generate all possible gene pairs
-			ref.GeneA <- object@database@pairs.db$inter.GeneName.A
-			ref.GeneB <- object@database@pairs.db$inter.GeneName.B
+			ref.GeneA <- used.proc.pairs.db$inter.GeneName.A
+			ref.GeneB <- used.proc.pairs.db$inter.GeneName.B
 			# conv
 			inds.gpairs.conv <- intersect(which(ref.GeneA %in% genes.X), which(ref.GeneB %in% genes.Y))
-			gpairs.conv <- object@database@pairs.db[inds.gpairs.conv, ]
+			gpairs.conv <- used.proc.pairs.db[inds.gpairs.conv, ]
 			# rev
 			inds.gpairs.rev <- intersect(which(ref.GeneB %in% genes.X), which(ref.GeneA %in% genes.Y))
-			gpairs.rev <- object@database@pairs.db[inds.gpairs.rev, 
-				c(ReverseOddEvenCols(std.index.colname.end.dual), (std.index.colname.end.dual+1):ncol(object@database@pairs.db))]
-			colnames(gpairs.rev) <- colnames(object@database@pairs.db)
+			cols.rev <- ReverseOddEvenCols(std.index.colname.end.dual)
+			gpairs.rev <- used.proc.pairs.db[inds.gpairs.rev, c(cols.rev, setdiff(seq_len(ncol(used.proc.pairs.db)), cols.rev))]
+			colnames(gpairs.rev) <- colnames(used.proc.pairs.db)
 			# result
 			gpairs.result <- rbind(gpairs.conv, gpairs.rev)
-
+			
 			# prioritized usage of selection to process
-			if (!is.null(sel.gene.pairs)) {  # use gene pairs
-#[TODO]
-			} else {  # use selected genes
+			if (is.null(sel.gene.pairs)) {  # use selected genes
 				inds.sel.X <- inds.sel.Y <- seq_len(nrow(gpairs.result))
 				if (!is.null(sel.some.genes.X)) {
 					inds.sel.X <- which(gpairs.result$inter.GeneName.A %in% sel.some.genes.X)
@@ -535,9 +542,9 @@ GetResultFullView <- function(
 
 
 
-# %%%%%%%%%%%%%%%%%%
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Other functions
-# %%%%%%%%%%%%%%%%%%
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 FetchClusterGroups <- function(

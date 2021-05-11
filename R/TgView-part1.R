@@ -24,13 +24,13 @@
 AnalyzeInterInAction <- function(
 	object, 
 	limits.exprs.change = kexprs.change, 
-	limits.action.mode = kpred.mode,
+	limits.action.mode = kpred.action.mode,
 	limits.action.effect = kpred.action.effect
 ) {
 	VEinfos <- getTgVEInfo(object)
 
 	limits.exprs.change <- CheckParamStd(limits.exprs.change, kexprs.change, "expression change", stop.on.zero = TRUE)
-	limits.action.mode <- CheckParamStd(limits.action.mode, kpred.mode, "action mode", stop.on.zero = TRUE)
+	limits.action.mode <- CheckParamStd(limits.action.mode, kpred.action.mode, "action mode", stop.on.zero = TRUE)
 	limits.action.effect <- CheckParamStd(limits.action.effect, kpred.action.effect, "action effect", stop.on.zero = TRUE)
 
 	# transform input to be kaction.id
@@ -144,6 +144,7 @@ AnalyzeInterInAction <- function(
 #' @param object [TODO]
 #' @param limits.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
 #' @param limits.action.mode Character. Select some action effects to be put in the result. 
+#' @param color.action.mode [TODO]
 #' @param legend.title It sets the content of legend title.
 #' @param legend.title.size It sets size of legend title.
 #' @param legend.key.size The size of keys in legend. 
@@ -165,7 +166,7 @@ AnalyzeInterInAction <- function(
 GetResultPieActionMode <- function(
 	object,
 	limits.exprs.change = kexprs.change,
-	limits.action.mode = kpred.mode,
+	limits.action.mode = kpred.action.mode,
 	color.action.mode = kpred.color.mode,
 	legend.title = "Action Mode",
 	legend.title.size = element_text(size = 14),
@@ -186,7 +187,7 @@ GetResultPieActionMode <- function(
 	# check expression change option
 	limits.exprs.change <- CheckParamStd(limits.exprs.change, kexprs.change, opt.name = "expression change", stop.on.zero = TRUE)
 	# check given action mode
-	limits.action.mode <- CheckParamStd(limits.action.mode, kpred.mode, opt.name = "action mode", stop.on.zero = TRUE)
+	limits.action.mode <- CheckParamStd(limits.action.mode, kpred.action.mode, opt.name = "action mode", stop.on.zero = TRUE)
 
 	# check color used in action mode
 	if (is.character(color.action.mode) == TRUE) {
@@ -333,6 +334,7 @@ GetResultPieActionMode <- function(
 #' @param limits.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
 #' @param limits.ext.action.effect [TODO]
 #' @param color.ext.action.effect [TODO]
+#' @param legend.title [TODO]
 #' @param legend.title.size It sets the attributes of legend title, and should be \code{element_text()}.
 #' @param legend.key.size The size of keys in legend. It should be in unit format, see \code{?unit} for further help.
 #' @param legend.text.size It sets the attributes of legend annotation texts, and should be \code{element_text()}.

@@ -7,7 +7,8 @@
 ExtractTargetOnepairClusters(
   interact.pairs.acted,
   cluster.name.C,
-  cluster.name.D
+  cluster.name.D,
+  kClustersSplit
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ ExtractTargetOnepairClusters(
 \item{cluster.name.C}{Character. Name of one cluster.}
 
 \item{cluster.name.D}{Character. Name of one cluster.}
+
+\item{kClustersSplit}{[TODO]}
 }
 \value{
 A list.

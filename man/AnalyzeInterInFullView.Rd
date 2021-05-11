@@ -35,6 +35,8 @@ AnalyzeInterInFullView(
 \item{sel.gene.pairs}{[TODO] data.frame}
 
 \item{force.process}{[TODO]}
+
+\item{verbose}{[TODO]}
 }
 \value{
 A list.

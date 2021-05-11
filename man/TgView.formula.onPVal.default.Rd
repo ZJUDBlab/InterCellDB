@@ -12,6 +12,8 @@ specified when creating \code{\link{InterCell}} object.}
 
 \item{data.b}{vector. The PVal values for another list of gene partners, which is 
 one-by-one matched to those in parameter \code{data.f}.}
+
+\item{pval.log.max}{The number for replacing the infinite number when \code{log(PVal = 0)}.}
 }
 \description{
 This is the default formula on calculating confidence for every gene pair, and the 

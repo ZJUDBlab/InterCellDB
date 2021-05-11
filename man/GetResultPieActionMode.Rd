@@ -7,7 +7,7 @@
 GetResultPieActionMode(
   object,
   limits.exprs.change = kexprs.change,
-  limits.action.mode = kpred.mode,
+  limits.action.mode = kpred.action.mode,
   color.action.mode = kpred.color.mode,
   legend.title = "Action Mode",
   legend.title.size = element_text(size = 14),
@@ -28,6 +28,8 @@ GetResultPieActionMode(
 \item{limits.exprs.change}{Character. Use exprssion level change of clusters to select part of data to be shown.}
 
 \item{limits.action.mode}{Character. Select some action effects to be put in the result.}
+
+\item{color.action.mode}{[TODO]}
 
 \item{legend.title}{It sets the content of legend title.}
 

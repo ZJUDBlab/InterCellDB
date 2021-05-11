@@ -11,7 +11,7 @@ CreateDBPackObject(species)
 Other species are not supported to be used for analysis.}
 }
 \value{
-A InterCellDBPack object.
+A \code{InterCellDBPack} object.
 }
 \description{
 This function is used to create \code{InterCellDBPack-class}.

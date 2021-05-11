@@ -31,7 +31,9 @@ GetResultPieActionEffect(
 
 \item{color.ext.action.effect}{[TODO]}
 
-\item{legend.title}{It sets the attributes of legend title, and should be \code{element_text()}.}
+\item{legend.title}{[TODO]}
+
+\item{legend.title.size}{It sets the attributes of legend title, and should be \code{element_text()}.}
 
 \item{legend.key.size}{The size of keys in legend. It should be in unit format, see \code{?unit} for further help.}
 
@@ -50,8 +52,6 @@ GetResultPieActionEffect(
 \item{note.hjust}{[TODO]}
 
 \item{note.vjust}{[TODO]}
-
-\item{color.rev.action.effect}{[TODO]}
 }
 \value{
 A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

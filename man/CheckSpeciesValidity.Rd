@@ -6,6 +6,9 @@
 \usage{
 CheckSpeciesValidity(species)
 }
+\arguments{
+\item{species}{[TODO]}
+}
 \description{
 [TODO]
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/InterCellDBclass.R
 \name{DataPrep.RemapClustersMarkers}
 \alias{DataPrep.RemapClustersMarkers}
-\title{Remap gene symbols to their authorized genenames}
+\title{Remap Gene Symbols to Their Authorized Genenames}
 \usage{
 DataPrep.RemapClustersMarkers(markers.all, species, if.used.inside = FALSE)
 }
@@ -10,10 +10,11 @@ DataPrep.RemapClustersMarkers(markers.all, species, if.used.inside = FALSE)
 \item{markers.all}{Data.frame. Feature genes that are generated from \code{Seurat::FindAllMarkers()} or 
 similar functions in other packages.}
 
-\item{species}{[TODO]}
+\item{species}{\pkg{InterCellDB} supports species in either 'human' or 'mouse'.
+Other species are not supported to be used for analysis.}
 
 \item{if.used.inside}{Logic. If used inside, some process will not run.}
 }
 \description{
-Use species-specific reference database to remap genes to their authorized genenames
+Use species-specific reference database to remap genes to their authorized genenames.
 }

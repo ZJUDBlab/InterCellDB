@@ -7,7 +7,7 @@
 AnalyzeInterInAction(
   object,
   limits.exprs.change = kexprs.change,
-  limits.action.mode = kpred.mode,
+  limits.action.mode = kpred.action.mode,
   limits.action.effect = kpred.action.effect
 )
 }

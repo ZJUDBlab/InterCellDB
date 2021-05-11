@@ -16,6 +16,10 @@ getTgSpGenes(object, ...)
 \S4method{getTgSpGenes}{InterCell}(object)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+
 \item{new.spgenes}{A new result of intercellular analysis on gene pair specificity.}
 }
 \description{

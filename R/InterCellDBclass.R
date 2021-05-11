@@ -12,27 +12,52 @@
 #'
 kmusthave.colnames <- c("cluster", "gene", "LogFC", "PVal")  # NOT CHANGE
 
-#' Predefined mode & corresponding colour usage for plotting
+#' Predefined Action Mode & Color Usage for It
 #'
-#' @description
-#' This is extracted from databases depicting mode of actions for functional usages.
+#' \code{kpred.action.mode} is extracted from databases depicting mode of actions for functional usages.
 #' expression is transcriptional regulation.
 #'
-kpred.mode <- c("activation", "inhibition", "binding", "catalysis", "reaction", "expression", "ptmod", "other")
+#' @rdname pred-action-mode
+#' @export
+#'
+kpred.action.mode <- c("activation", "inhibition", "binding", "catalysis", "reaction", "expression", "ptmod", "other")
+
+#' Predefined Action Mode & Color Usage for It 
+#'
+#' \code{kpred.color.mode} is aligned with \code{kpred.action.mode} one-to-one. In default setting,
+#' the color used for \bold{action mode} in plotting will use colors listed in this variable.
+#'
+#' @rdname pred-action-mode
+#' @export
+#'
 kpred.color.mode <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
 
-#' Predefined action effect
+#' Predefined Action Effect & Color Usage for It
 #'
-#' @description
-#' This is extracted from databases depicting action effect of actions for functional usages.
+#' \code{kpred.action.effect} is extracted from databases depicting action effect of actions for functional usages.
+#'
+#' @rdname pred-action-effect
+#' @export
 #'
 kpred.action.effect <- c("positive", "negative", "unspecified", "undirected")
+
+#' Predefined Action Effect & Color Usage for It
+#'
+#' \code{kpred.color.effect} is aligned with \code{kpred.action.effect} one-to-one. In default setting,
+#' the color used for \bold{action effect} in plotting will use colors listed in this variable.
+#'
+#' @rdname pred-action-effect
+#' @export
+#'
 kpred.color.effect <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7")
 
-#' Predefined extended action effect
+#' Predefined Action Effect & Color Usage for It
 #'
-#' @description
-#' This depicts action effect and direction of action together.
+#' \code{kpred.ext.action.effect} is the \bold{extended} format, which depicts action effect and direction of action together, 
+#' and extends action effect to 7 different types.
+#'
+#' @rdname pred-action-effect
+#' @export
 #'
 kpred.ext.action.effect <- c(
 	"A---B", # #1, undirected, others are directed
@@ -44,6 +69,15 @@ kpred.ext.action.effect <- c(
 	"Ao--B"  # #7
 	# "undefined for (> 7) and all other(< 0)"
 )
+
+#' Predefined Action Effect & Color Usage for It
+#'
+#' \code{kpred.color.ext.effect} is aligned with \code{kpred.ext.action.effect} one-to-one. In default setting,
+#' the color used for \bold{extened action effect} in plotting will use colors listed in this variable.
+#'
+#' @rdname pred-action-effect
+#' @export
+#'
 kpred.color.ext.effect <- c("#8DD3C7", "#FB8072", "#FF5740", "#B3DE69", "#81EF48", "#80B1D3", "#6B6AEA")
 
 
@@ -101,7 +135,7 @@ TgView.formula.onLogFC.default <- function(
 #' specified when creating \code{\link{InterCell}} object. 
 #' @param data.b vector. The PVal values for another list of gene partners, which is 
 #' one-by-one matched to those in parameter \code{data.f}.
-#' @param pval.log.max [TODO]
+#' @param pval.log.max The number for replacing the infinite number when \code{log(PVal = 0)}.
 #'
 TgView.formula.onPVal.default <- function(
 	data.f, 
@@ -235,8 +269,8 @@ setValidity("InterCellDBPack", validInterCellDBPackObject)
 # and all checked ones should set its initial value in the first time, or get errors
 validInterCellObject <- function(object) {
 	# check pred.action
-	# if (length(object@pred.action$action.mode) == 0 || !all(object@pred.action$action.mode %in% kpred.mode)) {
-	# 	return(paste0("Using undefined action mode: ", paste0(setdiff(object@pred.action$action.mode, kpred.mode), collapse = ", ")))
+	# if (length(object@pred.action$action.mode) == 0 || !all(object@pred.action$action.mode %in% kpred.action.mode)) {
+	# 	return(paste0("Using undefined action mode: ", paste0(setdiff(object@pred.action$action.mode, kpred.action.mode), collapse = ", ")))
 	# }
 	# if (length(object@pred.action$action.mode) != length(object@pred.action$color.mode)) {
 	# 	return(paste0("Using different length of 'action.mode' and its used color 'color.mode'!"))
@@ -274,7 +308,7 @@ setMethod(
 	signature = c("InterCellDBPack"),
 	definition = function(.Object, ...) {
 		.Object <- methods::callNextMethod(.Object, ...)
-		.Object@accessory.db <- list(Uniprot.key.map = Uniprot.key.map.list)
+		.Object@accessory.db <- list(merge.type.list = Uniprot.key.map.list)
 		.Object@misc <- list(TAKEN = "nothing yet")
 		methods::validObject(.Object)
 		return(.Object)
@@ -290,7 +324,7 @@ setMethod(
 		.Object@formulae <- list(FULLVIEW = FullView.formula.Evaluation.default,
 			TG.LOGFC = TgView.formula.onLogFC.default,
 			TG.PVAL = TgView.formula.onPVal.default)
-		#.Object@pred.action <- list(action.mode = kpred.mode, action.effect = kpred.action.effect)
+		#.Object@pred.action <- list(action.mode = kpred.action.mode, action.effect = kpred.action.effect)
 		#.Object@tool.vars <- list(gene.pair.split = "-~-", cluster.split = "~")
 		methods::validObject(.Object)
 		return(.Object)
@@ -313,13 +347,18 @@ setMethod(
 	definition = function(object) {
 		cat("A InterCell object, with ", nrow(object@fgenes), " differentially expressed genes spanning ", 
 			length(unique(object@fgenes$cluster)), " clusters.\n", sep = "")
+
+		# show the used database
 		show(object@database)
+
+		# show if intercellular analysis is processed
 		if (!is.null(object@tg.veinfo) && length(object@tg.veinfo) > 0) {
 			this.involved.clusters <- getOrigClusterNameTgVEInfo(object)
 			cat("Intercellular analysis performed between ", this.involved.clusters$cluster.name.A, " and ", this.involved.clusters$cluster.name.B)
 		} else {
 			cat("Intercellular analysis not processed yet.")
 		}
+		cat("\n")
 	}
 )
 
@@ -335,7 +374,7 @@ setMethod(
 #'
 #' @inheritParams InsideParam.species
 #'
-#' @return A InterCellDBPack object.
+#' @return A \code{InterCellDBPack} object.
 #'
 #' @import methods
 #'
@@ -385,6 +424,7 @@ CreateDBPackObject <- function(
 }
 
 
+
 #' Analyze interaction network in full view
 #'
 #' @description
@@ -417,7 +457,7 @@ CreateDBPackObject <- function(
 #' and the letters appearing in cluster names are not recommended for \code{cluster.split}. 
 #' The program will test for those situation but users should keep this in mind.
 #'
-#' @return A InterCell object. 
+#' @return A \code{InterCell} object.
 #'
 #' @importFrom methods new show callNextMethod validObject
 #'
@@ -447,7 +487,7 @@ CreateInterCellObject <- function(
 		Class = "InterCell",
 		fgenes = DEG.align.res$result,
 		database = DBPack.obj,
-		#pred.action = list(action.mode = kpred.mode, action.effect = kpred.action.effect,
+		#pred.action = list(action.mode = kpred.action.mode, action.effect = kpred.action.effect,
 		#	color.mode = kpred.color.mode, color.effect = kpred.color.effect),
 		tool.vars = list(gene.pair.split = gene.pair.split, cluster.split = cluster.split), 
 		misc = list(musthave.colnames = kmusthave.colnames)
@@ -464,14 +504,86 @@ CreateInterCellObject <- function(
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Accessor Function
+# Accessory Function
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#' Using Reference Database
+#'
+#' The \code{setRefDatabase} function is to \bold{set} the reference database for \code{InterCell}.
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param ... Parameters passed to other methods.
+#'
+#' @rdname RefDatabase-InterCell
+#' @export
+#'
+setGeneric(name = "setRefDatabase", def = function(object, ...) {
+	standardGeneric("setRefDatabase")
+	}
+)
+
+#' @param new.ref.database A new reference database.
+#'
+#' @examples
+#' \dontrun{
+#'   setRefDatabase(object, some.new.ref.database)
+#' }
+#'
+#' @rdname RefDatabase-InterCell
+#'
+setMethod(
+	f = "setRefDatabase",
+	signature = "InterCell",
+	definition = function(object, new.ref.database) {
+		if (class(new.ref.database) != "InterCellDBPack") {
+			stop("Given new reference database is not in right format.")
+		}
+		print("Change reference database.")
+		object@database <- new.ref.database
+		return(object)
+	}
+)
+
+#' Using Reference Database
+#'
+#' The \code{getRefDatabase} function is to \bold{get} the reference database for \code{InterCell}.
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param ... Parameters passed to other methods.
+#'
+#' @rdname RefDatabase-InterCell
+#' @export
+#'
+setGeneric(name = "getRefDatabase", def = function(object, ...) {
+	standardGeneric("getRefDatabase")
+	}
+)
+
+#'
+#' @examples
+#' \dontrun{
+#'   getRefDatabase(object)
+#' }
+#'
+#' @rdname RefDatabase-InterCell
+#'
+setMethod(
+	f = "getRefDatabase",
+	signature = "InterCell",
+	definition = function(object) {
+		if (class(object@database) != "InterCellDBPack") {
+			stop("Unexpected error: Reference database is invalid!")
+		}
+		return(object@database)
+	}
+)
+
 
 #' Using FullView Result
 #' 
 #' The \code{setFullViewResult} function is to \bold{set} the result of network analysis.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname FullViewResult-InterCell
@@ -481,6 +593,7 @@ setGeneric(name = "setFullViewResult", def = function(object, ...) {
 	standardGeneric("setFullViewResult")
 	}
 )
+
 #' @param new.inter.fullview A new result of network analysis.
 #'
 #' @examples
@@ -495,9 +608,12 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object, new.inter.fullview) {
 		if (!is.null(object@inter.fullview) && length(object@inter.fullview) != 0) {
-			warning("Overwrite existed result on network analysis. ")
+			warning("Overwrite existed result on network analysis. Former downstream result is cleaned.")
 		}
 		object@inter.fullview <- new.inter.fullview
+		object@tg.action.pairs <- list()
+		object@tg.veinfo <- list()
+		object@tg.spgenes <- list()
 		return(object)
 	}
 )
@@ -506,7 +622,7 @@ setMethod(
 #'
 #' The \code{getFullViewResult} function is to \bold{get} the result of network analysis.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname FullViewResult-InterCell
@@ -528,7 +644,7 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object) {
 		if (is.null(object@inter.fullview) || length(object@inter.fullview) == 0) {
-			stop("Network analysis is not performed yet. ")
+			stop("Network analysis is not performed yet. Please use function `AnalyzeInterInFullView` to generate it.")
 		}
 		return(object@inter.fullview)
 	}
@@ -539,7 +655,7 @@ setMethod(
 #' The \code{setTgActionPairs} function is to \bold{set} the result of intercellular analysis 
 #' on action properties for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgActionPairs-InterCell
@@ -573,7 +689,7 @@ setMethod(
 #' The \code{getTgActionPairs} function is to \bold{get} the result of intercellular analysis 
 #' on action properties for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgActionPairs-InterCell
@@ -595,7 +711,7 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object) {
 		if (is.null(object@tg.action.pairs) || length(object@tg.action.pairs) == 0) {
-			stop("TG action pairs not run [TODO] name alignment")
+			stop("The action pairs for selected interaction is not generated. Please use `FetchInterOI` to generate that. ")
 		}
 		return(object@tg.action.pairs)
 	}
@@ -606,7 +722,7 @@ setMethod(
 #' The \code{setTgVEInfo} function is to \bold{set} the result of intercellular analysis
 #' on detailed gene pairs (forming the interaction network) for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgVEInfo-InterCell
@@ -640,7 +756,7 @@ setMethod(
 #' The \code{getTgVEInfo} function is to \bold{get} the result of intercellular analysis
 #' on detailed gene pairs (forming the interaction network) for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgVEInfo-InterCell
@@ -662,7 +778,7 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object) {
 		if (is.null(object@tg.veinfo) || length(object@tg.veinfo) == 0) {
-			stop("TgVEinfo not run [TODO] name alignment")
+			stop("No interaction between specific 2 cells is fetched. Please use `FetchInterOI` to generate that. ")
 		}
 		return(object@tg.veinfo)
 	}
@@ -674,7 +790,7 @@ setMethod(
 #' The \code{setTgActionComp} function is to \bold{set} the result of intercellular analysis
 #' on composition of action mode and action effect for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgActionComp-InterCell
@@ -708,7 +824,7 @@ setMethod(
 #' The \code{getTgActionComp} function is to \bold{get} the result of intercellular analysis
 #' on composition of action mode and action effect for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgActionComp-InterCell
@@ -730,7 +846,7 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object) {
 		if (is.null(object@tg.action.comp) || length(object@tg.action.comp) == 0) {
-			stop("TgActionComp not run [TODO] name alignment")
+			stop("The analysis of composition of action properties is not performed. Please use `AnalyzeInterInAction` to generate that. ")
 		}
 		return(object@tg.action.comp)
 	}
@@ -742,7 +858,7 @@ setMethod(
 #' The \code{setTgSpGenes} function is to \bold{set} the result of intercellular analysis
 #' on gene pair specificity for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgSpGenes-InterCell
@@ -776,7 +892,7 @@ setMethod(
 #' The \code{getTgSpGenes} function is to \bold{get} the result of intercellular analysis
 #' on gene pair specificity for one interaction between 2 cell clusters.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname TgSpGenes-InterCell
@@ -798,7 +914,7 @@ setMethod(
 	signature = "InterCell",
 	definition = function(object) {
 		if (is.null(object@tg.spgenes) || length(object@tg.spgenes) == 0) {
-			stop("TgSpGenes not run [TODO] name alignment")
+			stop("Analysis of gene pair specificity is not performed. Please use `AnalyzeInterSpecificity` to generate that. ")
 		}
 		return(object@tg.spgenes)
 	}
@@ -810,7 +926,7 @@ setMethod(
 #' The \code{setGenePairSplit} function is to \bold{set} the gene pair split, 
 #' which is either one charater or string, and used to split 2 gene partners in one gene pair. 
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname GenePairSplit-InterCell
@@ -854,7 +970,7 @@ setMethod(
 #' The \code{getGenePairSplit} function is to \bold{get} the gene pair split, 
 #' which is either one charater or string, and used to split 2 gene partners in one gene pair. 
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname GenePairSplit-InterCell
@@ -884,7 +1000,7 @@ setMethod(
 #' The \code{setClusterSplit} function is to \bold{set} the cluster group split, 
 #' which is either one charater or string, and used to split 2 cell clusters in one interaction.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname ClusterSplit-InterCell
@@ -927,7 +1043,7 @@ setMethod(
 #' The \code{getClusterSplit} function is to \bold{set} the cluster group split, 
 #' which is either one charater or string, and used to split 2 cell clusters in one interaction.
 #'
-#' @param object [TODO]
+#' @inheritParams InsideObjectInterCell
 #' @param ... Parameters passed to other methods.
 #'
 #' @rdname ClusterSplit-InterCell
@@ -955,15 +1071,52 @@ setMethod(
 
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# function that returns object
+# Database Selection Functions
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-# This is used to modify the InterCellDBPack object.
-# like use high-confidence Experimentally validated database
+#' Select Subset of Gene Pair Database
+#'
+#' This function is to select subset of gene pair databases, and options on evidence sources, 
+#' confidence level, action properties (mode and effect) will be used. The result from different evidence sources
+#' will be \bold{union} in default settings. The result from action properties could be either intersection result or union.
+#' 
+#' @param object A \code{InterCellDBPack} or \code{InterCell} object.
+#' @param combined.score.range The combined score from all evidence sources, which works on the whole database.
+#' @param use.exp It adds the data whose evidence is experimentally validatd. 
+#' @param exp.score.range It controls the score range when selecting subset by experimentally validatd evidence, i.e. when \code{use.exp = TRUE}. 
+#'  The score should be 2 numbers within 1~1000.
+#' @param use.know It adds the data whose evidence is pathway curated. 
+#' @param know.score.range It controls the score range when selecting subset by pathway curated evidence, i.e. when \code{use.know = TRUE}. 
+#'  The score should be 2 numbers within 1~1000.
+#' @param use.pred It adds the data whose evidence is predicted.
+#' @param pred.score.range It controls the score range when selecting subset by predicted evidence, i.e. when \code{use.pred = TRUE}. 
+#'  The score should be 2 numbers within 1~1000.
+#' @param sel.physical It selects the subset of gene pairs whose corresponding protein pairs are physical associated. This parameter is 
+#'  identical to set \code{sel.action.mode = "binding"} for now due to the database limitation. It may change in future. 
+#' @param sel.action.mode Selection by action mode. "ALL" means not use this to select subset.
+#'  Other options will be directly select gene pair in that action mode. Supported options are listed in \code{kpred.action.mode}.
+#' @param sel.action.effect Selection by action effect. "ALL" means not use this to select subset. Other 
+#'  options will be directly select gene pair in that action effect. Supported options are listed in \code{kpred.action.effect}.
+#' @param sel.action.merge.option Either 'intersect' or 'union'. The option for merging the result from selection on action mode and action effect.
+#' @param slim.along.with.pairs This decides whether to select the corresponding subset of action pair database 
+#'  after selecting subset of gene pair database.
+#'
+#' @details
+#' The 3 evidence channels (\code{use.exp}, \code{use.know}, \code{use.pred}) are in identical priority. 
+#' For one gene pair, it could have scores from 3 evidence channels at the same time. In default setting, the 
+#' result of this function will be \bold{union} of results from 3 channels. If union is not satisfied, the function 
+#' \code{\link{MergeDBSubset}} will help.
 #
-# TO NOTE, exp > know > pred. Which means get <know> involved, <exp> score must be 0.
-#
+#' The score is within 1~1000. Score (>700) would be consider as high confidence. Score (>400) would be consider over medium confidence.
+#' Score (<=400) would be consider low confidence, while Score (<=150) would be the lowest.
+#'
+#' @return A \code{InterCellDBPack} or \code{InterCell} object, which is the same as given parameter \code{object}.
+#'
+#' @rdname SelectDBSubset
+#' @order 4
+#'
+#'
 SelectDBSubset.default <- function(
 	object,
 	combined.score.range = c(1, 1000),
@@ -974,10 +1127,10 @@ SelectDBSubset.default <- function(
 	use.pred = TRUE,
 	pred.score.range = c(1, 1000),
 	sel.physical = FALSE,
-	sel.action.mode = "ALL",  # "ALL" consider "Other", so pairs not in actions.db will be reserved as well
+	sel.action.mode = "ALL",
 	sel.action.effect = "ALL",
-	sel.action.merge.option = "intersect",  # or "union"
-	slim.along.with.pairs = TRUE  # genes.db will be exception
+	sel.action.merge.option = "intersect",
+	slim.along.with.pairs = TRUE
 ) {
 	# check score range
 	if (length(combined.score.range) != 2) {
@@ -994,11 +1147,11 @@ SelectDBSubset.default <- function(
 	}
 	# check action 
 	if (sel.action.mode[1] != "ALL") {
-		not.valid.action.mode <- setdiff(sel.action.mode, kpred.mode)
+		not.valid.action.mode <- setdiff(sel.action.mode, kpred.action.mode)
 		if (length(not.valid.action.mode) > 0) {
 			warning("Given undefined action mode: ", paste0(not.valid.action.mode, collapse = ", ", ". "))
 		}
-		sel.action.mode <- intersect(sel.action.mode, kpred.mode)
+		sel.action.mode <- intersect(sel.action.mode, kpred.action.mode)
 		if (length(sel.action.mode) == 0) {
 			stop("No valid action mode is selected!")
 		}
@@ -1025,26 +1178,22 @@ SelectDBSubset.default <- function(
 
 	# select from scores
 	retDB.list <- list()
-	inds.no.exp.score <- which(this.pairs.db$inter.Experiments.Score == 0)
-	inds.no.know.score <- which(this.pairs.db$inter.Database.Score == 0)
 	# get exp part
 	if (use.exp == TRUE) {
-		retDB.list <- c(retDB.list, list(this.pairs.db[intersect(which(this.pairs.db$inter.Experiments.Score >= exp.score.range[1]),
-			which(this.pairs.db$inter.Experiments.Score <= exp.score.range[2])), ]))
+		retDB.list <- c(retDB.list, list(intersect(which(this.pairs.db$inter.Experiments.Score >= exp.score.range[1]),
+			which(this.pairs.db$inter.Experiments.Score <= exp.score.range[2]))))
 	}
 	if (use.know == TRUE) {
-		tmp.know.sub.db <- this.pairs.db[inds.no.exp.score, ]
-		retDB.list <- c(retDB.list, list(tmp.know.sub.db[intersect(which(tmp.know.sub.db$inter.Database.Score >= know.score.range[1]),
-			which(tmp.know.sub.db$inter.Database.Score <= know.score.range[2])), ]))
+		retDB.list <- c(retDB.list, list(intersect(which(this.pairs.db$inter.Database.Score >= know.score.range[1]),
+			which(this.pairs.db$inter.Database.Score <= know.score.range[2]))))
 	}
 	if (use.pred == TRUE) {
-		tmp.pred.sub.db <- this.pairs.db[intersect(inds.no.exp.score, inds.no.know.score), ]
-		retDB.list <- c(retDB.list, list(tmp.pred.sub.db[intersect(which(tmp.pred.sub.db$inter.Predicted.Score >= pred.score.range[1]),
-			which(tmp.pred.sub.db$inter.Predicted.Score <= pred.score.range[2])), ]))
+		retDB.list <- c(retDB.list, list(intersect(which(this.pairs.db$inter.Predicted.Score >= pred.score.range[1]),
+			which(this.pairs.db$inter.Predicted.Score <= pred.score.range[2]))))
 	}
 	# collect result from score selection
-	this.pairs.db <- Reduce(rbind, retDB.list)
-
+	this.pairs.db <- this.pairs.db[Reduce(union, retDB.list), ]
+	#this.pairs.db <- DoPartUnique(this.pairs.db, match(c("inter.GeneName.A", "inter.GeneName.B"), colnames(this.pairs.db)))
 
 	## select from actions
 	use.action.pairs.list <- list()
@@ -1112,7 +1261,6 @@ SelectDBSubset.default <- function(
 	}
 	use.action.pairs <- unique(use.action.pairs)
 
-
 	# collect result from actions selection
 	if (length(use.action.pairs) > 0) {
 		this.pairs.db <- FastAlignPairs(this.pairs.db, 4)
@@ -1124,55 +1272,163 @@ SelectDBSubset.default <- function(
 	object@pairs.db <- this.pairs.db
 	if (slim.along.with.pairs == TRUE) {
 		use.cut.symbol.slim <- "->-"
-		#involved.genes <- unique(c(object@pairs.db$inter.GeneName.A, object@pairs.db$inter.GeneName.B))
-		tmp.sel.pairs.conv <- paste(object@pairs.db[, "inter.GeneID.A"], object@pairs.db[, "inter.GeneID.B"], sep = use.cut.symbol.slim)
-		tmp.sel.pairs.rev <- paste(object@pairs.db[, "inter.GeneID.B"], object@pairs.db[, "inter.GeneID.A"], sep = use.cut.symbol.slim)
+		# add direct way ones (conv)
+		tmp.sel.pairs <- paste(object@pairs.db[, "inter.GeneID.A"], object@pairs.db[, "inter.GeneID.B"], sep = use.cut.symbol.slim)
+		# add reverse direction ones (rev)
+		tmp.sel.pairs.conv <- c(tmp.sel.pairs , paste(object@pairs.db[, "inter.GeneID.B"], object@pairs.db[, "inter.GeneID.A"], sep = use.cut.symbol.slim))
 		# slim actions
 		tmp.sel.actions.p <- paste(object@actions.db[, "inter.GeneID.A"], object@actions.db[, "inter.GeneID.B"], sep = use.cut.symbol.slim)
-		object@actions.db <- object@actions.db[union(which(tmp.sel.actions.p %in% tmp.sel.pairs.conv), which(tmp.sel.actions.p %in% tmp.sel.pairs.rev)), ]
+		object@actions.db <- object@actions.db[which(tmp.sel.actions.p %in% tmp.sel.pairs), ]
 	}
 
 	return(object)
 }
 
-
+#' @param ... Parameters passed to function \code{SelectDBSubset.default}.
+#'
+#' @rdname SelectDBSubset
+#' @order 1
+#' @export
+#'
 setGeneric(name = "SelectDBSubset", def = function(object, ...) {
-		standardGeneric("SelectDBSubset")
+	standardGeneric("SelectDBSubset")
 	}
 )
+
+#' @rdname SelectDBSubset
+#' @order 2
+#' @export
+#'
 setMethod(
-	f = "SelectDBSubset", 
+	f = "SelectDBSubset",
 	signature = "InterCellDBPack",
-	definition = SelectDBSubset.default
+	definition = function(object, ...) {
+		SelectDBSubset.default(object, ...)
+	}
 )
+
+#' @rdname SelectDBSubset
+#' @order 3
+#' @export
+#'
 setMethod(
-	f = "SelectDBSubset", 
+	f = "SelectDBSubset",
 	signature = "InterCell",
 	definition = function(object, ...) {
-		object@database <- SelectDBSubset.default(object@database, ...)
-		return(object)
+		setRefDatabase(object, SelectDBSubset.default(object@database, ...))
 	}
 )
 
 
+#' Merge Database
+#'
+#' This function is to merge 2 databases to get user-desired database.
+#'
+#' @param db.object.1 A \code{InterCellDBPack} object to be merged.
+#' @param db.object.2 Another \code{InterCellDBPack} object to be merged.
+#' @param merge.option The supported options are 'intersect' and 'union'.
+#'
+#' @return A \code{InterCellDBPack} object.
+#'
+#' @export
+#'
+MergeDBSubset <- function(
+	db.object.1,
+	db.object.2,
+	merge.option = "intersect"
+) {
+	if (class(db.object.1) != "InterCellDBPack" || class(db.object.2) != "InterCellDBPack") {
+		ret.mg <- character()
+		if (class(db.object.1) != "InterCellDBPack") ret.mg <- c(ret.mg, "db.object.1")
+		if (class(db.object.2) != "InterCellDBPack") ret.mg <- c(ret.mg, "db.object.2")
+		stop("Given database subset in parameter ", paste0(ret.mg, collapse = ", ") , " not in `InterCellDBPack-class`. ",
+			 "Please use either `CreateDBPackObject` or `SelectDBSubset` to generate.")
+	}
+
+	if (length(merge.option) > 1) {
+		merge.option <- merge.option[1]
+	}
+	merge.option <- CheckParamStd(merge.option, c("intersect", "union"), "parameter `merge.option`", stop.on.zero = TRUE)
+
+	# before merging, check species
+	if (!identical(db.object.1@species, db.object.2@species)) {
+		stop("Merging database subset from different species ", paste(db.object.1@species, db.object.2@species, sep = ", "), ". ")
+	} else {
+		if (merge.option == "union") {
+			# genes.db 
+			# $gene.ncbi.db
+			addon.ugene.ncbi.db <- setdiff(rownames(db.object.2@genes.db$gene.ncbi.db), rownames(db.object.1@genes.db$gene.ncbi.db))
+			db.object.1@genes.db$gene.ncbi.db <- rbind(db.object.1@genes.db$gene.ncbi.db, db.object.2@genes.db$gene.ncbi.db[which(rownames(db.object.2@genes.db$gene.ncbi.db) %in% addon.ugene.ncbi.db), ])
+			# $gene.synonyms.db
+			addon.ugene.synonyms.db <- setdiff(rownames(db.object.2@genes.db$gene.synonyms.db), rownames(db.object.1@genes.db$gene.synonyms.db))
+			db.object.1@genes.db$gene.synonyms.db <- rbind(db.object.1@genes.db$gene.synonyms.db, db.object.2@genes.db$gene.synonyms.db[which(rownames(db.object.2@genes.db$gene.synonyms.db) %in% addon.ugene.synonyms.db), ])
+			# $gene.dup.synonyms.db
+			db.object.1@genes.db$gene.dup.synonyms.db <- unique(rbind(db.object.1@genes.db$gene.dup.synonyms.db, db.object.2@genes.db$gene.dup.synonyms.db))
+
+			# pairs.db
+			addon.pairs.db <- setdiff(rownames(db.object.2@pairs.db), rownames(db.object.1@pairs.db))
+			db.object.1@pairs.db <- rbind(db.object.1@pairs.db, db.object.2@pairs.db[which(rownames(db.object.2@pairs.db) %in% addon.pairs.db), ])
+			# actions.db
+			addon.actions.db <- setdiff(rownames(db.object.2@actions.db), rownames(db.object.1@actions.db))
+			db.object.1@actions.db <- rbind(db.object.1@actions.db, db.object.2@actions.db[which(rownames(db.object.2@actions.db) %in% addon.actions.db), ])
+			# anno.location.db
+			addon.anno.location.db <- setdiff(rownames(db.object.2@anno.location.db), rownames(db.object.1@anno.location.db))
+			db.object.1@anno.location.db <- rbind(db.object.1@anno.location.db, db.object.2@anno.location.db[which(rownames(db.object.2@anno.location.db) %in% addon.anno.location.db), ])
+			# anno.type.db 
+			addon.anno.type.db <- setdiff(rownames(db.object.2@anno.type.db), rownames(db.object.1@anno.type.db))
+			db.object.1@anno.type.db <- rbind(db.object.1@anno.type.db, db.object.2@anno.type.db[which(rownames(db.object.2@anno.type.db) %in% addon.anno.type.db), ])
+			# go.ref.db 
+			addon.go.ref.db <- setdiff(rownames(db.object.2@go.ref.db), rownames(db.object.1@go.ref.db))
+			db.object.1@go.ref.db <- rbind(db.object.1@go.ref.db, db.object.2@go.ref.db[which(rownames(db.object.2@go.ref.db) %in% addon.go.ref.db), ])
+		}
+		if (merge.option == "intersect") {
+			# genes.db 
+			# $gene.ncbi.db
+			addon.ugene.ncbi.db <- intersect(rownames(db.object.2@genes.db$gene.ncbi.db), rownames(db.object.1@genes.db$gene.ncbi.db))
+			db.object.1@genes.db$gene.ncbi.db <- db.object.2@genes.db$gene.ncbi.db[which(rownames(db.object.2@genes.db$gene.ncbi.db) %in% addon.ugene.ncbi.db), ]
+			# $gene.synonyms.db
+			addon.ugene.synonyms.db <- intersect(rownames(db.object.2@genes.db$gene.synonyms.db), rownames(db.object.1@genes.db$gene.synonyms.db))
+			db.object.1@genes.db$gene.synonyms.db <- db.object.2@genes.db$gene.synonyms.db[which(rownames(db.object.2@genes.db$gene.synonyms.db) %in% addon.ugene.synonyms.db), ]
+			# $gene.dup.synonyms.db
+			addon.ugene.dup.synonyms.db <- intersect(rownames(db.object.2@genes.db$gene.dup.synonyms.db), rownames(db.object.1@genes.db$gene.dup.synonyms.db))
+			db.object.1@genes.db$gene.dup.synonyms.db <- db.object.2@genes.db$gene.dup.synonyms.db[which(rownames(db.object.2@genes.db$gene.dup.synonyms.db) %in% addon.ugene.dup.synonyms.db), ]
+	
+			# pairs.db
+			addon.pairs.db <- intersect(rownames(db.object.2@pairs.db), rownames(db.object.1@pairs.db))
+			db.object.1@pairs.db <- db.object.2@pairs.db[which(rownames(db.object.2@pairs.db) %in% addon.pairs.db), ]
+			# actions.db
+			addon.actions.db <- intersect(rownames(db.object.2@actions.db), rownames(db.object.1@actions.db))
+			db.object.1@actions.db <- db.object.2@actions.db[which(rownames(db.object.2@actions.db) %in% addon.actions.db), ]
+			# anno.location.db
+			addon.anno.location.db <- intersect(rownames(db.object.2@anno.location.db), rownames(db.object.1@anno.location.db))
+			db.object.1@anno.location.db <- db.object.2@anno.location.db[which(rownames(db.object.2@anno.location.db) %in% addon.anno.location.db), ]
+			# anno.type.db 
+			addon.anno.type.db <- intersect(rownames(db.object.2@anno.type.db), rownames(db.object.1@anno.type.db))
+			db.object.1@anno.type.db <- db.object.2@anno.type.db[which(rownames(db.object.2@anno.type.db) %in% addon.anno.type.db), ]
+			# go.ref.db 
+			addon.go.ref.db <- intersect(rownames(db.object.2@go.ref.db), rownames(db.object.1@go.ref.db))
+			db.object.1@go.ref.db <- db.object.2@go.ref.db[which(rownames(db.object.2@go.ref.db) %in% addon.go.ref.db), ]
+		}
+	}
+
+	return(db.object.1)
+}
 
 
 
-# %%%%%%%%%%%%%%%%%%
-# Other functions
-# %%%%%%%%%%%%%%%%%%
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Other Related Functions
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Remap gene symbols to their authorized genenames
+#' Remap Gene Symbols to Their Authorized Genenames
 #'
 #' @description
-#' Use species-specific reference database to remap genes to their authorized genenames
+#' Use species-specific reference database to remap genes to their authorized genenames.
 #'
 #' @param markers.all Data.frame. Feature genes that are generated from \code{Seurat::FindAllMarkers()} or 
 #' similar functions in other packages.
-#' @param species [TODO]
+#' @inheritParams InsideParam.species
 #' @param if.used.inside Logic. If used inside, some process will not run.
-#'
-#'
 #'
 #' @export
 #'
@@ -1358,6 +1614,14 @@ DataPrep.RemapClustersMarkers  <- function(
 
 
 
+#' List cell clusters
+#'
+#' This function is to list all cell clusters.
+#'
+#' @inheritParams InsideObjectInterCell
+#'
+#' @export
+#'
 ListAllClusters <- function(
 	object
 ) {
@@ -1366,6 +1630,208 @@ ListAllClusters <- function(
 
 
 
+#' List Options for Gene Selection
+#' 
+#' This group of functions are served for giving options on selecting gene subset. It ranges from 
+#' subcellular locations, molecular functions and GO terms.
+#'
+#' @param object Allowed object should be in either class \code{InterCell} or class \code{InterCellDBPack}.
+#' @param ... Parameters passed to corresponding function with suffix 'default', like use \code{ListAllGeneLocation} 
+#'  and check parameters in \code{ListAllGeneLocation.default}.
+#'
+#' @return Character. The options.
+#'
+#' @name ListGeneSelectionProperty
+#' @rdname ListGeneSelectionProperty
+#'
+#'
+NULL
+
+
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+ListAllGeneLocation.default <- function(
+	object
+) {
+	return(unique(object@anno.location.db$GO.Term.target))
+}
+
+#' @rdname ListGeneSelectionProperty
+#' @order 1
+#' @export
+#'
+setGeneric(name = "ListAllGeneLocation", def = function(object, ...) {
+	standardGeneric("ListAllGeneLocation")
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneLocation",
+	signature = "InterCellDBPack",
+	definition = function(object, ...) {
+		ListAllGeneLocation.default(object, ...)
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneLocation",
+	signature = "InterCell",
+	definition = function(object, ...) {
+		ListAllGeneLocation.default(object@database, ...)
+	}
+)
+
+
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+ListAllGeneType.default <- function(
+	object
+) {
+	return(unique(object@anno.type.db$Keyword.Name))
+}
+
+#' @rdname ListGeneSelectionProperty
+#' @order 2
+#' @export
+#'
+setGeneric(name = "ListAllGeneType", def = function(object, ...) {
+	standardGeneric("ListAllGeneType")
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneType",
+	signature = "InterCellDBPack",
+	definition = function(object, ...) {
+		ListAllGeneType.default(object, ...)
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneType",
+	signature = "InterCell",
+	definition = function(object, ...) {
+		ListAllGeneType.default(object@database, ...)
+	}
+)
+
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+ListAllGeneMergeType.default <- function(
+	object
+) {
+	return(unique(object@accessory.db$merge.type.list[, "merged.molecular.function"]))
+}
+#' @rdname ListGeneSelectionProperty
+#' @order 3
+#' @export
+#'
+setGeneric(name = "ListAllGeneMergeType", def = function(object, ...) {
+	standardGeneric("ListAllGeneMergeType")
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneMergeType",
+	signature = "InterCellDBPack",
+	definition = function(object, ...) {
+		ListAllGeneMergeType.default(object, ...)
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneMergeType",
+	signature = "InterCell",
+	definition = function(object, ...) {
+		ListAllGeneMergeType.default(object@database, ...)
+	}
+)
+
+
+#' @param n.output It gives the first N GO terms in the order of AlphaBet.
+#'
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+ListAllGeneGOTerm.default <- function(
+	object,
+	n.output = +Inf
+) {
+	go.terms <- unique(object@go.ref.db$GO_term)
+	go.terms <- go.terms[order(go.terms, decreasing = FALSE)]
+	if (n.output < 1) {
+		n.output <- 1
+	}
+	if (length(go.terms) > n.output) {
+		go.terms <- go.terms[seq_len(n.output)]
+	}
+
+	return(go.terms)
+}
+
+#' @rdname ListGeneSelectionProperty
+#' @order 4
+#' @export
+#'
+setGeneric(name = "ListAllGeneGOTerm", def = function(object, ...) {
+	standardGeneric("ListAllGeneGOTerm")
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneGOTerm",
+	signature = "InterCellDBPack",
+	definition = function(object, ...) {
+		ListAllGeneGOTerm.default(object, ...)
+	}
+)
+#' @rdname ListGeneSelectionProperty
+#' @export
+#'
+setMethod(
+	f = "ListAllGeneGOTerm",
+	signature = "InterCell",
+	definition = function(object, ...) {
+		ListAllGeneGOTerm.default(object@database, ...)
+	}
+)
+
+
+
+#' Replace Cluster name
+#'
+#' This is function is to change the names of cell clusters.
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param cluster.names.current The currently used name of cell clusters.
+#' @param cluster.names.replace The new used name of cell clusters.
+#'
+#' @return A \code{InterCell} object.
+#'
+#' @examples
+#' \dontrun{
+#'   ReplaceClusterName(object, "Macrophage", "Myeloid")
+#' }
+#'
+#' @export
+#'
 ReplaceClusterName <- function(
 	object,
 	cluster.names.current,
@@ -1408,7 +1874,46 @@ ReplaceClusterName <- function(
 }
 
 
-# fetch genes of interest
+#' Fetch Genes of Interest
+#'
+#' This function is to fetch genes of interest by selecting on subcellular locations, 
+#' molecular functions and GO terms.
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param select.location Use subcellular location of gene product to select gene, and options are listed 
+#'  in \code{\link{ListAllGeneLocation}}.
+#' @param select.location.score The score of corresponding subcellular location, range from 1 to 5. Consider \code{score = c(4, 5)} 
+#'  as high and common usage.
+#' @param select.type Use molecular function of gene product to select gene, and options are listed in 
+#'  \code{\link{ListAllGeneType}}.
+#' @param select.merge.type The merged types. Comparing to \code{select.type}, it has less options, which are given 
+#'  in \code{\link{ListAllGeneMergeType}}. See details for help.
+#' @param select.go.terms Use GO terms to select gene, and supported options are listed in \code{\link{ListAllGeneGOTerm}}.
+#' @param go.use.relative Decide if the go terms in the related GO term tree are used. See details for help.
+#' @param go.relative.option Decide which relation to the selected GO term is used. Options are 
+#'  'ancestor', 'parents', 'offspring', 'children'. See details for help.
+#'
+#' @details
+#' The parameter \code{select.merge.type} is the summary for \code{select.type}. The options in \code{select.type} are originally 
+#' generated directly from Uniprot, which comprises over 100 types. For the convenience of usage, we summarize those types and gather
+#' them to 16 merged types, which comprise the common used types: 'Receptor', 'Cytokine', 'Growth Factor', etc.
+#'
+#' GO terms have 3 basic words: 'cellular_component', 'molecular_function', 'biological_process', and all other GO terms are the offspring of 
+#' one of them. As a result, GO terms form 3 family tree. Use parameter \code{go.use.relative}, it can extend one given GO term to all its 
+#' related GO terms. There are 4 pre-defined options for selecting specific relative group, which are 'ancestor', 'parents', 'offspring', 'children'.
+#' The 'parents' and 'children' are selecting the most close GO terms. For example, 'GO:0006955-immune response' is the nearest level above 
+#' 'GO:0002250-adaptive immune response', and in turn, 'adaptive immune response' is the children of 'immune response'. 
+#' The 'ancestor' and 'offspring' goes further than 'parents' and 'children'. The 'ancestor' iteratively searches for the 'parents'. 
+#' Conversely, the 'offspring' iteratively searches for the 'children'. For example, 'immune response' is the parents of 'adaptive immune response', and 
+#' 'adaptive immune response' is the parents of 'adaptive immune effector response'. Then, 'immune response' is the 'ancestor' of 'adaptive immune effector response'.
+#' The 'offspring' goes the same way by propagating 'children'. 
+#'
+#' @return Character. The selected genes.
+#'
+#' @rdname FetchGeneOI
+#' @order 4
+#' @export
+#'
 FetchGeneOI.default <- function(
 	object,  # InterCellDBPack
 	select.location = NULL,
@@ -1419,12 +1924,6 @@ FetchGeneOI.default <- function(
 	go.use.relative = TRUE, 
 	go.relative.option = "offspring"
 ) {
-	#this.genes.db <- object@genes.db
-	#this.pairs.db <- object@pairs.db
-	#this.locs.db <- object@anno.location.db
-	#this.type.db <- object@anno.type.db
-	#this.go.db <- object@go.ref.db
-
 	## input parameter process
 	# check location
 	if (!is.null(select.location)) {
@@ -1463,18 +1962,23 @@ FetchGeneOI.default <- function(
 			select.type <- NULL
 		}
 	}
-
-	# check merged type (if given, then override type)
+	# check merged type (if given, then override type) and overwrite type
 	if (!is.null(select.merge.type)) {
 		if (!is.null(select.type)) {
 			warning("Select genes using both parameter 'select.type' & 'select.merge.type'. Only the options in 'select.merge.type' are used!")
 		}
-		avb.opt.mg.type <- unique()
+		avb.opt.mg.type <- unique(object@accessory.db$merge.type.list$merged.molecular.function)
+		select.merge.type <- CheckParamStd(select.merge.type, avb.opt.mg.type, "merged type", stop.on.zero = FALSE)
+		if (length(select.merge.type) == 0) {
+			select.type <- NULL
+		} else {  # overwrite select.type
+			ref.db <- object@accessory.db$merge.type.list
+			select.type <- ref.db[which(ref.db$merged.molecular.function %in% select.merge.type), "orig.uniprot.keywords"]
+		}
 	}
 
 	# check GO terms
 	# - put in the tool function
-
 
 	## fetch genes
 	ret.gene.oi <- character()
@@ -1509,15 +2013,34 @@ FetchGeneOI.default <- function(
 	return(ret.gene.oi)
 }
 
+
+#' @param ... Parameters passed to function \code{FetchGeneOI.default}.
+#'
+#' @rdname FetchGeneOI
+#' @order 1
+#' @export 
+#'
 setGeneric(name = "FetchGeneOI", def = function(object, ...) {
 		standardGeneric("FetchGeneOI")
 	}
 )
+
+#' @rdname FetchGeneOI
+#' @order 2
+#' @export 
+#'
 setMethod(
 	f = "FetchGeneOI", 
 	signature = "InterCellDBPack",
-	definition = FetchGeneOI.default
+	definition = function(object, ...) {
+		return(FetchGeneOI.default(object, ...))
+	}
 )
+
+#' @rdname FetchGeneOI
+#' @order 3
+#' @export 
+#'
 setMethod(
 	f = "FetchGeneOI", 
 	signature = "InterCell",
@@ -1535,8 +2058,8 @@ setMethod(
 #' The gene names will be remapped to the authorized gene names recorded in gene 
 #' reference database embedded in this package.
 #'
-#' @param gene.pairs.table [TODO] in data.frame 2 columns
-#' @param species  [TODO] which species to be add database
+#' @param gene.pairs.table 2-column table, and each column records one list of genes.
+#' @inheritParams InsideParam.species
 #'
 #' @return A list with \code{$result} storing the formatted gene pairs.
 #'
@@ -1561,7 +2084,7 @@ FormatCustomGenePairs <- function(
 	result.list <- list()
 	apx.list <- list()
 	for (i in 1:2) {  # only use the first 2 columns
-		tmp.genes <- gene.pairs.table[, i]
+		tmp.genes <- as.character(gene.pairs.table[, i])
 		# create dummy df to meet the requirement of musthave columns
 		dummy.fgenes <- data.frame(gene = tmp.genes, 
 			cluster = seq_along(tmp.genes),  # give one gene one cluster to make duplicate ones preserved, but program may get quite slow
@@ -1574,10 +2097,18 @@ FormatCustomGenePairs <- function(
 		apx.list <- c(apx.list, dummy.remap.res[setdiff(names(dummy.remap.res), "result")])
 	}
 
-	result.IT <- data.frame(gene.A = result.list[[1]],
-		gene.B = result.list[[2]],
+	# get genename corresponding IDs
+	genes.ref.db <- switch(species, 
+		"human" = genes.human.ref.db$gene.ncbi.db,
+		"mouse" = genes.mouse.ref.db$gene.ncbi.db)
+	result.id.A <- genes.ref.db[match(result.list[[1]], genes.ref.db$Symbol_from_nomenclature_authority), "GeneID"]
+	result.id.B <- genes.ref.db[match(result.list[[2]], genes.ref.db$Symbol_from_nomenclature_authority), "GeneID"]
+
+	result.IT <- data.frame(inter.GeneID.A = result.id.A,
+		inter.GeneID.B = result.id.B,
+		inter.GeneName.A = result.list[[1]],
+		inter.GeneName.B = result.list[[2]],
 		stringsAsFactors = FALSE)
-	colnames(result.IT) <- colnames(gene.pairs.table)[1:2]
 
 	# return
 	list(result = result.IT, match.status = apx.list)

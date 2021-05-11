@@ -8,6 +8,7 @@
 #' @param interact.pairs.acted A list. The return value of \code{\link{AnalyzeClustersInteracts}}.
 #' @param cluster.name.C Character. Name of one cluster.
 #' @param cluster.name.D Character. Name of one cluster.
+#' @param kClustersSplit [TODO]
 #'
 #' @details
 #' The direction of this function is C-D, corresponding to coordinates X-Y in plot, and 
@@ -35,7 +36,8 @@ ExtractTargetOnepairClusters <- function(
 	interact.pairs.acted,
 	cluster.name.C,
 	cluster.name.D,
-	kClustersSplit
+	kClustersSplit,
+	just.list = FALSE
 ) {
 	if (!(cluster.name.C %in% as.character(unlist(interact.pairs.acted$list.clusters)) &&
 			cluster.name.D %in% as.character(unlist(interact.pairs.acted$list.clusters)))) {  # check if given cluster.name.* are in clusters.name list
@@ -43,6 +45,18 @@ ExtractTargetOnepairClusters <- function(
 	}
 	this.clusters.name <- c(cluster.name.C, cluster.name.D)
 	this.sel.name <- paste0(cluster.name.C, kClustersSplit, cluster.name.D) 
+	
+	this.pairs <- interact.pairs.acted$data.allpairs[[this.sel.name]]
+	if (just.list == FALSE) {
+		# check NA GeneIDs
+		inds.na <- union(which(is.na(this.pairs$inter.GeneID.A)), which(is.na(this.pairs$inter.GeneID.B)))
+		inds.na <- c(inds.na, union(which(is.na(this.pairs$inter.GeneName.A)), which(is.na(this.pairs$inter.GeneName.B))))
+		if (length(inds.na) > 0) {
+			warning("Detect ", length(inds.na), " gene pairs have NA gene IDs, and will be removed!")
+		}
+		this.pairs <- this.pairs[setdiff(seq_len(nrow(this.pairs)), inds.na), ]
+	}
+	
 	## slim - locations
 	this.loc.slim.tg.cols <- c("Gene.name", "GO.Term.target")
 	this.loc.save.cols <- c("GeneID", "Gene.name", "GO.Term.target")
@@ -54,15 +68,26 @@ ExtractTargetOnepairClusters <- function(
 	tmp.B.raw.loc <- interact.pairs.acted$anno.allpairs$location.B[[this.sel.name]]
 	this.B.loc <- DoPartUnique(tmp.B.raw.loc, cols.select = match(this.loc.slim.tg.cols, colnames(tmp.B.raw.loc)))
 	this.B.loc <- this.B.loc[, this.loc.save.cols]
+	## check - locations (genes should be in bt.pairs)
+	this.A.loc <- this.A.loc[which(this.A.loc$Gene.name %in% this.pairs$inter.GeneName.A), ]
+	this.B.loc <- this.B.loc[which(this.B.loc$Gene.name %in% this.pairs$inter.GeneName.B), ]
+
 	## slim - types (already done in the database level)
 	#
+	this.A.type <- interact.pairs.acted$anno.allpairs$type.A[[this.sel.name]]
+	this.B.type <- interact.pairs.acted$anno.allpairs$type.B[[this.sel.name]]
+	## check - types (genes should be in bt.pairs)
+	this.A.type <- this.A.type[which(this.A.type$Gene.name %in% this.pairs$inter.GeneName.A), ]
+	this.B.type <- this.B.type[which(this.B.type$Gene.name %in% this.pairs$inter.GeneName.B), ]
+
 	#end# res
+	print(paste0("Using ", nrow(this.pairs), " gene pairs."))
 	list(clusters.name = this.clusters.name, 
-			 bt.pairs = interact.pairs.acted$data.allpairs[[this.sel.name]],
+			 bt.pairs = this.pairs,
 			 anno.infos = list(location.A = this.A.loc, 
 												 location.B = this.B.loc, 
-												 type.A = interact.pairs.acted$anno.allpairs$type.A[[this.sel.name]],
-												 type.B = interact.pairs.acted$anno.allpairs$type.B[[this.sel.name]])
+												 type.A = this.A.type,
+												 type.B = this.B.type)
 			)
 }
 
@@ -152,7 +177,7 @@ GenerateMapDetailOnepairClusters <- function(
 ) {
 	bt.pairs <- clusters.onepair.select$bt.pairs
 	if (nrow(bt.pairs) == 0) {
-		stop("Error: No pairs available in given parameter.",
+		stop("No pairs available in given parameter.",
 			"Generating from ", paste0(clusters.onepair.select$clusters.name, collapse = " & "), " is failed."
 		)
 	}
@@ -510,6 +535,17 @@ FetchInterOI <- function(
 
 
 
+GetOneInter <- function(
+	object,
+	cluster.x,
+	cluster.y
+) {
+	kClustersSplit <- getClusterSplit(object)
+	fullview.result <- getFullViewResult(object)
+	tg.inter <- ExtractTargetOnepairClusters(fullview.result, cluster.x, cluster.y, kClustersSplit, just.list = TRUE)
+	return(tg.inter)
+}
+
 
 
 #' Select part of gene pairs
@@ -527,10 +563,8 @@ FetchInterOI <- function(
 #' The default way is to intersect the subsets, and the other option is union.
 #' @param sel.gene.pairs Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
 #' one of the participated genes. The 2 required column names need to be specified by another parameter \code{sel.some.gene.pairs.colnames}.
-#' @param sel.some.gene.pairs.colnames Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
-#' and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.
-#' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.mode}, or
-#' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.mode}.
+#' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.mode}, or
+#' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.mode}.
 #' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
 #' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.
 #' @param sel.mode.action.option Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by mode 
@@ -539,7 +573,7 @@ FetchInterOI <- function(
 #'
 #' @details
 #' The whole list of mode or action.effect is defined as global variable that is given within the package.
-#' kpred.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
+#' kpred.action.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
 #' As the action database given now is not completed well, it is recommended to select upon
 #' action.effect, while leaving all different modes preserved.
 #'
@@ -557,12 +591,12 @@ SelectInterSubset <- function(
 	sel.some.genes.Y = NULL, 
 	sel.genes.option = "intersect", 
 	sel.gene.pairs = NULL, 
-	sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"), 
 	sel.mode.val = NULL, 
 	sel.action.effect.val = NULL, 
 	sel.mode.action.option = "intersect" 
 ) {
 	VEinfos <- getTgVEInfo(object)
+	sel.some.gene.pairs.colnames <- c("inter.GeneName.A", "inter.GeneName.B")
 	#
 	afterV.A.clustername <- VEinfos$cluster.name.A
 	afterV.B.clustername <- VEinfos$cluster.name.B
@@ -703,7 +737,7 @@ SelectInterSubset <- function(
 	#
 	### select target edges.part.infos and vertices.part.infos by mode & action.effect
 	## check if valid, sel.mode.val, sel.action.effect.val
-	predefined.mode.list <- kpred.mode
+	predefined.mode.list <- kpred.action.mode
 	predefined.action.effect.list <- kpred.action.effect
 	if ((sum(sel.mode.val %in% predefined.mode.list) == length(sel.mode.val) ||
 		 is.null(sel.mode.val)) &&

@@ -19,6 +19,10 @@ getFullViewResult(object, ...)
 \S4method{setTgActionPairs}{InterCell}(object, new.action.pairs)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+
 \item{new.inter.fullview}{A new result of network analysis.}
 
 \item{new.action.pairs}{A new result of intercellular analysis on action properties}

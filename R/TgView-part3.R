@@ -212,7 +212,8 @@ Inside.select.genepairs.method.logfc.sum.default <- function(
 	this.spgenes, 
 	VEinfos, 
 	select.by.method.pairs.limit, 
-	select.by.method.decreasing = TRUE, 
+	select.by.method.decreasing = TRUE,
+	kClustersSplit,
 	...
 ) {
 	tmp.cluster.A <- VEinfos$cluster.name.A
@@ -383,7 +384,7 @@ GetResultTgSpecificity <- function(
 			# select by methods
 			select.genepairs <- switch(select.genepairs.method, 
 				"random" = Inside.select.genepairs.method.random.IT(input.spgenes, select.by.method.pairs.limit, ...), 
-				"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(input.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, ...), 
+				"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(input.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, kClustersSplit, ...), 
 				stop("Undefined method for selecting gene pairs. Please re-check the given param: select.genepairs.method!!")
 			)
 		} else {  # check validity of those select gene pairs

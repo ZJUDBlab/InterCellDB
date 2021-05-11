@@ -12,6 +12,11 @@ getTgActionPairs(object, ...)
 
 \S4method{getTgActionPairs}{InterCell}(object)
 }
+\arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+}
 \description{
 The \code{setTgActionPairs} function is to \bold{set} the result of intercellular analysis 
 on action properties for one interaction between 2 cell clusters.

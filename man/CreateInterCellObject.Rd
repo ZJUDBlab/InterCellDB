@@ -24,7 +24,7 @@ using \code{setClusterSplit} if not decided yet.}
 using \code{setGenePairSplit} if not decided yet.}
 }
 \value{
-A InterCell object.
+A \code{InterCell} object.
 }
 \description{
 This function analyzes count and power of interaction pairs among all given clusters.

@@ -16,6 +16,10 @@ getClusterSplit(object)
 \S4method{getClusterSplit}{InterCell}(object)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
+\item{...}{Parameters passed to other methods.}
+
 \item{new.cluster.split}{A new cluster group split, which is either one character or string.}
 }
 \description{
