@@ -2,7 +2,7 @@
 % Please edit documentation in R/FullView.R
 \name{AnalyzeInterInFullView}
 \alias{AnalyzeInterInFullView}
-\title{Analyze interaction network in full view}
+\title{Perform Network Analysis}
 \usage{
 AnalyzeInterInFullView(
   object,
@@ -18,36 +18,71 @@ AnalyzeInterInFullView(
 )
 }
 \arguments{
-\item{object}{[TODO] InterCell Object}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{sel.clusters.X}{[TODO]}
+\item{sel.clusters.X}{Defining one part of interacting clusters. The options can be 
+found from \code{\link{ListAllClusters}}. See details for help.}
 
-\item{sel.clusters.Y}{[TODO]}
+\item{sel.clusters.Y}{Defining the other part of interacting clusters. The options can be 
+found from \code{\link{ListAllClusters}}. See details for help.}
 
-\item{sel.exprs.change}{[TODO]}
+\item{sel.exprs.change}{Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.
+It gives the corresponding expression change of every interacting gene pair.}
 
-\item{sel.some.genes.X}{[TODO]}
+\item{sel.some.genes.X}{It gives the genes to be expected to be expressed in clusters given
+by parameter \code{sel.clusters.X}.}
 
-\item{sel.some.genes.Y}{[TODO]}
+\item{sel.some.genes.Y}{It gives the genes to be expected to be expressed in clusters given
+by parameter \code{sel.clusters.Y}.}
 
-\item{sel.genes.option}{[TODO]}
+\item{sel.genes.option}{Options are 'intersect' or 'union'. 'intersect' strictly restricts gene pair to 
+have one gene partner in \code{sel.some.genes.X} and the other in \code{sel.some.genes.Y}. 'union' restricts 
+gene pair to have at least one gene either in \code{sel.some.genes.X} or \code{sel.some.genes.Y}.}
 
-\item{sel.gene.pairs}{[TODO] data.frame}
+\item{sel.gene.pairs}{Directly specify the desired gene pairs. It should be given in standard table that is generated 
+by \code{\link{FormatCustomGenePairs}}. To note, it's strictly aligned to clusters, see details.}
 
-\item{force.process}{[TODO]}
+\item{force.process}{It stops the program when no subset of genes are selected either by \code{sel.some.genes.X} and \code{sel.some.genes.Y}
+or by \code{sel.gene.pairs}, which may take long time to process. To force process, set this to TRUE.}
 
-\item{verbose}{[TODO]}
+\item{verbose}{If set TRUE, the progress bar will be shown.}
 }
 \value{
-A list.
+A \code{InterCell} object.
 }
 \description{
-This function analyzes count and power of interaction pairs among all given clusters.
+This function works for network analysis, which calculates
+count and power of interaction pairs among all given clusters.
 }
 \details{
-
+This function performs network analysis and calculates:
+\itemize{
+  \item count: count of interaction.
+  \item power: strength of interaction, which is calculated by formula: SUM(abs(LogFC[gene.X] * LogFC[gene.Y])).
 }
-\examples{
 
+\bold{sel.clusters.X} and \bold{sel.clusters.Y}: 
+Interactions are defined by pairs of interacting clusters, or say cluster groups. 
+For one interaction, e.g. cluster-Myeloid ~ cluster-T_cell, the fromer one will be 
+restricted to clusters given in \code{sel.clusters.X} and the latter one will be 
+retricted to clusters given in \code{sel.clusters.Y}.
+The clusters given by \code{ListAllClusters} list all available clusters, and users can 
+manually pick some or all of them. 
 
+\bold{sel.exprs.change}: 
+The *up means the gene is up-regulated, i.e. its LogFC (log fold change) > 0.
+The *dn means the gene is down-regulated. Take 'Xup.Ydn' for example,
+it gets to explore the interaction between cluster X and cluster Y by taking up-regulated genes from X and 
+down-regulated genes from Y. 
+
+\bold{sel.gene.pairs}: 
+The gene pairs given in this parameter are strictly aligned to clusters given by 
+parameter \code{sel.clusters.X} and \code{sel.clusters.Y}. After standardizing by \code{FormatCustomGenePairs},
+the gene pairs are given in 4 columns, and 2 of them are named 'inter.GeneName.A', 'inter.GeneName.B'.
+The corresponding relation is that genes listed in 'inter.GeneName.A' are used to compare with genes expressed by clusters given in \code{sel.clusters.X} 
+and genes listed in 'inter.GeneName.B' are used to compare with genes expressed by clusters given in \code{sel.clusters.Y}.
+For example, if the user gives C3~C3ar1 in \code{sel.gene.pairs}, Myeloid_cell and T_cell in \code{sel.clusters.X}, and 
+fibroblast and B_cell in \code{sel.clusters.Y}, then C3 will be tested in Myeloid_cell and T_cell but not fibroblast and B_cell,
+and C3ar1 will be only tested in fibroblast and B_cell. If the user need C3~C3ar1 to be tested in the opposite way, 
+one more row C3ar1~C3 should be given in \code{sel.gene.pairs}.
 }

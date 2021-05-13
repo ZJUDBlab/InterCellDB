@@ -2,19 +2,19 @@
 % Please edit documentation in R/FullView.R
 \name{GetResultFullView}
 \alias{GetResultFullView}
-\title{Get result of analysis in full view}
+\title{Get Result for Network Analysis}
 \usage{
 GetResultFullView(
   object,
   show.clusters.in.x = NULL,
   show.clusters.in.y = NULL,
-  plot.cluster.group.method = "all",
+  sel.cluster.group.method = "all",
   power.max.limit = NULL,
   power.min.limit = NULL,
-  plot.power.range = NULL,
-  hide.power.label = FALSE,
   cnt.max.limit = NULL,
   cnt.min.limit = NULL,
+  plot.power.range = NULL,
+  hide.power.label = FALSE,
   plot.cnt.range = NULL,
   hide.cnt.label = FALSE,
   nodes.size.range = c(1, 6),
@@ -29,54 +29,47 @@ GetResultFullView(
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{show.clusters.in.x}{Vector. Clusters(use cluster names) that are chosen to show in x-axis by users.}
+\item{show.clusters.in.x}{Clusters chosen to show in x-axis, corresponding to paramter \code{sel.clusters.X} in \code{\link{AnalyzeInterInFullView}}.}
 
-\item{show.clusters.in.y}{Vector. Clusters(use cluster names) that are chosen to show in y-axis by users.}
+\item{show.clusters.in.y}{Clusters chosen to show in y-axis, corresponding to paramter \code{sel.clusters.Y} in \code{\link{AnalyzeInterInFullView}}.}
 
-\item{plot.cluster.group.method}{[TODO]}
+\item{sel.cluster.group.method}{Options are 'all', 'diagonal' and 'diagonal-2'. It controls 
+'all' is recommended for most cases, and 
+'diagonal*' is recommended when same restrictions are applied to clusters in X and Y.}
 
-\item{power.max.limit}{Numeric. Specify the upper limit of power, whose value is highly user-defined and data-dependent.}
+\item{power.max.limit}{One number that specifies the upper limit of power, and power larger than this value will be coerced to this value.}
 
-\item{power.min.limit}{Numeric. Specify the lower limit of power, like \code{power.max.limit}.}
+\item{power.min.limit}{One number that specifies the lower limit of power, and power lower than this value will be coerced to this value.}
 
-\item{plot.power.range}{[TODO] This will extend the range of actual value for plotting adjustment.}
+\item{cnt.min.limit}{Numeric. Specify the lower limit of count, and lower ones will be coerced to this.}
 
-\item{hide.power.label}{Logic. If TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.}
+\item{plot.power.range}{This will extend the plotting range beyond actual value range for power.}
 
-\item{cnt.max.limit}{Numeric. Specify the upper limit of count, whose value is highly user-defined and data-dependent.}
+\item{hide.power.label}{If set TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.}
 
-\item{cnt.min.limit}{Numeric. Specify the lower limit of count, like \code{cnt.max.limit}.}
+\item{plot.cnt.range}{This will extend the plotting range beyond actual value range for count.}
 
-\item{plot.cnt.range}{[TODO] This will extend the range of actual value for plotting adjustment}
+\item{hide.cnt.label}{If set TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.}
 
-\item{hide.cnt.label}{Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.}
+\item{nodes.size.range}{2 numbers that specifies the range of sizes of the nodes shown in the graph.}
 
-\item{nodes.size.range}{Numeric. It specifies the range of sizes of the nodes in the graph.}
+\item{nodes.colour.seq}{Given colours will be used to generate colour gradient for plotting.}
 
-\item{nodes.colour.seq}{Character. Given colours will be used to generate colour gradient for plotting.}
-
-\item{nodes.colour.value.seq}{Numeric. If set NULL, evenly place each colour in \code{nodes.colour.seq} vector.
+\item{nodes.colour.value.seq}{Numeric. If set NULL, colours given in \code{nodes.colour.seq} will be evenly placed.
 Otherwise, numeric values with the same length of \code{nodes.colour.seq} should be given to specify the positions corresponding to each colour.
 See parameter \code{values} in \code{ggplot2::scale_colour_gradientn} for details.}
 
-\item{label.power.options}{List. Options are hjust, vjust, nudge.x, nudge.y, size. See \code{ggplot2::geom_text} for details.
-\itemize{
-  \item hjust:   horizontal justification. Use either a string in ("left", "center", "right"), or a number between 0 and 1. See
-                 \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
-  \item vjust:   vertical justification. Use either a string in ("top", "middle", "bottom"), or a number between 0 and 1. See
-                 \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
-  \item nudge.x: horizontal adjustment to nudge labels by.
-  \item nudge.y: vertical adjustment to nudge labels by.
-  \item size:    label size.
-}}
+\item{label.power.options}{List of 'power' label appearance control parameters, including hjust, vjust, nudge.x, nudge.y, size. See details for help.}
 
-\item{label.cnt.options}{List. Options are like \code{label.power.options}.}
+\item{label.cnt.options}{List of label appearance control parameters like those in \code{label.power.options}.}
 
-\item{plot.axis.x.name}{Character. X-axis name when plot is shown.}
+\item{plot.axis.x.name}{X-axis name when plotting.}
 
-\item{plot.axis.y.name}{Character. Y-axis name when plot is shown.}
+\item{plot.axis.y.name}{Y-axis name when plotting.}
+
+\item{cnt.max.limitOne}{number that specifies the upper limit of count, and larger ones will be coerced to this.}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
@@ -86,20 +79,19 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 }
 }
 \description{
-This function focuses on some subset of interaction pairs, and get rather fine grained
-result from those.
+This function summarizes the result of network analysis in graph and table, and gives clues to 
+most active intercellular communications.
 }
 \details{
-This function uses some subset of interaction pairs, and does calculations in cluster level.
-It calculates:
+\code{label.power.options} and \code{label.cnt.options}: 
+The meanings for each item are recommended to refer to \code{ggplot2::geom_text} for details.
 \itemize{
-  \item count: count of interaction pairs.
-  \item power: strength of interaction pairs, which is calculated by formula: SUM(abs(LogFC[geneA] * LogFC[geneB])), 
-               as the function defines: \code{FullView.Evaluation.func.default}.
+  \item hjust:   horizontal justification. Use either a string in ("left", "center", "right"), or a number between 0 and 1. See
+                 \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
+  \item vjust:   vertical justification. Use either a string in ("top", "middle", "bottom"), or a number between 0 and 1. See
+                 \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
+  \item nudge.x: horizontal adjustment to nudge labels by.
+  \item nudge.y: vertical adjustment to nudge labels by.
+  \item size:    label size.
 }
-}
-\examples{
-
-
-
 }

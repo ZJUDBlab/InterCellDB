@@ -1,27 +1,68 @@
 
 
+#' Generate Gene Pairs in Standard Format
+#' 
+#' @description
+#' This function generates gene pairs in standard format(in data frame), 
+#' and gets these pairs easier to be compared with others.
+#'
+#' @param VEinfos standard storage for one interaction.
+#'
+#' @details
+#' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 
+#' participated in each gene pair are recorded in columns named "inter.GeneName.A" and "inter.GeneName.B".
+#'
+#' @importFrom dplyr left_join
+#'
+Tool.GenStdGenePairs.from.VEinfos <- function(
+  VEinfos
+) {
+  vertices.infos <- VEinfos$vertices.infos
+  edges.infos <- VEinfos$edges.infos
+  #
+  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PVal")], by = c("from" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.A", "inter.GeneName.A", "inter.LogFC.A", "inter.PVal.A")
+  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PVal")], by = c("to" = "UID"))
+  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.B", "inter.GeneName.B", "inter.LogFC.B", "inter.PVal.B")
+  # form std data.frame
+  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B", "inter.PVal.A", "inter.PVal.B", "inter.Cluster.A", "inter.Cluster.B")
+  tmp.res <- tmp.res[, match(align.colnames, colnames(tmp.res))]
 
-#' Find special genes in one pair of interacting clusters
+  # match cluster
+  # get conv ones
+  std.res.conv <- tmp.res[intersect(which(tmp.res$inter.Cluster.A == VEinfos$cluster.name.A), which(tmp.res$inter.Cluster.B == VEinfos$cluster.name.B)), ]
+  # get rev ones
+  std.res.rev <- tmp.res[intersect(which(tmp.res$inter.Cluster.A == VEinfos$cluster.name.B), which(tmp.res$inter.Cluster.B == VEinfos$cluster.name.A)), ]
+  std.res.rev <- std.res.rev[, ReverseOddEvenCols(length(align.colnames))]  # reverse all paired columns
+  colnames(std.res.rev) <- colnames(std.res.conv)
+  # get the result
+  std.res.all <- rbind(std.res.conv, std.res.rev)
+  std.res.all <- DoPartUnique(std.res.all, 1:2)
+
+  return(std.res.all)
+}
+
+
+
+#' Analyze Gene Pairs by Specificity
 #'
 #' @description
-#' This function is used to find special genes in one pair of interacting clusters. Genes are special
-#' if it passes some limitations when comparing to other pairs of interacting clusters. 
+#' This function is used to evaluate specificity for gene pairs from one interaction. In other word, 
+#' it explores every gene pair with all its occuring interactions. The one interaction is controlled by 
+#' \code{\link{FetchInterOI}}.
 #'
-#' @param object [TODO]
-#' @param to.cmp.cluster.groups Character. It defines the cluster groups to be compared. 
-#' @param extended.search [TODO]
-#' @param uq.cnt.range Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
-#' to exist in several cluster groups.
+#' @inheritParams InsideObjectInterCell
+#' @param to.cmp.cluster.groups It gives the interactions (cluster groups) to be compared. 
+#'  \code{\link{ListClusterGroups}} helps to give the names of interactions.
+#' @param extended.search Decide whether to add more gene pairs (those from compared cluster groups) into analysis.
+#' @param uq.cnt.options Integer. It defines the allowed co-occurence count of one gene pair, and count goes larger impling 
+#' lower specificity. The recommended value is \code{1:(length(to.cmp.cluster.groups) + 1)}.
 #'
-#'
-#' @return List of length 2. With one named "res" saving all result and the other 
-#' named "for.plot.use" saving all needed data for plotting by function \code{GetResult.SummarySpecialGenes}.
-#'
+#' @return A \code{InterCell} object.
 #'
 #' @import dplyr
 #' @import ggplot2
 #' @import cowplot
-#'
 #' 
 #' @export
 #'
@@ -29,7 +70,7 @@ AnalyzeInterSpecificity <- function(
 	object, 
 	to.cmp.cluster.groups = character(),  # should be a subset of interact.pairs.acted$name.allpairs
 	extended.search = FALSE, 
-	uq.cnt.range = c(1:100)
+	uq.cnt.options = c(1:100)
 ) {
 	interact.pairs.acted <- getFullViewResult(object)
 	VEinfos <- getTgVEInfo(object)
@@ -44,6 +85,7 @@ AnalyzeInterSpecificity <- function(
 		warning("Given invalid cluster groups: ", paste0(not.valid.cluster.groups, collapse = ", ", ". "))
 	}
 	to.cmp.cluster.groups <- unique(intersect(to.cmp.cluster.groups, interact.pairs.acted$name.allpairs))
+	# check 0 for to.cmp.cluster.groups is put below
 
 	# calculate the multiply of fold change of interacting genes
 	inside.c.short.interacts <- function(
@@ -71,7 +113,7 @@ AnalyzeInterSpecificity <- function(
 	if ((this.pair.name %in% all.pairs.names) == FALSE) {
 		stop("Given name of cluster pairs NOT exist!")
 	}
-	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)  # [TODO] not use the original interaction, but use the result from tg.veinfo 
+	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
 	
 	this.clusters.separate <- strsplit(this.pair.name, split = kClustersSplit, fixed = TRUE)[[1]]
 	this.pair.interacts <- inside.c.short.interacts(target.gene.pairs.df, kGenesSplit)
@@ -84,15 +126,18 @@ AnalyzeInterSpecificity <- function(
 		gp.pvaladj.B = target.gene.pairs.df[, "inter.PVal.B"], 
 		stringsAsFactors = FALSE)
 	# further check if comparison of itself exist, which may cause error in downstream analysis
-	if (sum(this.pair.name %in% to.cmp.cluster.groups) > 0) {
-		to.cmp.cluster.groups <- setdiff(to.cmp.cluster.groups, this.pair.name)
+	to.cmp.cluster.groups <- setdiff(to.cmp.cluster.groups, this.pair.name)
+
+	if (length(to.cmp.cluster.groups) == 0) {
+		stop("No cluster groups are ready to compare. Please check parameter `to.cmp.cluster.groups`. ",
+			 "By the way, the name of the interaction fetched by `FetchInterOI` will be removed from `to.cmp.cluster.groups` automatically if presented. ")
 	}
 
 	# set the uq.cnt range
 	tmp.all.uq.clusters <- unique(as.character(unlist(strsplit(c(this.pair.name, to.cmp.cluster.groups), split = kClustersSplit, fixed = TRUE))))
-	uq.cnt.range <- uq.cnt.range[which(uq.cnt.range %in% seq_along(tmp.all.uq.clusters))]
-	if (length(uq.cnt.range) == 0) {
-		stop("Please specify available uq.cnt.range to continue the analysis!\nThe allowed values are ", 
+	uq.cnt.options <- uq.cnt.options[which(uq.cnt.options %in% seq_along(tmp.all.uq.clusters))]
+	if (length(uq.cnt.options) == 0) {
+		stop("Please specify available uq.cnt.options to continue the analysis!\nThe allowed values are ", 
 			paste0(seq_along(tmp.all.uq.clusters), collapse = ", "), ".")
 	}
 
@@ -124,7 +169,7 @@ AnalyzeInterSpecificity <- function(
 			res.df
 		})
 	other.gene.pairs.packed <- bind_rows(other.gene.pairs.df.list)
-	
+
 	# get unique counts result
 	this.all.gp.packed <- rbind(this.gene.pairs, other.gene.pairs.packed)
 	this.uq.cnts <- tapply(this.all.gp.packed$gp.belongs, this.all.gp.packed$gp.name, length)
@@ -133,7 +178,7 @@ AnalyzeInterSpecificity <- function(
 
 	## select diff.cnt subset
 	# uq.cnt
-	tmp.inds.uq.valid <- this.uq.cnts %in% uq.cnt.range
+	tmp.inds.uq.valid <- this.uq.cnts %in% uq.cnt.options
 	this.uq.cnts <- this.uq.cnts[tmp.inds.uq.valid]
 	this.uq.indices <- this.uq.indices[tmp.inds.uq.valid]
 	# other settings
@@ -196,23 +241,23 @@ AnalyzeInterSpecificity <- function(
 
 
 # GetResult.SummarySpecialGenes Select Gene Pairs Method: random
-Inside.select.genepairs.method.random.default <- function(
+Inside.sel.gene.pairs.method.random.default <- function(
 	this.spgenes, 
-	select.by.method.pairs.limit,
+	sel.by.method.count,
 	...
 ) {
-	tmp.inds.sel <- sample(seq_along(this.spgenes), select.by.method.pairs.limit)
-	select.genepairs <- names(this.spgenes)[tmp.inds.sel]
-	return(select.genepairs)
+	tmp.inds.sel <- sample(seq_along(this.spgenes), sel.by.method.count)
+	sel.gene.pairs <- names(this.spgenes)[tmp.inds.sel]
+	return(sel.gene.pairs)
 }
-Inside.select.genepairs.method.random.IT <- Inside.select.genepairs.method.random.default
+Inside.sel.gene.pairs.method.random.IT <- Inside.sel.gene.pairs.method.random.default
 
 # GetResult.SummarySpecialGenes Select Gene Pairs Method: LogFC sum(decreasing or increasing)
-Inside.select.genepairs.method.logfc.sum.default <- function(
+Inside.sel.gene.pairs.method.logfc.sum.default <- function(
 	this.spgenes, 
 	VEinfos, 
-	select.by.method.pairs.limit, 
-	select.by.method.decreasing = TRUE,
+	sel.by.method.count, 
+	sel.by.method.decreasing = TRUE,
 	kClustersSplit,
 	...
 ) {
@@ -226,68 +271,66 @@ Inside.select.genepairs.method.logfc.sum.default <- function(
 			tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
 		}))
 	# max -> min or min -> max
-	tmp.inds.sel <- order(tmp.tg.calc, decreasing = select.by.method.decreasing)
-	length(tmp.inds.sel) <- select.by.method.pairs.limit
+	tmp.inds.sel <- order(tmp.tg.calc, decreasing = sel.by.method.decreasing)
+	length(tmp.inds.sel) <- sel.by.method.count
 	tmp.inds.sel <- tmp.inds.sel[which(!is.na(tmp.inds.sel))]
-	select.genepairs <- names(this.spgenes)[tmp.inds.sel]
-	return(select.genepairs)
+	sel.gene.pairs <- names(this.spgenes)[tmp.inds.sel]
+	return(sel.gene.pairs)
 }
-Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.logfc.sum.default
+Inside.sel.gene.pairs.method.logfc.sum.IT <- Inside.sel.gene.pairs.method.logfc.sum.default
 
-#Inside.select.genepairs.method.diff.logfc.sum.default <- function(
+#Inside.sel.gene.pairs.method.diff.logfc.sum.default <- function(
 #	this.spgenes, 
 #	VEinfos, 
-#	select.by.method.pairs.limit, 
-#	select.by.method.decreasing = TRUE, 
+#	sel.by.method.count, 
+#	sel.by.method.decreasing = TRUE, 
 #	...
 #) {
 #}
-#Inside.select.genepairs.method.diff.logfc.sum.IT <- Inside.select.genepairs.method.diff.logfc.sum.default
+#Inside.sel.gene.pairs.method.diff.logfc.sum.IT <- Inside.sel.gene.pairs.method.diff.logfc.sum.default
 # method name is "diff-logfc-sum"
 #select.by.method.diff.option = "1-mean",  # only used in diff-logfc-sum, mean-mean, 1-1, 1-mean, mean-1
 #
 
-#' Summary special genes in cluster groups
+
+#' Get Result for Specificity Analysis
 #'
 #' @description
-#' This function is to summary special genes and their specific expressing attributes.
+#' This function is to summary gene pair specificity by showing all gene pairs with their 
+#' co-occurring interactions. Gene pairs are evaluated on both power and confidence like it in \code{\link{GetResultTgCrosstalk}}.
 #' 
-#'
-#' @param object [TODO]
-#' @param show.uq.cnt.range Integer. It defines the range of \code{uq.cnt} that is going to be used in downstream analysis, and 
-#' the default setting is to use all valid \code{uq.cnt}. 
-#' @param show.uq.cnt.merged Logic. If set TRUE, then gene pairs of different \code{uq.cnt} will be merged in analysis, or gene pairs 
-#' will be grouped by their \code{uq.cnt} and be plotted accordingly.
-#' @param select.genepairs Character. It specificly gives the gene pairs that are going to be analyzed. 
-#' @param select.genepairs.method Character. It has options: "random", "logfc-sum". It works only when no specific gene pairs are given in 
-#' parameter \code{select.genepairs}. Method "random" will randomly pick up some gene pairs. Method "logfc-sum" will calculate the sum of LogFCs of 
-#' the 2 genes in every gene pairs, and order them by the calculated values.
-#' @param select.by.method.pairs.limit Integer. It defines the maximum number of gene pairs that are selected by any method.
-#' @param select.by.method.decreasing Logic. It works for method "logfc-sum". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.
-#' @param show.topn.inside.onepair Integer. One gene pairs get to be shared by several cluster groups. By setting this parameter, 
-#' only the top ranked some gene pairs will be finally shown in result. The default value is +Inf, which preserves all result.
-#' @param prioritize.cluster.groups Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
-#' finally plotted from the most left-side to right, and as such, it is called prioritizing. 
-#' @param display.conv.or.rev [TODO] Is the display of cluster interaction the same arrange as VEinfos(direction.A.to.B)
-#'   conv, the same, rev, the reverse format. For example, cluster.A -> cluster.B in VEinfo, so, if conv, display like cluster.A~cluster.B, or as cluster.B~cluster.A
-#'   gene pairs will be aligned as cluster order changed.
-#' @param grid.plot.ncol [TODO]show.uq.cnt.merged = FALSE, then it will be used
-#' @param barplot.or.dotplot  [TODO]
-#' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
+#' @inheritParams InsideObjectInterCell
+#' @param sel.uq.cnt.options It defines the range of co-occurence count to be shown in result. If no option is given,
+#'  it will use all available co-occurence count.
+#' @param sel.gene.pairs Directly specify the desired gene pairs. It should be given in standard table that is generated 
+#'  by \code{\link{FormatCustomGenePairs}}. To note, it's strictly aligned to clusters, which is illustrated in \code{\link{AnalyzeInterInFullView}}.
+#' @param sel.gene.pairs.method Options are: "random", "logfc-sum" or not to use (by set NULL). It works only when no specific gene pairs are given in 
+#'  parameter \code{sel.gene.pairs}. Method "random" will randomly pick up some gene pairs. Method "logfc-sum" will calculate the sum of LogFCs of 
+#'  the 2 genes in every gene pairs, and order them by the calculated values.
+#' @param sel.by.method.count It defines the maximum number of gene pairs to be fetched by any method.
+#' @param sel.by.method.decreasing It works for method "logfc-sum". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.
+#' @param prioritize.cluster.groups It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
+#'  finally plotted from the most left-side to right. 
+#' @param plot.name.X.to.Y If set FALSE, switch the position of 2 involving clusters in the original names of interaction. If set TRUE, keep still.
+#' @param plot.uq.cnt.merged If set TRUE, then gene pairs of different count of co-occurence will be merged to show in the result, or gene pairs 
+#'  will be grouped by their count of co-occurence and be plotted accordingly.
+#' @param grid.plot.ncol It gives the number of columns for plotting grid when \code{plot.uq.cnt.merged = FALSE}.
+#' @param barplot.or.dotplot If TRUE, use 'barplot', or, use 'dotplot'.
+#' @param plot.font.size.base It defines the base font size for all texts. 
 #' @param axis.text.x.pattern It defines the axis text style in x-axis. 
 #' @param bar.facet.scales It controls the scales that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
 #' @param bar.facet.space It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".
-#' @param bar.facet.text.x It defines the facet labeling text on the top horizontal position. 
-#' @param bar.facet.background It defines the background style of labellers in facet way.
-#' @param bar.colour Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
-#' built-in 20 kinds of colours will be automatically used.
-#' @param bar.width Numeric. It defines the bar width.
-#' @param dot.range.to.use [TODO]
-#' @param dot.colour.palette  [TODO]
-#' @param dot.size.range  [TODO]
-#' @param dot.y.order.in.alphabet [TODO]
+#' @param bar.facet.text.x It defines the style of facet text on the top horizontal position. 
+#' @param bar.facet.background It defines the background style of labels among facets.
+#' @param bar.colour It gives colors that plotting bars get to use. If no specific colour is given, then the 
+#'  built-in 20 kinds of colours will be used.
+#' @param bar.width It defines the bar width.
+#' @param dot.range.to.use It specifies the user specified ranges for evaluation params.
+#' @param dot.colour.seq It specifies the colour sequence for dots.
+#' @param dot.colour.value.seq It is along with the param \code{dot.colour.seq}, and changes the colour expansion.
+#' @param dot.size.range It specifies the size range of the dots
+#' @param dot.y.order.in.alphabet If set TRUE, order gene pairs in alphabet.
 #' @param ... Other parameter that can be passed to select by method functions.
-#'
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
@@ -299,22 +342,19 @@ Inside.select.genepairs.method.logfc.sum.IT <- Inside.select.genepairs.method.lo
 #' @import RColorBrewer
 #' @import ggplot2
 #' @import cowplot
-#'
 #' 
 #' @export
 #'
 GetResultTgSpecificity <- function(
 	object,
-	show.uq.cnt.range = integer(), 
-	show.uq.cnt.merged = TRUE,  # merged shows different uq.cnt in one plot, or in several plots
-	select.genepairs = character(), 
-	select.genepairs.method = "random",  # logfc-sum,  are other 1 options pre-defined
-	select.by.method.pairs.limit = 10, 
-	select.by.method.decreasing = TRUE, 
-	show.topn.inside.onepair = +Inf,
-	prioritize.cluster.groups = character(),  # names put here will be showed in left and order as it is in here 
-	display.conv.or.rev = TRUE,
-	# plotting param
+	sel.uq.cnt.options = integer(), 
+	sel.gene.pairs = NULL, 
+	sel.gene.pairs.method = NULL,
+	sel.by.method.count = 10, 
+	sel.by.method.decreasing = TRUE, 
+	prioritize.cluster.groups = character(),
+	plot.name.X.to.Y = TRUE,
+	plot.uq.cnt.merged = TRUE,
 	grid.plot.ncol = 1, 
 	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
@@ -323,10 +363,11 @@ GetResultTgSpecificity <- function(
 	bar.facet.space  = "free_x", 
 	bar.facet.text.x = element_text(size = 8, colour = "black"), 
 	bar.facet.background = element_rect(fill = "lightgrey", colour = "white"), 
-	bar.colour = character(),  # [TODO] add option to select to use barplot or dotplot
+	bar.colour = character(),
 	bar.width = 0.8, 
 	dot.range.to.use = list("LogFC" = c(-Inf, +Inf), "PVal" = c(-Inf, +Inf)), 
-	dot.colour.palette = scale_colour_gradientn(name = "PVal", colours = c("#00809D", "#EEEEEE", "#C30000"), values = c(0.0, 0.5, 1.0)),
+	dot.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
+	dot.colour.value.seq = c(0.0, 0.5, 1.0),
 	dot.size.range = c(2, 8), 
 	dot.y.order.in.alphabet = TRUE,
 	...
@@ -336,25 +377,24 @@ GetResultTgSpecificity <- function(
 	VEinfos <- getTgVEInfo(object)
 	onepair.spgenes <- getTgSpGenes(object)
 	this.spgenes <- onepair.spgenes$for.plot.use
+	#
+	show.topn.inside.onepair <- +Inf
+
 	## pre-check
 	this.property.valid.uq.cnt <- unique(as.integer(unlist(lapply(this.spgenes, function(x) { x$uq.cnt }))))
 	# check valid uq.cnt
-	if (length(show.uq.cnt.range) == 0) {  # if length uq.cnt = 0 then set it directly
-		show.uq.cnt.range <- this.property.valid.uq.cnt
+	if (length(sel.uq.cnt.options) == 0) {  # if length uq.cnt = 0 then set it directly
+		sel.uq.cnt.options <- this.property.valid.uq.cnt
 	} else {
 		# check valid
-		tmp.inds.valid.uq <- which(show.uq.cnt.range %in% this.property.valid.uq.cnt)
-		if (length(tmp.inds.valid.uq) != length(show.uq.cnt.range)) {
-			warning("Select not-existed uq.cnt: ", paste0(show.uq.cnt.range[setdiff(seq_along(show.uq.cnt.range), tmp.inds.valid.uq)], collapse = ", "), 
+		tmp.inds.valid.uq <- which(sel.uq.cnt.options %in% this.property.valid.uq.cnt)
+		if (length(tmp.inds.valid.uq) != length(sel.uq.cnt.options)) {
+			warning("Select not-existed uq.cnt: ", paste0(sel.uq.cnt.options[setdiff(seq_along(sel.uq.cnt.options), tmp.inds.valid.uq)], collapse = ", "), 
 				", which will be ignored!")
 		}
-		show.uq.cnt.range <- show.uq.cnt.range[tmp.inds.valid.uq]
+		sel.uq.cnt.options <- sel.uq.cnt.options[tmp.inds.valid.uq]
 	}
 
-	# check topn
-	if (show.topn.inside.onepair < 0) {
-		stop("Top N must be larger than 0! Check parameter show.uq.cnt.range!")
-	}
 	# check cluster group given
 	this.property.valid.cluster.group <- unique(as.character(unlist(lapply(this.spgenes, function(x) { x$uq.details$gp.belongs }))))
 	tmp.inds.valid.cluster.group <- which(prioritize.cluster.groups %in% this.property.valid.cluster.group)
@@ -365,40 +405,73 @@ GetResultTgSpecificity <- function(
 	}
 	prioritize.cluster.groups <- prioritize.cluster.groups[tmp.inds.valid.cluster.group]
 
+	# check dot plot parameters
+	given.range.to.use <- CheckParamStd(names(dot.range.to.use), c("LogFC", "PVal"), "range", stop.on.zero = FALSE)
+	tmp.not.in.range <- setdiff(c("LogFC", "PVal"), given.range.to.use)
+	if (length(tmp.not.in.range) != 0) {
+		for (tmp.i in tmp.not.in.range) {
+			dot.range.to.use <- c(dot.range.to.use, list(c(-Inf, Inf)))
+			names(dot.range.to.use)[length(dot.range.to.use)] <- tmp.i
+		}
+		warning("Auto add ranges on: ", paste0(tmp.not.in.range, collapse = ", "))
+	}
+	#
+	if (length(dot.colour.seq) != length(dot.colour.value.seq)) {
+    stop("Colors and their gradient values should be of same length! Check parameter `dot.colour.seq` and `dot.colour.value.seq`.")
+  }
+
 	# fetch selected gene pairs
 	inside.fetch.sel.genepairs <- function(
 		input.spgenes,
 		VEinfos,
-		select.genepairs,
-		select.genepairs.method,
-		select.by.method.pairs.limit,
-		select.by.method.decreasing,
+		sel.gene.pairs,
+		sel.gene.pairs.method,
+		sel.by.method.count,
+		sel.by.method.decreasing,
 		...
 	) {
-		if (length(select.genepairs) == 0) {  # then use method
-			# check maximum pairs limit
-			if (select.by.method.pairs.limit > length(input.spgenes)) {
-				warning("Maximum gene pairs are:", length(input.spgenes), ", and given limit is automatically shrinked to that value.")
-				select.by.method.pairs.limit <- length(input.spgenes)
+		if (length(sel.gene.pairs) == 0) {  
+			if (is.null(sel.gene.pairs.method) || length(sel.gene.pairs.method) == 0) {
+				sel.gene.pairs <- names(input.spgenes)  # use all 
+			} else {  # then use method
+				# check maximum pairs limit
+				if (sel.by.method.count > length(input.spgenes)) {
+					warning("Maximum gene pairs are:", length(input.spgenes), ", and given limit is automatically shrinked to that value.")
+					sel.by.method.count <- length(input.spgenes)
+				}
+				# select by methods
+				sel.gene.pairs <- switch(sel.gene.pairs.method, 
+					"random" = Inside.sel.gene.pairs.method.random.IT(input.spgenes, sel.by.method.count, ...), 
+					"logfc-sum" = Inside.sel.gene.pairs.method.logfc.sum.IT(input.spgenes, VEinfos, sel.by.method.count, sel.by.method.decreasing, kClustersSplit, ...), 
+					stop("Undefined method for selecting gene pairs. Please re-check the given param: sel.gene.pairs.method!!")
+				)
 			}
-			# select by methods
-			select.genepairs <- switch(select.genepairs.method, 
-				"random" = Inside.select.genepairs.method.random.IT(input.spgenes, select.by.method.pairs.limit, ...), 
-				"logfc-sum" = Inside.select.genepairs.method.logfc.sum.IT(input.spgenes, VEinfos, select.by.method.pairs.limit, select.by.method.decreasing, kClustersSplit, ...), 
-				stop("Undefined method for selecting gene pairs. Please re-check the given param: select.genepairs.method!!")
-			)
 		} else {  # check validity of those select gene pairs
-			tmp.inds.vd.gp <- which(select.genepairs %in% names(input.spgenes))
-			if (length(tmp.inds.vd.gp) != length(select.genepairs)) {
+			## check format of given `sel.gene.pairs`
+			# check data.frame
+			if (!is.data.frame(sel.gene.pairs)) {
+				stop("User-selected gene pairs should be given in table (data.frame format)!")
+			}
+			# check if it is standardized data.frame
+			std.colnames.1t4 <- c("inter.GeneID.A", "inter.GeneID.B", "inter.GeneName.A", "inter.GeneName.B")
+			if (!identical(colnames(sel.gene.pairs)[1:4], std.colnames.1t4)) {
+				stop("Non-standardized table of gene pairs are given, please use function `FormatCustomGenePairs` first to get standardized one!")
+			}
+
+			# transform data.frame to character
+			sel.gene.pairs <- paste(sel.gene.pairs[, "inter.GeneName.A"], sel.gene.pairs[, "inter.GeneName.B"], sep = kGenesSplit)
+
+			tmp.inds.vd.gp <- which(sel.gene.pairs %in% names(input.spgenes))
+			if (length(tmp.inds.vd.gp) != length(sel.gene.pairs)) {
 				warning("Selected gene pairs not exist: ", 
-					paste0(select.genepairs[setdiff(seq_along(select.genepairs), tmp.inds.vd.gp)], collapse = ", "), 
+					paste0(sel.gene.pairs[setdiff(seq_along(sel.gene.pairs), tmp.inds.vd.gp)], collapse = ", "), 
 					", which will be removed from following analysis!")
 			}
-			select.genepairs <- select.genepairs[tmp.inds.vd.gp]
+			sel.gene.pairs <- sel.gene.pairs[tmp.inds.vd.gp]
 		}
 		# unique on gene pairs
-		select.genepairs <- unique(select.genepairs)
-		return(select.genepairs)
+		sel.gene.pairs <- unique(sel.gene.pairs)
+		return(sel.gene.pairs)
 	}
 	# template function for dealing every valid uq.cnt
 	inside.collect.uq.cnt.each <- function(
@@ -422,9 +495,9 @@ GetResultTgSpecificity <- function(
 
 	inside.trans.coords.uq <- function(
 		std.spgenes,
-		show.genepairs.order,  # ordered as it is in select.genepairs
+		show.genepairs.order,  # ordered as it is in sel.gene.pairs
 		prioritize.cluster.groups,
-		display.conv.or.rev,
+		plot.name.X.to.Y,
 		std.width.col = 2,  # may be export as param, so as the gap
 		std.width.gap = 3
 	) {
@@ -458,9 +531,12 @@ GetResultTgSpecificity <- function(
 					stringsAsFactors = FALSE)
 				})
 		tmp.df.res <- bind_rows(tmp.df.list)
+		if (nrow(tmp.df.res) == 0) {
+			stop("No available gene pairs in current settings. Consider enlarge the range of `sel.uq.cnt.options`, like set 1:100 or larger.")
+		}
 
 		# re-align cluster orders, conv or rev
-		if (display.conv.or.rev == FALSE) {
+		if (plot.name.X.to.Y == FALSE) {
 			uq.name.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.name"],
 				to.split.by = kGenesSplit, res.colnames = c("gene.A", "gene.B"))
 			uq.label.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.label"],
@@ -472,26 +548,26 @@ GetResultTgSpecificity <- function(
 	}
 
 	## process: reconstruct data format of every uq.cnt to fit plotting
-	if (show.uq.cnt.merged == TRUE) {
+	if (plot.uq.cnt.merged == TRUE) {
 		plot.data.uq <- list()
-		for (iuq in show.uq.cnt.range) {
+		for (iuq in sel.uq.cnt.options) {
 			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
 			plot.data.uq <- c(plot.data.uq, tmp.spgenes)
 		}
-		tmp.sel.gpairs <- inside.fetch.sel.genepairs(plot.data.uq, VEinfos, select.genepairs, select.genepairs.method, select.by.method.pairs.limit, select.by.method.decreasing, ...)
+		tmp.sel.gpairs <- inside.fetch.sel.genepairs(plot.data.uq, VEinfos, sel.gene.pairs, sel.gene.pairs.method, sel.by.method.count, sel.by.method.decreasing, ...)
 		plot.data.uq <- plot.data.uq[which(names(plot.data.uq) %in% tmp.sel.gpairs)]
-		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups, display.conv.or.rev)
+		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups, plot.name.X.to.Y)
 	} else {
 		plot.data.uq.notm.list <- list()
 		tmp.uq.cnt.valid.list <- integer()
-		for (iuq in show.uq.cnt.range) {
+		for (iuq in sel.uq.cnt.options) {
 			tmp.spgenes <- inside.collect.uq.cnt.each(this.spgenes, iuq, show.topn.inside.onepair)
-			tmp.sel.gpairs <- inside.fetch.sel.genepairs(tmp.spgenes, VEinfos, select.genepairs, select.genepairs.method, select.by.method.pairs.limit, select.by.method.decreasing, ...)
+			tmp.sel.gpairs <- inside.fetch.sel.genepairs(tmp.spgenes, VEinfos, sel.gene.pairs, sel.gene.pairs.method, sel.by.method.count, sel.by.method.decreasing, ...)
 			tmp.spgenes <- tmp.spgenes[which(names(tmp.spgenes) %in% tmp.sel.gpairs)]
 			if (length(tmp.spgenes) == 0) {
 				next  # not added to the result list
 			}
-			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups, display.conv.or.rev)
+			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups, plot.name.X.to.Y)
 			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
 			tmp.uq.cnt.valid.list <- c(tmp.uq.cnt.valid.list, iuq)
 		}
@@ -561,7 +637,8 @@ GetResultTgSpecificity <- function(
 		plot.data,
 		prioritize.cluster.groups,
 		dot.range.to.use,
-		dot.colour.palette,
+		dot.colour.seq,
+		dot.colour.value.seq,
 		dot.size.range
 	) {
 		# move the data range
@@ -601,7 +678,7 @@ GetResultTgSpecificity <- function(
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.name))
 		this.plot <- this.plot + 
 			geom_point(aes(colour = plot.dot.colour, size = plot.dot.size)) + 
-			dot.colour.palette + 
+			scale_colour_gradientn(name = "PVal.Calc", colours = dot.colour.seq, values = dot.colour.value.seq) + 
 			scale_size(name = "LogFC.Calc", range = dot.size.range) + 
 			labs(x = "Cluster Groups", y = "Gene Pairs")
 		this.plot <- this.plot + 
@@ -632,7 +709,7 @@ GetResultTgSpecificity <- function(
 
 	## process: draw plots
 	if (barplot.or.dotplot == TRUE) {
-		if (show.uq.cnt.merged == TRUE) {
+		if (plot.uq.cnt.merged == TRUE) {
 			this.plot.mg <- inside.uq.bar.plot(plot.data.uq.df, prioritize.cluster.groups, bar.colour)
 			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 		} else {
@@ -647,14 +724,14 @@ GetResultTgSpecificity <- function(
 			return(list(plot = this.notm.plot, table = this.notm.ret.table.list))
 		}
 	} else {
-		if (show.uq.cnt.merged == TRUE) {
-			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, dot.range.to.use, dot.colour.palette, dot.size.range)
+		if (plot.uq.cnt.merged == TRUE) {
+			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)
 			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 		} else {
 			this.notm.plot.list <- list()
 			this.notm.ret.table.list <- list()
 			for (i.item in names(plot.data.uq.notm.list)) {
-				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, dot.range.to.use, dot.colour.palette, dot.size.range)))
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)))
 				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 			}
 			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)

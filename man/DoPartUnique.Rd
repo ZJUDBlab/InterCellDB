@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{DoPartUnique}
 \alias{DoPartUnique}
-\title{Speed-up doing unique for data.frame}
+\title{Speed-up Doing Unique for Data.frame}
 \usage{
 DoPartUnique(xxpairs, cols.select = c(1:2))
 }

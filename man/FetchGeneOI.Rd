@@ -15,33 +15,34 @@ FetchGeneOI(object, ...)
 
 FetchGeneOI.default(
   object,
-  select.location = NULL,
-  select.location.score = c(1:5),
-  select.type = NULL,
-  select.merge.type = NULL,
-  select.go.terms = NULL,
+  sel.location = NULL,
+  sel.location.score = c(1:5),
+  sel.type = NULL,
+  sel.merge.type = NULL,
+  sel.go.terms = NULL,
   go.use.relative = TRUE,
   go.relative.option = "offspring"
 )
 }
 \arguments{
-\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+\item{object}{A \code{InterCell} object or \code{InterCellDBPack} object. \code{FetchGeneOI.default}
+gets \code{InterCellDBPack} as input.}
 
 \item{...}{Parameters passed to function \code{FetchGeneOI.default}.}
 
-\item{select.location}{Use subcellular location of gene product to select gene, and options are listed 
+\item{sel.location}{Use subcellular location of gene product to select gene, and options are listed 
 in \code{\link{ListAllGeneLocation}}.}
 
-\item{select.location.score}{The score of corresponding subcellular location, range from 1 to 5. Consider \code{score = c(4, 5)} 
+\item{sel.location.score}{The score of corresponding subcellular location, range from 1 to 5. Consider \code{score = c(4, 5)} 
 as high and common usage.}
 
-\item{select.type}{Use molecular function of gene product to select gene, and options are listed in 
+\item{sel.type}{Use molecular function of gene product to select gene, and options are listed in 
 \code{\link{ListAllGeneType}}.}
 
-\item{select.merge.type}{The merged types. Comparing to \code{select.type}, it has less options, which are given 
+\item{sel.merge.type}{The merged types. Comparing to \code{sel.type}, it has less options, which are given 
 in \code{\link{ListAllGeneMergeType}}. See details for help.}
 
-\item{select.go.terms}{Use GO terms to select gene, and supported options are listed in \code{\link{ListAllGeneGOTerm}}.}
+\item{sel.go.terms}{Use GO terms to select gene, and supported options are listed in \code{\link{ListAllGeneGOTerm}}.}
 
 \item{go.use.relative}{Decide if the go terms in the related GO term tree are used. See details for help.}
 
@@ -56,7 +57,7 @@ This function is to fetch genes of interest by selecting on subcellular location
 molecular functions and GO terms.
 }
 \details{
-The parameter \code{select.merge.type} is the summary for \code{select.type}. The options in \code{select.type} are originally 
+The parameter \code{sel.merge.type} is the summary for \code{sel.type}. The options in \code{sel.type} are originally 
 generated directly from Uniprot, which comprises over 100 types. For the convenience of usage, we summarize those types and gather
 them to 16 merged types, which comprise the common used types: 'Receptor', 'Cytokine', 'Growth Factor', etc.
 

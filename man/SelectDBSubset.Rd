@@ -30,7 +30,8 @@ SelectDBSubset.default(
 )
 }
 \arguments{
-\item{object}{A \code{InterCellDBPack} or \code{InterCell} object.}
+\item{object}{A \code{InterCellDBPack} or \code{InterCell} object. \code{SelectDBSubset.default} uses
+\code{InterCellDBPack} as input.}
 
 \item{...}{Parameters passed to function \code{SelectDBSubset.default}.}
 

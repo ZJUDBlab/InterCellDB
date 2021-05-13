@@ -2,19 +2,18 @@
 % Please edit documentation in R/TgView-part3.R
 \name{GetResultTgSpecificity}
 \alias{GetResultTgSpecificity}
-\title{Summary special genes in cluster groups}
+\title{Get Result for Specificity Analysis}
 \usage{
 GetResultTgSpecificity(
   object,
-  show.uq.cnt.range = integer(),
-  show.uq.cnt.merged = TRUE,
-  select.genepairs = character(),
-  select.genepairs.method = "random",
-  select.by.method.pairs.limit = 10,
-  select.by.method.decreasing = TRUE,
-  show.topn.inside.onepair = +Inf,
+  sel.uq.cnt.options = integer(),
+  sel.gene.pairs = NULL,
+  sel.gene.pairs.method = NULL,
+  sel.by.method.count = 10,
+  sel.by.method.decreasing = TRUE,
   prioritize.cluster.groups = character(),
-  display.conv.or.rev = TRUE,
+  plot.name.X.to.Y = TRUE,
+  plot.uq.cnt.merged = TRUE,
   grid.plot.ncol = 1,
   barplot.or.dotplot = FALSE,
   plot.font.size.base = 12,
@@ -26,47 +25,43 @@ GetResultTgSpecificity(
   bar.colour = character(),
   bar.width = 0.8,
   dot.range.to.use = list(LogFC = c(-Inf, +Inf), PVal = c(-Inf, +Inf)),
-  dot.colour.palette = scale_colour_gradientn(name = "PVal", colours = c("#00809D",
-    "#EEEEEE", "#C30000"), values = c(0, 0.5, 1)),
+  dot.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
+  dot.colour.value.seq = c(0, 0.5, 1),
   dot.size.range = c(2, 8),
   dot.y.order.in.alphabet = TRUE,
   ...
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{show.uq.cnt.range}{Integer. It defines the range of \code{uq.cnt} that is going to be used in downstream analysis, and 
-the default setting is to use all valid \code{uq.cnt}.}
+\item{sel.uq.cnt.options}{It defines the range of co-occurence count to be shown in result. If no option is given,
+it will use all available co-occurence count.}
 
-\item{show.uq.cnt.merged}{Logic. If set TRUE, then gene pairs of different \code{uq.cnt} will be merged in analysis, or gene pairs 
-will be grouped by their \code{uq.cnt} and be plotted accordingly.}
+\item{sel.gene.pairs}{Directly specify the desired gene pairs. It should be given in standard table that is generated 
+by \code{\link{FormatCustomGenePairs}}. To note, it's strictly aligned to clusters, which is illustrated in \code{\link{AnalyzeInterInFullView}}.}
 
-\item{select.genepairs}{Character. It specificly gives the gene pairs that are going to be analyzed.}
-
-\item{select.genepairs.method}{Character. It has options: "random", "logfc-sum". It works only when no specific gene pairs are given in 
-parameter \code{select.genepairs}. Method "random" will randomly pick up some gene pairs. Method "logfc-sum" will calculate the sum of LogFCs of 
+\item{sel.gene.pairs.method}{Options are: "random", "logfc-sum" or not to use (by set NULL). It works only when no specific gene pairs are given in 
+parameter \code{sel.gene.pairs}. Method "random" will randomly pick up some gene pairs. Method "logfc-sum" will calculate the sum of LogFCs of 
 the 2 genes in every gene pairs, and order them by the calculated values.}
 
-\item{select.by.method.pairs.limit}{Integer. It defines the maximum number of gene pairs that are selected by any method.}
+\item{sel.by.method.count}{It defines the maximum number of gene pairs to be fetched by any method.}
 
-\item{select.by.method.decreasing}{Logic. It works for method "logfc-sum". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.}
+\item{sel.by.method.decreasing}{It works for method "logfc-sum". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.}
 
-\item{show.topn.inside.onepair}{Integer. One gene pairs get to be shared by several cluster groups. By setting this parameter, 
-only the top ranked some gene pairs will be finally shown in result. The default value is +Inf, which preserves all result.}
+\item{prioritize.cluster.groups}{It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
+finally plotted from the most left-side to right.}
 
-\item{prioritize.cluster.groups}{Character. It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
-finally plotted from the most left-side to right, and as such, it is called prioritizing.}
+\item{plot.name.X.to.Y}{If set FALSE, switch the position of 2 involving clusters in the original names of interaction. If set TRUE, keep still.}
 
-\item{display.conv.or.rev}{[TODO] Is the display of cluster interaction the same arrange as VEinfos(direction.A.to.B)
-conv, the same, rev, the reverse format. For example, cluster.A -> cluster.B in VEinfo, so, if conv, display like cluster.A~cluster.B, or as cluster.B~cluster.A
-gene pairs will be aligned as cluster order changed.}
+\item{plot.uq.cnt.merged}{If set TRUE, then gene pairs of different count of co-occurence will be merged to show in the result, or gene pairs 
+will be grouped by their count of co-occurence and be plotted accordingly.}
 
-\item{grid.plot.ncol}{[TODO]show.uq.cnt.merged = FALSE, then it will be used}
+\item{grid.plot.ncol}{It gives the number of columns for plotting grid when \code{plot.uq.cnt.merged = FALSE}.}
 
-\item{barplot.or.dotplot}{[TODO]}
+\item{barplot.or.dotplot}{If TRUE, use 'barplot', or, use 'dotplot'.}
 
-\item{plot.font.size.base}{Numeric. It defines the font size of texts such as labels and titles.}
+\item{plot.font.size.base}{It defines the base font size for all texts.}
 
 \item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
 
@@ -74,22 +69,24 @@ gene pairs will be aligned as cluster order changed.}
 
 \item{bar.facet.space}{It controls the space allocating strategy that facet uses, and gets 4 options as defined by \pkg{ggplot2}: "fixed", "free", "free_x", "free_y".}
 
-\item{bar.facet.text.x}{It defines the facet labeling text on the top horizontal position.}
+\item{bar.facet.text.x}{It defines the style of facet text on the top horizontal position.}
 
-\item{bar.facet.background}{It defines the background style of labellers in facet way.}
+\item{bar.facet.background}{It defines the background style of labels among facets.}
 
-\item{bar.colour}{Character. It gives all optional colours that plotting bars get to use. If no specific colour is given, then the 
-built-in 20 kinds of colours will be automatically used.}
+\item{bar.colour}{It gives colors that plotting bars get to use. If no specific colour is given, then the 
+built-in 20 kinds of colours will be used.}
 
-\item{bar.width}{Numeric. It defines the bar width.}
+\item{bar.width}{It defines the bar width.}
 
-\item{dot.range.to.use}{[TODO]}
+\item{dot.range.to.use}{It specifies the user specified ranges for evaluation params.}
 
-\item{dot.colour.palette}{[TODO]}
+\item{dot.colour.seq}{It specifies the colour sequence for dots.}
 
-\item{dot.size.range}{[TODO]}
+\item{dot.colour.value.seq}{It is along with the param \code{dot.colour.seq}, and changes the colour expansion.}
 
-\item{dot.y.order.in.alphabet}{[TODO]}
+\item{dot.size.range}{It specifies the size range of the dots}
+
+\item{dot.y.order.in.alphabet}{If set TRUE, order gene pairs in alphabet.}
 
 \item{...}{Other parameter that can be passed to select by method functions.}
 }
@@ -101,5 +98,6 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 }
 }
 \description{
-This function is to summary special genes and their specific expressing attributes.
+This function is to summary gene pair specificity by showing all gene pairs with their 
+co-occurring interactions. Gene pairs are evaluated on both power and confidence like it in \code{\link{GetResultTgCrosstalk}}.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{Tool.SplitToGenDataFrame}
 \alias{Tool.SplitToGenDataFrame}
-\title{split character to be data.frame}
+\title{Split Character To Data.frame}
 \usage{
 Tool.SplitToGenDataFrame(to.splits.string, to.split.by, res.colnames)
 }

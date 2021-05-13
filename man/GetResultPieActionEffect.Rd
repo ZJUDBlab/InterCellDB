@@ -2,7 +2,7 @@
 % Please edit documentation in R/TgView-part1.R
 \name{GetResultPieActionEffect}
 \alias{GetResultPieActionEffect}
-\title{Give composition proportion of action effect}
+\title{Get Result for Composition of Action Effect}
 \usage{
 GetResultPieActionEffect(
   object,
@@ -23,56 +23,47 @@ GetResultPieActionEffect(
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{limits.exprs.change}{Character. Use exprssion level change of clusters to select part of data to be shown.}
+\item{limits.exprs.change}{Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'. It selects 
+the part of result to be shown.}
 
-\item{limits.ext.action.effect}{[TODO]}
+\item{limits.ext.action.effect}{Options are listed in \code{kpred.ext.action.effect}. It specifies 
+the range of shown extended action effect.}
 
-\item{color.ext.action.effect}{[TODO]}
+\item{color.ext.action.effect}{The colors to be used. It is one-to-one matching with \code{limits.ext.action.effect}.}
 
-\item{legend.title}{[TODO]}
+\item{legend.title}{The content of legend title.}
 
-\item{legend.title.size}{It sets the attributes of legend title, and should be \code{element_text()}.}
+\item{legend.title.size}{The size of legend title.}
 
-\item{legend.key.size}{The size of keys in legend. It should be in unit format, see \code{?unit} for further help.}
+\item{legend.key.size}{The size of keys in legend.}
 
-\item{legend.text.size}{It sets the attributes of legend annotation texts, and should be \code{element_text()}.}
+\item{legend.text.size}{The size of legend text.}
 
-\item{legend.box.margin}{It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.}
+\item{legend.box.margin}{The margin of legend box, and should be given in \code{margin()}. See \code{?margin} for further help.}
 
-\item{show.note}{[TODO]}
+\item{show.note}{If set TRUE, the note will be shown in the graph.}
 
-\item{note.label.size}{[TODO]}
+\item{note.label.size}{Numeric. The size of note label.}
 
-\item{note.lineheight}{[TODO]}
+\item{note.lineheight}{Numeric. The lineheight of note.}
 
-\item{note.postion.xy}{[TODO]}
+\item{note.postion.xy}{The position of note, should be 2 numbers that give the coordinate. Allowed range is (0~1, 0~1).}
 
-\item{note.hjust}{[TODO]}
+\item{note.hjust}{The horizontal alignment of note. Allowed range is 0~1.}
 
-\item{note.vjust}{[TODO]}
+\item{note.vjust}{The vertical alignment of note. Allowed range is 0~1.}
 }
 \value{
 A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 \itemize{
-  \item plot: the object of \pkg{ggplot2}.
+  \item plot: NULL.
+  \item grid.plot: the graph.
   \item table: a list of \code{data.frame}.
 }
 }
 \description{
 This function focuses on one interaction pair and its detailed information(expression changes, 
-gene-gene action effects), and get result from it.
-}
-\examples{
-# select only Xup.Yup
-\dontrun{
-GetResult.SummaryOnepairClusters(
-  onepair.gmoc,
-  limits.exprs.change = c("Xup.Yup")
-)
-}
-
-
-
+gene-gene action effect), and get result from it.
 }

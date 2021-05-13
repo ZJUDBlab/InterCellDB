@@ -17,8 +17,8 @@ globalVariables(c("Uniprot.key.map.list",
 #' 
 #' @format Data.frame.
 #' \itemize{
-#'    \item {\code{orig.uniprot.keywords}: } {[TODO]}
-#'    \item {\code{merged.molecular.function}: } {[TODO]
+#'    \item {\code{orig.uniprot.keywords}: } {keywords from Uniprot Keyword Molecular Function.}
+#'    \item {\code{merged.molecular.function}: } {manual merged keywords
 #'          }
 #' }
 #'

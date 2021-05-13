@@ -11,13 +11,12 @@ kexprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
 
 
 
-#' [TODO]
+#' Check Species
 #'
-#' [TODO]
+#' This function helps to check species.
 #'
-#' @param species [TODO]
+#' @param species Allowed species are 'human' and 'mouse'.
 #'
-#' @export
 #'
 CheckSpeciesValidity <- function(
 	species
@@ -30,8 +29,7 @@ CheckSpeciesValidity <- function(
 	return(species)
 }
 
-
-
+# This function is to provide standard format to check some parameters.
 CheckParamStd <- function(
 	input.opt,
 	allowed.opt,
@@ -49,8 +47,7 @@ CheckParamStd <- function(
 	return(input.opt)
 }
 
-
-
+# Transform 4 action effect to corresponding 7 extended action effect
 TransActionEffectToActId <- function(
 	action.effect
 ) {
@@ -66,11 +63,12 @@ TransActionEffectToActId <- function(
 	return(ret.act.ids)
 }
 
+
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # more common used tool function
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' split character to be data.frame
+#' Split Character To Data.frame
 #' 
 #' @description
 #' This function generates n-column data frame by spliting character by some specific letters or phrases.
@@ -139,7 +137,7 @@ Tc.Cap.simple.vec <- function(to.cap.vec) {
 
 
 
-#' Speed-up doing unique for data.frame
+#' Speed-up Doing Unique for Data.frame
 #'
 #' @description
 #' This function uses the properties of \code{data.frame} and \code{rownames}, and 
@@ -154,8 +152,6 @@ Tc.Cap.simple.vec <- function(to.cap.vec) {
 #' be really slow if it is applied on the whole table. However, in most circumstances, 
 #' there is no need to apply \code{unique()} on all columns, i.e. only do unique on some 
 #' columns, which is exactly the thing this function does.
-#'
-#'
 #'
 #' @export
 #'
@@ -176,7 +172,7 @@ DoPartUnique <- function(
 
 
 
-#' Permutate reverse order of odds and evens
+#' Permutate Reverse Order of Odds and Evens
 #'
 #' @description
 #' This function generates reverse premutation of odd values and even values 
@@ -188,8 +184,6 @@ DoPartUnique <- function(
 #' # for 1:10 
 #' ReverseOddEvenCols(10)
 #' # the reuslt is c(2,1,4,3,6,5,8,7,10,9)
-#'
-#'
 #'
 #' @export
 #'
@@ -213,12 +207,18 @@ ReverseOddEvenCols <- function(
 
 
 
-#
-#
-#
-#
-# [TODO]
-#
+#' Fast Align Gene Pairs
+#'
+#' This function helps to align gene pairs by their GeneID or GeneName. Its purpose is
+#' to make different gene pairs data comparable in the same settings.
+#'
+#' @param xxpairs Gene pairs to be compared.
+#' @param ind.colname.end.dual Gene Pairs are given as pairs, so as their properties.
+#' @param use.cols Use which columns to align those pairs. Column ID or column name is supported.
+#' @param use.class Defines what is given in \code{use.cols}.
+#'
+#' @export
+#'
 FastAlignPairs <- function(
 	xxpairs, 
 	ind.colname.end.dual, 
@@ -259,11 +259,10 @@ FastAlignPairs <- function(
 # Tool function for specific purpose
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Find genes annotated in specific GO terms
+#' Find Genes Annotated in Specific GO Terms
 #' 
 #' @description
 #' This function uses GO terms or GO IDs to get a specific list of genes.
-#'
 #'
 #' @param go.todolist Character. Several GO_terms or GO_IDs or mixed, which will 
 #' be used to get subsets of feature genes. 
@@ -275,8 +274,6 @@ FastAlignPairs <- function(
 #' With each corresponding to one group of database listed in \pkg{GO.db}.
 #' 
 #' @return Character. A gene list of given GO IDs or terms.
-#'
-#'
 #'
 #' @importFrom GO.db GOCCANCESTOR GOCCPARENTS GOCCOFFSPRING GOCCCHILDREN 
 #' @importFrom GO.db GOMFANCESTOR GOMFPARENTS GOMFOFFSPRING GOMFCHILDREN 
@@ -383,52 +380,4 @@ Tool.FindGenesFromGO <- function(
 	go.res.final <- go.res.final[tmp.reorder.inds[which(!is.na(tmp.reorder.inds))]]
 
 	return(go.res.final)
-}
-
-
-
-#' generate gene pairs in standard format from VEinfos
-#' 
-#' @description
-#' This function generates gene pairs in standard format(in data frame), 
-#' and gets these pairs easier to be compared with others.
-#'
-#' @param VEinfos [TODO]
-#'
-#' @details
-#' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 
-#' participated in each gene pair are recorded in columns named "inter.GeneName.A" and "inter.GeneName.B".
-#'
-#' @importFrom dplyr left_join
-#'
-#'
-#'
-#' @export
-#'
-Tool.GenStdGenePairs.from.VEinfos <- function(
-  VEinfos
-) {
-  vertices.infos <- VEinfos$vertices.infos
-  edges.infos <- VEinfos$edges.infos
-  #
-  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PVal")], by = c("from" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.A", "inter.GeneName.A", "inter.LogFC.A", "inter.PVal.A")
-  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PVal")], by = c("to" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.B", "inter.GeneName.B", "inter.LogFC.B", "inter.PVal.B")
-  # form std data.frame
-  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B", "inter.PVal.A", "inter.PVal.B", "inter.Cluster.A", "inter.Cluster.B")
-  tmp.res <- tmp.res[, match(align.colnames, colnames(tmp.res))]
-  # result
-  std.df <- DoPartUnique(tmp.res, 1:2)
-  # match cluster
-  # get conv ones
-  std.res.conv <- std.df[intersect(which(std.df$inter.Cluster.A == VEinfos$cluster.name.A), which(std.df$inter.Cluster.B == VEinfos$cluster.name.B)), ]
-  # get rev ones
-  std.res.rev <- std.df[intersect(which(std.df$inter.Cluster.A == VEinfos$cluster.name.B), which(std.df$inter.Cluster.B == VEinfos$cluster.name.A)), ]
-  std.res.rev <- std.res.rev[, ReverseOddEvenCols(length(align.colnames))]  # reverse all paired columns
-  colnames(std.res.rev) <- colnames(std.res.conv)
-  # get the result
-  std.res.all <- rbind(std.res.conv, std.res.rev)
-
-  return(std.res.all)
 }

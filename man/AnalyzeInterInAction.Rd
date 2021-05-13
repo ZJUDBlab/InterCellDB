@@ -2,7 +2,7 @@
 % Please edit documentation in R/TgView-part1.R
 \name{AnalyzeInterInAction}
 \alias{AnalyzeInterInAction}
-\title{Collect gene pairs by expression change and action effects}
+\title{Analysis Composition of Actions}
 \usage{
 AnalyzeInterInAction(
   object,
@@ -12,22 +12,21 @@ AnalyzeInterInAction(
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{limits.exprs.change}{It specifies the range of expression change status that needs to be collected.}
+\item{limits.exprs.change}{Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.
+It collects the gene pairs matching to given expression change.}
 
-\item{limits.action.mode}{[TODO]}
+\item{limits.action.mode}{Options are listed in \code{kpred.action.mode}. It specifies 
+the range of used action mode.}
 
-\item{limits.action.effect}{It specifies the range of action effects that need to be collected.}
+\item{limits.action.effect}{Options are listed in \code{kpred.action.effect}. It specifies 
+the range of used action effect.}
 }
 \value{
-[TODO]
+A \code{InterCell} object.
 }
 \description{
-This function gets to collect gene pairs by their expression change (total 4 category) and 
-action effects (total 4 category).
-}
-\details{
-This function is to collect hierachical information inside the raw data, which is collecting gene pairs 
-and grouping them by expression change status and action effects.
+This function gets to group gene pairs by their expression change, action mode and 
+action effect.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{Tool.FindGenesFromGO}
 \alias{Tool.FindGenesFromGO}
-\title{Find genes annotated in specific GO terms}
+\title{Find Genes Annotated in Specific GO Terms}
 \usage{
 Tool.FindGenesFromGO(
   go.todolist,

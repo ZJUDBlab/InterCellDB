@@ -2,7 +2,7 @@
 % Please edit documentation in R/TgView-prep.R
 \name{SelectInterSubset}
 \alias{SelectInterSubset}
-\title{Select part of gene pairs}
+\title{Select Some Gene Pairs from One Interaction}
 \usage{
 SelectInterSubset(
   object,
@@ -12,48 +12,41 @@ SelectInterSubset(
   sel.some.genes.Y = NULL,
   sel.genes.option = "intersect",
   sel.gene.pairs = NULL,
-  sel.some.gene.pairs.colnames = c("inter.GeneName.A", "inter.GeneName.B"),
-  sel.mode.val = NULL,
-  sel.action.effect.val = NULL,
-  sel.mode.action.option = "intersect"
+  sel.action.mode = "ALL",
+  sel.action.effect = "ALL",
+  sel.action.merge.option = "intersect"
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{direction.X.to.Y}{[TODO]}
+\item{direction.X.to.Y}{Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
+The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.}
 
-\item{sel.exprs.change}{Character. It selects the expression change status that gene pairs can be. It has total 4 options:
-"Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn", which are defined in global variables \code{kexprs.change}.}
+\item{sel.exprs.change}{Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.
+It gives the corresponding expression change of every interacting gene pair.}
 
-\item{sel.some.genes.X}{Character. It selects some genes in cluster A(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.A} to fetch that).}
+\item{sel.some.genes.X}{It gives the target genes expected to be expressed by cluster X (
+the same as parameter \code{cluster.x} in \code{\link{FetchInterOI}}).}
 
-\item{sel.some.genes.Y}{Character. It selects some genes in cluster B(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.B} to fetch that).}
+\item{sel.some.genes.Y}{It gives the target genes expected to be expressed by cluster Y (
+the same as parameter \code{cluster.y} in \code{\link{FetchInterOI}}).}
 
-\item{sel.genes.option}{Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by some given genes.
-The default way is to intersect the subsets, and the other option is union.}
+\item{sel.genes.option}{Options are 'intersect' or 'union'. 'intersect' strictly restricts gene pair to 
+have one gene partner in \code{sel.some.genes.X} and the other in \code{sel.some.genes.Y}. 'union' restricts 
+gene pair to have at least one gene either in \code{sel.some.genes.X} or \code{sel.some.genes.Y}.}
 
-\item{sel.gene.pairs}{Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
-one of the participated genes. The 2 required column names need to be specified by another parameter \code{sel.some.gene.pairs.colnames}.}
+\item{sel.gene.pairs}{Directly specify the desired gene pairs. It should be given in standard table that is generated 
+by \code{\link{FormatCustomGenePairs}}. The genes in "inter.*.A" will be applied to cluster X, and "inter.*.B" will be applied to cluster Y.}
 
-\item{sel.some.gene.pairs.colnames}{Character of length 2. It strictly specifies the column names that records the genes of given gene pairs, 
-and it also implies the direction goes from the first column to the second (AtoB). So, make sure putting genes in their proper positions.}
+\item{sel.action.mode}{Selection by action mode. "ALL" means not use action mode to select subset.
+Other options will be directly select gene pair in that action mode. Supported options are listed in \code{kpred.action.mode}.}
 
-\item{sel.mode.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.mode}, or
-please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.mode}.}
+\item{sel.action.effect}{Selection by action effect. "ALL" means not use action effect to select subset. 
+Other options will be directly select gene pair in that action effect. Supported options are listed in \code{kpred.action.effect}.}
 
-\item{sel.action.effect.val}{Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
-please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.}
-
-\item{sel.mode.action.option}{Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by mode 
-and subset selected by action.effect. The default way is to intersect the subsets, and the other option is union.}
+\item{sel.action.merge.option}{Either 'intersect' or 'union'. The option for merging the result from selection on action mode and action effect.}
 }
 \description{
-This function is to further select subset of interactions in given 2-cell group.
-}
-\details{
-The whole list of mode or action.effect is defined as global variable that is given within the package.
-kpred.action.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
-As the action database given now is not completed well, it is recommended to select upon
-action.effect, while leaving all different modes preserved.
+This function is to further select subset of interacting gene pairs in given interaction
 }

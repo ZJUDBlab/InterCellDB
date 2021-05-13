@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{ReverseOddEvenCols}
 \alias{ReverseOddEvenCols}
-\title{Permutate reverse order of odds and evens}
+\title{Permutate Reverse Order of Odds and Evens}
 \usage{
 ReverseOddEvenCols(ncols)
 }
@@ -17,7 +17,5 @@ in continues values, e.g. \code{1:10}.
 # for 1:10 
 ReverseOddEvenCols(10)
 # the reuslt is c(2,1,4,3,6,5,8,7,10,9)
-
-
 
 }

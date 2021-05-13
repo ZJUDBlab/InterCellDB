@@ -7,9 +7,10 @@
 FormatCustomGenePairs(gene.pairs.table, species)
 }
 \arguments{
-\item{gene.pairs.table}{[TODO] in data.frame 2 columns}
+\item{gene.pairs.table}{2-column table, and each column records one list of genes.}
 
-\item{species}{[TODO] which species to be add database}
+\item{species}{\pkg{InterCellDB} supports species in either 'human' or 'mouse'.
+Other species are not supported to be used for analysis.}
 }
 \value{
 A list with \code{$result} storing the formatted gene pairs.
@@ -19,4 +20,8 @@ This function makes 2-column table (each row represents one gene pair) to be
 formatted to be used in this package.
 The gene names will be remapped to the authorized gene names recorded in gene 
 reference database embedded in this package.
+}
+\details{
+The formatting process will remap the genes in 1st column from input to 'inter.*.A' columns in result.
+The result of 2nd column from input will be put in 'inter.*.B' columns.
 }

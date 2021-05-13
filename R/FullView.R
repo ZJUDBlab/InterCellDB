@@ -1,28 +1,64 @@
 
 
-#' Analyze interaction network in full view
+#' Perform Network Analysis
 #'
 #' @description
-#' This function analyzes count and power of interaction pairs among all given clusters.
+#' This function works for network analysis, which calculates
+#' count and power of interaction pairs among all given clusters.
 #'
-#' @param object [TODO] InterCell Object
-#' @param sel.clusters.X [TODO]
-#' @param sel.clusters.Y [TODO]
-#' @param sel.exprs.change [TODO]
-#' @param sel.some.genes.X [TODO]
-#' @param sel.some.genes.Y [TODO]
-#' @param sel.genes.option [TODO]
-#' @param sel.gene.pairs [TODO] data.frame
-#' @param force.process [TODO]
-#' @param verbose [TODO]
+#' @inheritParams InsideObjectInterCell
+#' @param sel.clusters.X Defining one part of interacting clusters. The options can be 
+#'  found from \code{\link{ListAllClusters}}. See details for help.
+#' @param sel.clusters.Y Defining the other part of interacting clusters. The options can be 
+#'  found from \code{\link{ListAllClusters}}. See details for help.
+#' @param sel.exprs.change Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.
+#'  It gives the corresponding expression change of every interacting gene pair.
+#' @param sel.some.genes.X It gives the genes to be expected to be expressed in clusters given  
+#'  by parameter \code{sel.clusters.X}. 
+#' @param sel.some.genes.Y It gives the genes to be expected to be expressed in clusters given  
+#'  by parameter \code{sel.clusters.Y}. 
+#' @param sel.genes.option Options are 'intersect' or 'union'. 'intersect' strictly restricts gene pair to 
+#'  have one gene partner in \code{sel.some.genes.X} and the other in \code{sel.some.genes.Y}. 'union' restricts 
+#'  gene pair to have at least one gene either in \code{sel.some.genes.X} or \code{sel.some.genes.Y}.
+#' @param sel.gene.pairs Directly specify the desired gene pairs. It should be given in standard table that is generated 
+#'  by \code{\link{FormatCustomGenePairs}}. To note, it's strictly aligned to clusters, see details.
+#' @param force.process It stops the program when no subset of genes are selected either by \code{sel.some.genes.X} and \code{sel.some.genes.Y}
+#'  or by \code{sel.gene.pairs}, which may take long time to process. To force process, set this to TRUE.
+#' @param verbose If set TRUE, the progress bar will be shown.
 #'
 #' @details
+#' This function performs network analysis and calculates:
+#' \itemize{
+#'   \item count: count of interaction.
+#'   \item power: strength of interaction, which is calculated by formula: SUM(abs(LogFC[gene.X] * LogFC[gene.Y])).
+#' }
 #'
+#' \bold{sel.clusters.X} and \bold{sel.clusters.Y}: 
+#' Interactions are defined by pairs of interacting clusters, or say cluster groups. 
+#' For one interaction, e.g. cluster-Myeloid ~ cluster-T_cell, the fromer one will be 
+#' restricted to clusters given in \code{sel.clusters.X} and the latter one will be 
+#' retricted to clusters given in \code{sel.clusters.Y}.
+#' The clusters given by \code{ListAllClusters} list all available clusters, and users can 
+#' manually pick some or all of them. 
 #'
-#' @return A list.
+#' \bold{sel.exprs.change}: 
+#' The *up means the gene is up-regulated, i.e. its LogFC (log fold change) > 0.
+#' The *dn means the gene is down-regulated. Take 'Xup.Ydn' for example,
+#' it gets to explore the interaction between cluster X and cluster Y by taking up-regulated genes from X and 
+#' down-regulated genes from Y. 
 #'
-#' @examples
+#' \bold{sel.gene.pairs}: 
+#' The gene pairs given in this parameter are strictly aligned to clusters given by 
+#' parameter \code{sel.clusters.X} and \code{sel.clusters.Y}. After standardizing by \code{FormatCustomGenePairs},
+#' the gene pairs are given in 4 columns, and 2 of them are named 'inter.GeneName.A', 'inter.GeneName.B'.
+#' The corresponding relation is that genes listed in 'inter.GeneName.A' are used to compare with genes expressed by clusters given in \code{sel.clusters.X} 
+#' and genes listed in 'inter.GeneName.B' are used to compare with genes expressed by clusters given in \code{sel.clusters.Y}.
+#' For example, if the user gives C3~C3ar1 in \code{sel.gene.pairs}, Myeloid_cell and T_cell in \code{sel.clusters.X}, and 
+#' fibroblast and B_cell in \code{sel.clusters.Y}, then C3 will be tested in Myeloid_cell and T_cell but not fibroblast and B_cell,
+#' and C3ar1 will be only tested in fibroblast and B_cell. If the user need C3~C3ar1 to be tested in the opposite way, 
+#' one more row C3ar1~C3 should be given in \code{sel.gene.pairs}. 
 #'
+#' @return A \code{InterCell} object.
 #'
 #' @importFrom dplyr bind_rows left_join
 #' @import progress
@@ -37,8 +73,8 @@ AnalyzeInterInFullView <- function(
 	sel.some.genes.X = NULL,
 	sel.some.genes.Y = NULL,
 	sel.genes.option = "intersect", 
-	sel.gene.pairs = NULL,  # [TODO] modify and set an standard AddUserPairs function
-	force.process = FALSE,  # control if no gene selection applied
+	sel.gene.pairs = NULL,
+	force.process = FALSE,
 	verbose = TRUE
 ) {
 	# check sel.clusters.*
@@ -112,7 +148,6 @@ AnalyzeInterInFullView <- function(
 		warning("Given invalid user option on selecting genes: ", paste0(sel.genes.option, collapse = ", "), ". ", 
 			"Using default 'intersect' option!")
 	)
-	
 
 	# check exprs change
 	not.valid.exprs.c <- setdiff(sel.exprs.change, kexprs.change)
@@ -123,7 +158,6 @@ AnalyzeInterInFullView <- function(
 	if (length(sel.exprs.change) == 0) {
 		stop("No expression change selection is given in parameter `sel.exprs.change`. Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.")
 	}
-
 
 	## analyze interaction network
 	interact.pairs.all <- list(
@@ -161,14 +195,17 @@ AnalyzeInterInFullView <- function(
 			ref.GeneB <- used.proc.pairs.db$inter.GeneName.B
 			# conv
 			inds.gpairs.conv <- intersect(which(ref.GeneA %in% genes.X), which(ref.GeneB %in% genes.Y))
-			gpairs.conv <- used.proc.pairs.db[inds.gpairs.conv, ]
-			# rev
-			inds.gpairs.rev <- intersect(which(ref.GeneB %in% genes.X), which(ref.GeneA %in% genes.Y))
-			cols.rev <- ReverseOddEvenCols(std.index.colname.end.dual)
-			gpairs.rev <- used.proc.pairs.db[inds.gpairs.rev, c(cols.rev, setdiff(seq_len(ncol(used.proc.pairs.db)), cols.rev))]
-			colnames(gpairs.rev) <- colnames(used.proc.pairs.db)
-			# result
-			gpairs.result <- rbind(gpairs.conv, gpairs.rev)
+			gpairs.result <- used.proc.pairs.db[inds.gpairs.conv, ]
+			
+			if (is.null(sel.gene.pairs)) {  # using reference database, then rev. ones should be collected
+				# rev
+				inds.gpairs.rev <- intersect(which(ref.GeneB %in% genes.X), which(ref.GeneA %in% genes.Y))
+				cols.rev <- ReverseOddEvenCols(std.index.colname.end.dual)
+				gpairs.rev <- used.proc.pairs.db[inds.gpairs.rev, c(cols.rev, setdiff(seq_len(ncol(used.proc.pairs.db)), cols.rev))]
+				colnames(gpairs.rev) <- colnames(used.proc.pairs.db)
+				# merge result
+				gpairs.result <- rbind(gpairs.result, gpairs.rev)
+			}
 			
 			# prioritized usage of selection to process
 			if (is.null(sel.gene.pairs)) {  # use selected genes
@@ -251,30 +288,39 @@ AnalyzeInterInFullView <- function(
 
 
 
-#' Get result of analysis in full view
+#' Get Result for Network Analysis
 #' 
 #' @description
-#' This function focuses on some subset of interaction pairs, and get rather fine grained
-#' result from those.
+#' This function summarizes the result of network analysis in graph and table, and gives clues to 
+#' most active intercellular communications.
 #'
-#' @param object [TODO] 
-#' @param show.clusters.in.x Vector. Clusters(use cluster names) that are chosen to show in x-axis by users.
-#' @param show.clusters.in.y Vector. Clusters(use cluster names) that are chosen to show in y-axis by users.
-#' @param plot.cluster.group.method [TODO]
-#' @param power.max.limit Numeric. Specify the upper limit of power, whose value is highly user-defined and data-dependent.
-#' @param power.min.limit Numeric. Specify the lower limit of power, like \code{power.max.limit}.
-#' @param plot.power.range [TODO] This will extend the range of actual value for plotting adjustment.
-#' @param hide.power.label Logic. If TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.
-#' @param cnt.max.limit Numeric. Specify the upper limit of count, whose value is highly user-defined and data-dependent.
-#' @param cnt.min.limit Numeric. Specify the lower limit of count, like \code{cnt.max.limit}.
-#' @param plot.cnt.range [TODO] This will extend the range of actual value for plotting adjustment
-#' @param hide.cnt.label Logic. If TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.
-#' @param nodes.size.range Numeric. It specifies the range of sizes of the nodes in the graph.
-#' @param nodes.colour.seq Character. Given colours will be used to generate colour gradient for plotting.
-#' @param nodes.colour.value.seq Numeric. If set NULL, evenly place each colour in \code{nodes.colour.seq} vector.
+#' @inheritParams InsideObjectInterCell
+#' @param show.clusters.in.x Clusters chosen to show in x-axis, corresponding to paramter \code{sel.clusters.X} in \code{\link{AnalyzeInterInFullView}}.
+#' @param show.clusters.in.y Clusters chosen to show in y-axis, corresponding to paramter \code{sel.clusters.Y} in \code{\link{AnalyzeInterInFullView}}.
+#' @param sel.cluster.group.method Options are 'all', 'diagonal' and 'diagonal-2'. It controls 
+#'  'all' is recommended for most cases, and 
+#'  'diagonal*' is recommended when same restrictions are applied to clusters in X and Y.
+#' @param power.max.limit One number that specifies the upper limit of power, and power larger than this value will be coerced to this value.
+#' @param power.min.limit One number that specifies the lower limit of power, and power lower than this value will be coerced to this value.
+#' @param cnt.max.limitOne number that specifies the upper limit of count, and larger ones will be coerced to this.
+#' @param cnt.min.limit Numeric. Specify the lower limit of count, and lower ones will be coerced to this.
+#' @param plot.power.range This will extend the plotting range beyond actual value range for power.
+#' @param hide.power.label If set TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.
+#' @param plot.cnt.range This will extend the plotting range beyond actual value range for count.
+#' @param hide.cnt.label If set TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.
+#' @param nodes.size.range 2 numbers that specifies the range of sizes of the nodes shown in the graph.
+#' @param nodes.colour.seq Given colours will be used to generate colour gradient for plotting.
+#' @param nodes.colour.value.seq Numeric. If set NULL, colours given in \code{nodes.colour.seq} will be evenly placed.
 #' Otherwise, numeric values with the same length of \code{nodes.colour.seq} should be given to specify the positions corresponding to each colour.
 #' See parameter \code{values} in \code{ggplot2::scale_colour_gradientn} for details.
-#' @param label.power.options List. Options are hjust, vjust, nudge.x, nudge.y, size. See \code{ggplot2::geom_text} for details.
+#' @param label.power.options List of 'power' label appearance control parameters, including hjust, vjust, nudge.x, nudge.y, size. See details for help.
+#' @param label.cnt.options List of label appearance control parameters like those in \code{label.power.options}.
+#' @param plot.axis.x.name X-axis name when plotting.
+#' @param plot.axis.y.name Y-axis name when plotting.
+#' 
+#' @details
+#' \code{label.power.options} and \code{label.cnt.options}: 
+#' The meanings for each item are recommended to refer to \code{ggplot2::geom_text} for details.
 #' \itemize{
 #'   \item hjust:   horizontal justification. Use either a string in ("left", "center", "right"), or a number between 0 and 1. See
 #'                  \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
@@ -284,28 +330,12 @@ AnalyzeInterInFullView <- function(
 #'   \item nudge.y: vertical adjustment to nudge labels by.
 #'   \item size:    label size.
 #' }
-#' @param label.cnt.options List. Options are like \code{label.power.options}.
-#' @param plot.axis.x.name Character. X-axis name when plot is shown.
-#' @param plot.axis.y.name Character. Y-axis name when plot is shown.
-#' 
-#' @details
-#' This function uses some subset of interaction pairs, and does calculations in cluster level.
-#' It calculates:
-#' \itemize{
-#'   \item count: count of interaction pairs.
-#'   \item power: strength of interaction pairs, which is calculated by formula: SUM(abs(LogFC[geneA] * LogFC[geneB])), 
-#'                as the function defines: \code{FullView.Evaluation.func.default}.
-#' }
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
 #'   \item plot: the object of \pkg{ggplot2}.
 #'   \item table: a list of \code{data.frame}.
 #' }
-#'
-#' @examples
-#'
-#'
 #'
 #' @import ggplot2
 #'
@@ -315,13 +345,13 @@ GetResultFullView <- function(
 	object,
 	show.clusters.in.x = NULL,
 	show.clusters.in.y = NULL,
-	plot.cluster.group.method = "all",  # also support diagonal or diagonal-2
+	sel.cluster.group.method = "all",
 	power.max.limit = NULL,
 	power.min.limit = NULL,
-	plot.power.range = NULL, 
-	hide.power.label = FALSE,
 	cnt.max.limit = NULL,
 	cnt.min.limit = NULL,
+	plot.power.range = NULL, 
+	hide.power.label = FALSE,
 	plot.cnt.range = NULL, 
 	hide.cnt.label = FALSE,
 	nodes.size.range = c(1, 6),
@@ -378,7 +408,7 @@ GetResultFullView <- function(
 		}
 		return(list(xsel = res.va, ysel = res.vb))
 	}
-	select.cluster.groups <- switch(plot.cluster.group.method,
+	select.cluster.groups <- switch(sel.cluster.group.method,
 		"all" = {
 				col.x.data <- rep(fac.x.clusters, each = length(fac.y.clusters))
 				col.y.data <- rep(fac.y.clusters, times = length(fac.x.clusters))
@@ -386,7 +416,7 @@ GetResultFullView <- function(
 			},
 		"diagonal" = inside.diagonal.selection(fac.x.clusters, fac.y.clusters),
 		"diagonal-2" = inside.diagonal.selection(fac.x.clusters, fac.y.clusters, identical.rm = TRUE),
-		stop("Undefined method for selecting cluster groups. Please re-check the given parameter: plot.cluster.group.method")
+		stop("Undefined method for selecting cluster groups. Please re-check the given parameter: sel.cluster.group.method")
 	)
 	col.x.data <- select.cluster.groups$xsel
 	col.y.data <- select.cluster.groups$ysel
@@ -546,8 +576,32 @@ GetResultFullView <- function(
 # Other functions
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-FetchClusterGroups <- function(
+#' List Cluster Groups
+#'
+#' This function is to help on listing all or some of cluster groups (i.e. interacting clusters).
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param use.former It controls whether to list cluster groups relating to one or some clusters(.X) given in 
+#'  parameter \code{sel.clusters.X} of \code{link{AnalyzeInterInFullView}}.
+#' @param cluster.former The name of clusters, which is used find all X~? interactions (X is cluters given in these parameter). 
+#' @param use.latter It controls whether to list cluster groups relating to one or some clusters(.Y) given in 
+#'  parameter \code{sel.clusters.Y} of \code{link{AnalyzeInterInFullView}}.
+#' @param cluster.latter The name of clusters, which is used find all ?~Y interactions (Y is cluters given in these parameter). 
+#'
+#' @return Character. Names of cluster groups.
+#'
+#' @examples
+#' \dontrun {
+#'  ListClusterGroups(object, use.former = TRUE, cluster.former = "T_cell")
+#'  # the output of this will be "T_cell~Macrophage", "T_cell~B_cell" and things like that, depending on available clusters.
+#' 
+#'  ListClusterGroups(object, use.latter = TRUE, cluster.latter = "T_cell")
+#'  # the output of this will be "Macrophage~T_cell", "B_cell~T_cell" and things like that, depending on available clusters.
+#' }
+#'
+#' @export
+#' 
+ListClusterGroups <- function(
 	object,
 	use.former = FALSE,
 	cluster.former = character(),  # to X
@@ -597,7 +651,6 @@ FetchClusterGroups <- function(
 	}
 
 	res.cg <- unique(res.cg)
-	print(paste("Fetch", length(res.cg), "cluster groups."))
 	return(res.cg)
 }
 

@@ -1,14 +1,15 @@
 
 
-#' Extract one pair of interaction
+#' Extract Pairs from One Interaction
 #'
 #' @description
-#' `ExtractTargetOnepairClusters` returns one pair of interaction from user-given cluster names.
+#' This function returns one pair of interaction by giving names of 2 cell clusters.
 #'
-#' @param interact.pairs.acted A list. The return value of \code{\link{AnalyzeClustersInteracts}}.
-#' @param cluster.name.C Character. Name of one cluster.
-#' @param cluster.name.D Character. Name of one cluster.
-#' @param kClustersSplit [TODO]
+#' @param interact.pairs.acted The result of network analysis.
+#' @param cluster.name.C Name of one cluster.
+#' @param cluster.name.D Name of the other cluster.
+#' @param kClustersSplit Letters to split 2 interacting clusters.
+#' @param just.list If set TRUE, no automatic removing of NA will be performed for data.
 #'
 #' @details
 #' The direction of this function is C-D, corresponding to coordinates X-Y in plot, and 
@@ -27,8 +28,6 @@
 #'           \item type.B: it records molecular functions of B in gene pairs formatted as A-B
 #'         }
 #' }
-#'
-#'
 #'
 #' @export
 #'
@@ -93,8 +92,6 @@ ExtractTargetOnepairClusters <- function(
 
 
 
-
-
 # [inside usage]
 # This function is to interpret meanings hidden in action.<taxonomy>.ref.db,
 # and uses columns(mode, is_directional, a_is_acting) in the database.
@@ -141,20 +138,18 @@ Inside.CollectActionMapping <- function(
 
 
 
-
-
-#' Generate interaction pairs with their actions
+#' Collect Gene Pairs with Actions
 #' 
 #' @description
-#' This function uses actions.ref.db to distinguish as well as collect pairs whose direction of interact actions
-#' are known in some degree and are recorded, and pairs with no detailed informations.
+#' This function uses \code{actions.ref.db} to collect gene pairs with their action properties.
+#' Not-recording ones will be set as 'undirected' (no direction and no detailed action).
 #'
 #' @param clusters.onepair.select  A list. Return value of \code{\link{ExtractTargetOnepairClusters}}.
 #' @inheritParams Inside.DummyActionsRefDB
 #'
 #' @return A list.
 #' \itemize{
-#'   \item clusters.name: names of clusters involved. Its length is of 2.
+#'   \item clusters.name: names of clusters involved. Its length is 2.
 #'   \item anno.infos: a list of lists. The sublists are 
 #'         \itemize{
 #'           \item location.A: it records locations of A in gene pairs formatted as A-B
@@ -164,8 +159,6 @@ Inside.CollectActionMapping <- function(
 #'         }
 #'   \item actions.detailed: A list of detailed information about interaction pairs whose actions are recorded in actions.ref.db.
 #' }
-#'
-#'
 #'
 #' @import progress
 #'
@@ -303,22 +296,24 @@ GenerateMapDetailOnepairClusters <- function(
 
 
 
-#' Generate data about vertices and edges
+#' Generate Standard Data for One Interaction
 #'
 #' @description
-#' This function uses detailed informations about one interaction pair(return value of 
-#' \code{GenerateMapDetailOnepairClusters()}), to generate data for drawing relation plot.
+#' This function uses detailed informations about one gene pair(return value of 
+#' \code{GenerateMapDetailOnepairClusters()}), to generate standard data with genes and 
+#' gene pairs stored seperately. 
 #'
 #' @param onepair.gmoc List. Return value of \code{\link{GenerateMapDetailOnepairClusters}}.
 #' @inheritParams Inside.DummyFgenes 
-#' @param direction.X.to.Y [TODO]
-#' @param if.ignore.location Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+#' @param direction.X.to.Y Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
+#' The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.
+#' @param if.ignore.location If set TRUE, genes with different locations or types documented will
 #' be treated as the same, and only one row information will be reserved.
 #'
 #' @details
-#' This function uses actions that are recorded in STRING act database, but only a small part of 
+#' This function uses actions that are recorded in STRING action database, but only a small part of 
 #' actions are thoroughly difined in the database.
-#' This function is used to generate formatted data structure(with vertices and edges).
+#' This function is used to generate formatted data structure (with vertices and edges).
 #'
 #' In vertices, all gene informations are well recorded, and every gene is given one unique ID.
 #'
@@ -333,8 +328,6 @@ GenerateMapDetailOnepairClusters <- function(
 #'   \item vertices.apx.type.A: data.frame that records the types(molecular functions) of A in gene pairs formatted as A-B.
 #'   \item vertices.apx.type.B: data.frame that records the types(molecular functions) of B in gene pairs formatted as A-B.
 #' }
-#'
-#'
 #'
 #' @importFrom dplyr left_join bind_rows
 #'
@@ -493,7 +486,12 @@ GenerateVEinfos <- function(
 }
 
 
-# as .mirror for A-A cluster group, sometimes it is need to removed it 
+
+
+
+# [inside usage]
+# as .mirror is added to cluster name when cluster group like A-A appears.
+# Sometimes it needs to remove it, so that's the purpose of this function.
 getOrigClusterNameTgVEInfo <- function(
 	object
 ) {
@@ -510,7 +508,25 @@ getOrigClusterNameTgVEInfo <- function(
 
 
 
-# This function is to fetch interactions in given 2-cell groups
+#' Fetch One Interaction
+#'
+#' This function is to fetch result of one interaction (all gene pairs between 2 cell clusters)
+#' from network analysis, and generates standard data for downstream analysis. Any \code{NA} about gene itself
+#' (GeneID, GeneName) will be removed.
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param cluster.x Name of one cluster.
+#' @param cluster.y Name of the other cluster.
+#' @param if.ignore.location If set FALSE, genes will be extended by their locations, i.e. one gene 
+#'  along with several locations.
+#'  If set TRUE, only one subcellular location for one specific gene will be reserved, 
+#'  but the locations reserved are randomly picked.
+#'
+#' @return A \code{InterCell} object.
+#' @seealso 'GetOneInter' for extracting gene pairs with NA reserved
+#' 
+#' @export
+#' 
 FetchInterOI <- function(
 	object,
 	cluster.x,
@@ -535,6 +551,19 @@ FetchInterOI <- function(
 
 
 
+#' Get One Interaction
+#'
+#' This function is to get the result of one interaction (all gene pairs between 2 cell clusters)
+#' from network analysis, and directly return the value (even NA appears).
+#'
+#' @inheritParams InsideObjectInterCell
+#' @param cluster.x Name of one cluster.
+#' @param cluster.y Name of the other cluster.
+#' 
+#' @return A list of all results for one interaction.
+#'
+#' @export
+#' 
 GetOneInter <- function(
 	object,
 	cluster.x,
@@ -548,36 +577,31 @@ GetOneInter <- function(
 
 
 
-#' Select part of gene pairs
+#' Select Some Gene Pairs from One Interaction
 #'
 #' @description
-#' This function is to further select subset of interactions in given 2-cell group.
+#' This function is to further select subset of interacting gene pairs in given interaction 
+#  (gene pairs between 2 cell clusters).
 #'
-#' @param object [TODO]
-#' @param direction.X.to.Y [TODO]
-#' @param sel.exprs.change Character. It selects the expression change status that gene pairs can be. It has total 4 options:
-#' "Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn", which are defined in global variables \code{kexprs.change}.
-#' @param sel.some.genes.X Character. It selects some genes in cluster A(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.A} to fetch that).
-#' @param sel.some.genes.Y Character. It selects some genes in cluster B(A is defined in parameter \code{VEinfos} and use \code{VEinfos$cluster.name.B} to fetch that).
-#' @param sel.genes.option Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by some given genes.  
-#' The default way is to intersect the subsets, and the other option is union.
-#' @param sel.gene.pairs Data.frame. It is at-least-2-column data.frame, which records gene pairs with each column settling 
-#' one of the participated genes. The 2 required column names need to be specified by another parameter \code{sel.some.gene.pairs.colnames}.
-#' @param sel.mode.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.mode}, or
-#' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.mode}.
-#' @param sel.action.effect.val Character. If set NULL, it uses all values in global variables \code{InterCellDB::kpred.action.effect}, or
-#' please specify detailed and accurate values in subset of \code{InterCellDB::kpred.action.effect}.
-#' @param sel.mode.action.option Character. Its allowed values are "intersect" and "union". It defines the way that merges the result of subset selected by mode 
-#' and subset selected by action.effect. The default way is to intersect the subsets, and the other option is union.
-#'
-#'
-#' @details
-#' The whole list of mode or action.effect is defined as global variable that is given within the package.
-#' kpred.action.mode defines 9 modes, while kpred.action.effect defines 4 action effects.
-#' As the action database given now is not completed well, it is recommended to select upon
-#' action.effect, while leaving all different modes preserved.
-#'
-#'
+#' @inheritParams InsideObjectInterCell
+#' @param direction.X.to.Y Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
+#' The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.
+#' @param sel.exprs.change Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.
+#'  It gives the corresponding expression change of every interacting gene pair.
+#' @param sel.some.genes.X It gives the target genes expected to be expressed by cluster X (
+#'  the same as parameter \code{cluster.x} in \code{\link{FetchInterOI}}).
+#' @param sel.some.genes.Y It gives the target genes expected to be expressed by cluster Y (
+#'  the same as parameter \code{cluster.y} in \code{\link{FetchInterOI}}).
+#' @param sel.genes.option Options are 'intersect' or 'union'. 'intersect' strictly restricts gene pair to 
+#'  have one gene partner in \code{sel.some.genes.X} and the other in \code{sel.some.genes.Y}. 'union' restricts 
+#'  gene pair to have at least one gene either in \code{sel.some.genes.X} or \code{sel.some.genes.Y}.
+#' @param sel.gene.pairs Directly specify the desired gene pairs. It should be given in standard table that is generated 
+#'  by \code{\link{FormatCustomGenePairs}}. The genes in "inter.*.A" will be applied to cluster X, and "inter.*.B" will be applied to cluster Y.
+#' @param sel.action.mode Selection by action mode. "ALL" means not use action mode to select subset.
+#'  Other options will be directly select gene pair in that action mode. Supported options are listed in \code{kpred.action.mode}.
+#' @param sel.action.effect Selection by action effect. "ALL" means not use action effect to select subset. 
+#'  Other options will be directly select gene pair in that action effect. Supported options are listed in \code{kpred.action.effect}.
+#' @param sel.action.merge.option Either 'intersect' or 'union'. The option for merging the result from selection on action mode and action effect.
 #'
 #' @importFrom dplyr left_join 
 #'
@@ -591,12 +615,11 @@ SelectInterSubset <- function(
 	sel.some.genes.Y = NULL, 
 	sel.genes.option = "intersect", 
 	sel.gene.pairs = NULL, 
-	sel.mode.val = NULL, 
-	sel.action.effect.val = NULL, 
-	sel.mode.action.option = "intersect" 
+	sel.action.mode = "ALL", 
+	sel.action.effect = "ALL", 
+	sel.action.merge.option = "intersect" 
 ) {
 	VEinfos <- getTgVEInfo(object)
-	sel.some.gene.pairs.colnames <- c("inter.GeneName.A", "inter.GeneName.B")
 	#
 	afterV.A.clustername <- VEinfos$cluster.name.A
 	afterV.B.clustername <- VEinfos$cluster.name.B
@@ -605,11 +628,10 @@ SelectInterSubset <- function(
 	vertices.A.apx.types <- VEinfos$vertices.apx.type.A
 	vertices.B.apx.types <- VEinfos$vertices.apx.type.B
 	### select target edges.part.infos and vertices.part.infos by some genes
-	if (!is.null(sel.some.genes.X) || !is.null(sel.some.genes.Y)) {
-		# --- merge option ---
-		if(!(sel.genes.option[[1]] %in% c("union", "intersect"))) {  # only use [1]
-			stop("Sel-some-genes merge option error: undefined merge options! only 'union' and 'intersect' are allowed.")
-		}
+	if (is.null(sel.gene.pairs) && (!is.null(sel.some.genes.X) || !is.null(sel.some.genes.Y))) {
+		# check merge option
+		sel.genes.option <- CheckParamStd(sel.genes.option, c("union", "intersect"), "merge option", stop.on.zero = TRUE)
+		# process
 		uid.somegenes.sel.A <- uid.somegenes.sel.B <- integer()
 		if (is.null(sel.some.genes.X)) {
 			uid.somegenes.sel.A <- vertices.all.infos[which(vertices.all.infos$ClusterName == afterV.A.clustername), "UID"]
@@ -645,21 +667,16 @@ SelectInterSubset <- function(
 	### select target edges.part.infos and vertices.part.infos by some gene pairs
 	## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
 	if (!is.null(sel.gene.pairs)) {
-		if (class(sel.gene.pairs) == "data.frame" && nrow(sel.gene.pairs) > 0 && ncol(sel.gene.pairs) >= 2) {
-			tmp.x <- sum(sel.some.gene.pairs.colnames %in% colnames(sel.gene.pairs))
-			if (tmp.x != length(sel.some.gene.pairs.colnames) || tmp.x < 2) {
-				stop("Given colnames in `sel.some.gene.pairs.colnames` are unvalid or less than 2 (unable to define gene pairs)! They are ",
-					paste0(sel.some.gene.pairs.colnames, collapse = ", "))
-			}
-			tmp.sel.gp.df <- sel.gene.pairs[, sel.some.gene.pairs.colnames]
+		if (class(sel.gene.pairs) == "data.frame" && nrow(sel.gene.pairs) > 0 
+			&& all(c("inter.GeneID.A", "inter.GeneID.B", "inter.GeneName.A", "inter.GeneName.B") %in% colnames(sel.gene.pairs))) {
 			tmp.p1.by.vec <- "GeneName"
-			names(tmp.p1.by.vec) <- sel.some.gene.pairs.colnames[1]
+			names(tmp.p1.by.vec) <- "inter.GeneName.A"
 			tmp.p2.by.vec <- "GeneName"
-			names(tmp.p2.by.vec) <- sel.some.gene.pairs.colnames[2]
+			names(tmp.p2.by.vec) <- "inter.GeneName.B"
 			# join is considering to be cluster-gene perfectly matched
-			tob.res.sel.gp.df <- left_join(sel.gene.pairs, vertices.all.infos[, c("UID", "GeneName")], by = tmp.p1.by.vec)
+			tob.res.sel.gp.df <- left_join(sel.gene.pairs, vertices.all.infos[which(vertices.all.infos$ClusterName == afterV.A.clustername), c("UID", "GeneName")], by = tmp.p1.by.vec)
 			colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "part1.UID"
-			tob.res.sel.gp.df <- left_join(tob.res.sel.gp.df, vertices.all.infos[, c("UID", "GeneName")], by = tmp.p2.by.vec)
+			tob.res.sel.gp.df <- left_join(tob.res.sel.gp.df, vertices.all.infos[which(vertices.all.infos$ClusterName == afterV.B.clustername), c("UID", "GeneName")], by = tmp.p2.by.vec)
 			colnames(tob.res.sel.gp.df)[which(colnames(tob.res.sel.gp.df) %in% c("UID"))] <- "part2.UID"
 			# get subset, using short-inter-pair to match
 			tob.res.short.interacts.conv <- paste(tob.res.sel.gp.df[, "part1.UID"], tob.res.sel.gp.df[, "part2.UID"], sep = "->")
@@ -676,10 +693,8 @@ SelectInterSubset <- function(
 	### select target edges.part.infos and vertices.part.infos by exprs changes of genes
 	## As the process in selecting mode & action.effect using 'edges' as reference, So here, only selecting 'edges' is enough
 	# check if exprs change selection is valid
-	if (sum(sel.exprs.change %in% kexprs.change) != length(sel.exprs.change)) {
-		stop("Given parameter `sel.exprs.change` has some undefined values: ", 
-			paste0(setdiff(sel.exprs.change, kexprs.change), collapse = ", "), "!")
-	}
+	sel.exprs.change <- CheckParamStd(sel.exprs.change, kexprs.change, "expression change", stop.on.zero = TRUE)
+
 	## select by expression changes
 	# cluster belongs inds
 	tmp.inds.cluster.va <- which(vertices.all.infos$ClusterName == afterV.A.clustername)
@@ -736,31 +751,31 @@ SelectInterSubset <- function(
 	# for "A--oB" or "Ao--B",   given type: "unspecified" --- kpred.ext.action.effect[c(6,7)]
 	#
 	### select target edges.part.infos and vertices.part.infos by mode & action.effect
-	## check if valid, sel.mode.val, sel.action.effect.val
+	## check if valid, sel.action.mode, sel.action.effect
 	predefined.mode.list <- kpred.action.mode
 	predefined.action.effect.list <- kpred.action.effect
-	if ((sum(sel.mode.val %in% predefined.mode.list) == length(sel.mode.val) ||
-		 is.null(sel.mode.val)) &&
-		(sum(sel.action.effect.val %in% predefined.action.effect.list) == length(sel.action.effect.val) ||
-		 is.null(sel.action.effect.val))) {
+	if ((sum(sel.action.mode %in% predefined.mode.list) == length(sel.action.mode) ||
+		 sel.action.mode == "ALL") &&
+		(sum(sel.action.effect %in% predefined.action.effect.list) == length(sel.action.effect) ||
+		 sel.action.effect == "ALL")) {
 		inds.full.a1 <- seq_len(nrow(edges.sel3.infos))
 		# --- mode ---
-		if (is.null(sel.mode.val)) {
+		if (sel.action.mode == "ALL") {
 			inds.mode.sel <- inds.full.a1
 		} else {
-			inds.mode.sel <- which(edges.sel3.infos[, "mode"] %in% sel.mode.val)
+			inds.mode.sel <- which(edges.sel3.infos[, "mode"] %in% sel.action.mode)
 		}
 		# --- action.effect ---
-		if (is.null(sel.action.effect.val)) {
+		if (sel.action.effect == "ALL") {
 			inds.actf.sel <- inds.full.a1
 		} else {
-			inds.actf.sel <- which(edges.sel3.infos[, "action.effect"] %in% sel.action.effect.val)
+			inds.actf.sel <- which(edges.sel3.infos[, "action.effect"] %in% sel.action.effect)
 		}
 		# --- merge option ---
-		if (sel.mode.action.option == "union") {
+		if (sel.action.merge.option == "union") {
 			inds.mode.actf.sel <- union(inds.mode.sel, inds.actf.sel)
 		} else {
-			if (sel.mode.action.option == "intersect") {
+			if (sel.action.merge.option == "intersect") {
 				inds.mode.actf.sel <- intersect(inds.mode.sel, inds.actf.sel)
 			} else {
 				stop("Mode-ActionEffect merge option error: undefined merge options! only 'union' and 'intersect' are allowed.")
@@ -788,8 +803,8 @@ SelectInterSubset <- function(
 		inds.part.B.vx <- which(vertices.B.apx.types[, "GeneName"] %in% vertices.part.infos[which(vertices.part.infos$ClusterName == afterV.B.clustername), "GeneName"])
 		vertices.B.apx.types <- vertices.B.apx.types[inds.part.B.vx, ]
 	} else {
-		not.inlist.mode <- sel.mode.val[which(!(sel.mode.val %in% predefined.mode.list))]
-		not.inlist.action.effect <- sel.action.effect.val[which(!(sel.action.effect.val %in% predefined.action.effect.list))]
+		not.inlist.mode <- sel.action.mode[which(!(sel.action.mode %in% predefined.mode.list))]
+		not.inlist.action.effect <- sel.action.effect[which(!(sel.action.effect %in% predefined.action.effect.list))]
 		stop(paste0("Error in given @param, with mode not in list: ", paste0(not.inlist.mode, collapse = ", "), 
 			", with action.effect not in list: ", paste0(not.inlist.action.effect, collapse = ", "),
 			", please recheck these given above!"))

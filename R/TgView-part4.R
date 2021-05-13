@@ -278,57 +278,57 @@ Inside.GetCoords.PartialCircle <- function(
 
 
 
-#' Draw CellPlot for one pair of clusters
+#' Get Result for Sptial Pattern
 #' 
 #' @description
-#' This function analyzes the interaction pairs between two target clusters, and gives one vivid two-cell
-#' graph and several result tables in the return values.
+#' This function collects gene pairs from one interaction (between 2 target clusters), and 
+#' related gene attributes (subcellular location, expression), action properties (action mode and action effect).
+#' Then, all those informations are summarized.
 #'
-#' @param object [TODO]
-#' @param area.extend.times Numeric. Its default value is 10 which can handle most cases. If a warning given like "Cannot be located inside!" or something else, 
-#' one should change this paramemter to be larger to get all vertices allocated.
-#' @param hide.locations.A Character. It applies extra limitation on the locations of A in gene pairs formatted as A-B.
-#' @param hide.types.A Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.
-#' @param hide.locations.B Character. It applies extra limitation on the locations of B in gene pairs formatted as A-B.
-#' @param hide.types.B Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.
-#' @param hide.sole.vertices Character. It hides sole vertices which cannot form available edges anymore.
+#' @inheritParams InsideObjectInterCell
+#' @param area.extend.times Its default value is 10, which can handle most cases. If too many genes are collected,
+#'  users should enlarge this value until those genes can be allocated.
+#' @param hide.other.area If set TRUE, genes with no subcellular location other than 'Other' will be removed from result 
+#'  as well as plotting area:Other.
+#' @param hide.some.genes.X It removes genes (from cluster.X) from result.
+#' @param hide.some.genes.Y It removes genes (from cluster.Y) from result.
+#' @param hide.sole.vertices It decides whether to hide sole genes which have no available relation with other genes.
 #' @param expand.gap.radius.list Numeric. It defines the minimum distance between points(genes) for each plotting area.
 #' @param expand.shift.degree.list Numeric. It defines the begin degree that points(genes) are to be drawn. The degree is calculated counter-clockwise.
 #' @param expand.gap.degree.list Numeric. It defines the way that points(genes) arrange. If it is set 180 and shift degree is set 90, then points will be aligned in vertical line. 
-#' If it is set 90 and shift degree is set 0, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
+#'  If it is set 90 and shift degree is set 0, then points will be put counter-clockwise from horizontal line to vertical and then back to horizontal and finally at vertical place.
 #' @param expand.center.density.list Numeric. It defines the density in each plotting area. Higher value means points concentrating more around 
-#' the center of the area, and lower value means more sparse.
+#'  the center of the area, and lower value means more sparse.
 #' @param expand.outside.cut.percent.list Numeric. It is used to restrict plotting area range against center point in each plotting area. The value of this parameter 
-#' defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.
-#' @param expand.PM.gap.len Numeric. It defines the gap of each points(genes) plotted in area:Plasma Membrane. The larger value means sparser the points being plotted, while smaller denser.
-#' @param locate.PM.method Character. It defines the way to allocate points(genes) plotted in area:Plasma Membrane. It supports 2 methods for now: 
-#' "random" and "uniform".
+#'  defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.
+#' @param expand.PM.gap.len It defines the gap of each points(genes) plotted in area:Plasma Membrane. The larger value means sparser the points being plotted, while smaller denser.
+#' @param locate.PM.method It defines the way to allocate points(genes) plotted in area:Plasma Membrane. It supports 2 methods for now: 
+#'  'random' and 'uniform'.
 #' @param nodes.size.range Numeric of length 2. The former gives the minimum size, while the latter gives the maximum. Node(genes) sizes are reflecting the actual LogFC value of every gene. 
-#' @param nodes.size.gap Numeric. It is used along with \code{nodes.size.range}. It defines the resolution of changing point sizes. For example, defines \code{nodes.size.range = c(3,6)} and 
-#'  \code{nodes.size.gap = 1}, then point sizes are \code{c(3,4,5,6)}, and will be shown the same in graph legend.
+#' @param nodes.size.gap It is used along with \code{nodes.size.range}. It defines the resolution of changing point sizes. For example, defines \code{nodes.size.range = c(3,6)} and 
+#'  \code{nodes.size.gap = 1}, then point sizes are \code{c(3,4,5,6)}.
 #' @param nodes.fill.updn Character of length 2. It defines the 2 colours used to distinguish the up-regulated and down-regulated nodes(genes). 
-#' @param nodes.colour Character. Colour of nodes.
-#' @param nodes.alpha Numeric. Alpha of nodes.
-#' @param nodes.shape Vector. Use shape reprentable IDs(in integer) or directly shape description(in character). 
-#' See \pkg{ggplot2} for details
-#' @param nodes.stroke Numeric. Stroke size of nodes. See details in \pkg{ggplot2}.
-#' @param label.size.nodes Numeric. It defines the size of label text on nodes(genes). If get length 2, the former defines size of nodes in the left part of graph, and 
-#' the latter corresponds to the right part of graph. 
-#' @param label.colour.nodes Character. It defines the colour of label.
-#' @param label.vjust Numeric. It defines the vertical alignment value for labels.
-#' @param label.hjust Numeric. It defines the horizontal alignment value for labels. 
-#' @param label.nudge.x Numeric. It defines the slight adjustment movement along x-axis when plotting.
-#' @param label.nudge.y Numeric. It defines the slight adjustment movement along y-axis when plotting.
-#' @param label.padding.itself Numeric. It defines the padding size of label.
-#' @param label.size.itself Numeric. It defines the size of label itself(includes padding, etc).
-#' @param link.size Numeric. Size of link width.
-#' @param link.colour Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.mode}. Otherwise, named vector could be provided 
-#' with the desired colours corresponding to some of \code{InterCellDB::kpred.action.mode}.
-#' @param link.alpha Numeric. Alpha of links.
-#' @param link.linetype Character. Linetype of links.
-#' @param link.arrow.angle Numeric. Angle of link arrow.
-#' @param link.arrow.length Numeric. Length of link arrow.
-#' @param link.arrow.type Character. Type of link arrow, either \code{open} or \code{closed}.
+#' @param nodes.colour Color of nodes.
+#' @param nodes.alpha Alpha of nodes.
+#' @param nodes.shape Use shape reprentable IDs(in integer) or directly shape description(in character). 
+#'  See \pkg{ggplot2} for details
+#' @param nodes.stroke Stroke size of nodes. See details in \pkg{ggplot2}.
+#' @param label.size.nodes It defines the size of label text on nodes(genes). If get length 2, the former defines size of nodes in the left part of graph, and 
+#'  the latter corresponds to the right part of graph. 
+#' @param label.colour.nodes It defines the colour of label.
+#' @param label.vjust It defines the vertical alignment value for labels.
+#' @param label.hjust It defines the horizontal alignment value for labels. 
+#' @param label.nudge.x It defines the slight adjustment movement along x-axis when plotting.
+#' @param label.nudge.y It defines the slight adjustment movement along y-axis when plotting.
+#' @param label.padding.itself It defines the padding size of label.
+#' @param label.size.itself It defines the size of label itself(includes padding, etc).
+#' @param link.size Size of link width.
+#' @param link.colour Colour of links, the length should be same as \code{kpred.action.mode}.
+#' @param link.alpha Alpha of links.
+#' @param link.linetype Linetype of links.
+#' @param link.arrow.angle Angle of link arrow.
+#' @param link.arrow.length Length of link arrow.
+#' @param link.arrow.type Type of link arrow, either \code{open} or \code{closed}.
 #' @param legend.show.fill.updn.label Character of length 2. It gives the labels putting in legend:fill.
 #' @param legend.show.fill.override.point.size Numeric. It changes the size of template points used in legend:fill.
 #' @param legend.show.size.override.colour Character. It changes the colour of template points used in legend:colour. 
@@ -338,10 +338,8 @@ Inside.GetCoords.PartialCircle <- function(
 #' @param legend.manual.left.spacing Unit. It spcifies the left spacing of the manual legend to \pkg{ggplot2} automatically-generated legends.
 #' @param legend.manual.internal.spacing Unit. It defines the spacing between 2 manual legend about action mode and action effect.
 #'
-#'
-#'
 #' @details
-#' All parameters starts with 'label.' can be specified of 2 values or only 1 value. As the graph contains 2 cells(drawn like it), with 1 cell put in the 
+#' All parameters starts with 'label.' can be specified of 2 values or only 1 value. As the graph contains 2 cells (drawn like it), with 1 cell put in the 
 #' left side and the other put in right side, there are some situations that number of nodes(genes) is quite unbalanced between them. The label may hard to 
 #' be placed properly. To deal with this problem, this function gives the way to specify different label patterns for each part. That's why parameters started with 
 #' 'label.' can be set of 2 values as well as 1 value.
@@ -353,8 +351,6 @@ Inside.GetCoords.PartialCircle <- function(
 #'   \item table: a list of \code{data.frame}.
 #' }
 #'
-#'
-#'
 #' @import grid
 #' @import gtable
 #' @import ggplot2
@@ -365,10 +361,9 @@ Inside.GetCoords.PartialCircle <- function(
 GetResultTgCellPlot <- function(
   object,
   area.extend.times = 10, 
-  hide.locations.A = c("Other"),
-  hide.types.A = NULL,
-  hide.locations.B = c("Other"),
-  hide.types.B = NULL,
+  hide.other.area = TRUE,
+  hide.some.genes.X = NULL,
+  hide.some.genes.Y = NULL,
   hide.sole.vertices = TRUE, 
   expand.gap.radius.list = list(ECM = 2, CTP = 2, NC = 2, OTHER = 2),  
   expand.shift.degree.list = list(ECM = 90, CTP = 30, NC = 30, OTHER = 30), 
@@ -393,7 +388,7 @@ GetResultTgCellPlot <- function(
   label.padding.itself = list(unit(0.25, "lines"), unit(0.25, "lines")),
   label.size.itself = c(0.25, 0.25),
   link.size = 0.6,
-  link.colour = c("#D70051", "#00913A", "#1296D4", "#956134", "#F46D42", "#0A0AFF", "#762A83", "#B5B5B6"),  # [TODO] bug on link.colour
+  link.colour = c("#D70051", "#00913A", "#1296D4", "#956134", "#F46D42", "#0A0AFF", "#762A83", "#B5B5B6"),
   link.alpha = 1, 
   link.linetype = c("solid", "solid", "solid", "44"), 
   link.arrow.angle = c(20, 90, 60, 0), 
@@ -446,21 +441,6 @@ GetResultTgCellPlot <- function(
   if (length(label.size.itself) < 1 || is.null(label.size.itself)) stop("Paramemter `label.size.itself` is invalid!")
   label.size.itself <- if (length(label.size.itself) == 1) rep(label.size.itself, times = 2) else label.size.itself[1:2]
   # check and set link colour
-#  if (is.null(names(link.colour))) {
-#    if (length(link.colour) != length(kpred.action.mode)) {
-#      length(link.colour) <- length(kpred.action.mode)
-#      link.colour[which(is.na(link.colour))] <- "grey"  # use grey to all other
-#      warning("Given link colour are shorter than expected, and are automatically extended.")
-#    }
-#  } else {
-#    template.link.colour <- c("#D70051", "#00913A", "#1296D4", "#956134", "#C8DC32", "#B5B5B6", "#0A0AFF")
-#    tmp.inds.link.col <- match(names(link.colour), kpred.action.mode)
-#    tmp.link.colour <- link.colour[!is.na(tmp.inds.link.col)]  # get the valid ones
-#    warning("Named link colour has some unvalid names: ", paste0(link.colour[is.na(tmp.inds.link.col)], collapse = ", "), 
-#      ", which will be automatically replaced with default colour values.")
-#    template.link.colour[match(names(tmp.link.colour), kpred.action.mode)] <- tmp.link.colour
-#    link.colour <- template.link.colour
-#  }
   names(link.colour) <- kpred.action.mode  # set the names right
   
   # check given nodes.size.gap
@@ -482,37 +462,18 @@ GetResultTgCellPlot <- function(
   pred.loc.common.A <- setdiff(levels(factor(vertices.infos$Location[which(vertices.infos$ClusterName == act.A.clustername)])), pred.loc.special)
   pred.loc.common.B <- setdiff(levels(factor(vertices.infos$Location[which(vertices.infos$ClusterName == act.B.clustername)])), pred.loc.special)
 
-  ## hide some vertices & merge all cytoplasm locations
+  ## hide some vertices
+  # hide location in other
+  tmp.hide.other <- integer()
+  if (hide.other.area == TRUE) {
+    tmp.hide.other <- which(vertices.infos$Location == "Other")
+  }
   # A
-  tmp.is.A <- which(vertices.infos$ClusterName == act.A.clustername)
-  # A loc
-  if (is.null(hide.locations.A)) {
-    tmp.inds.A.loc <- integer(0)
-  } else {
-    tmp.inds.A.loc <- intersect(tmp.is.A, which(vertices.infos$Location %in% hide.locations.A))
-  }
-  # A type
-  if (is.null(hide.types.A)) {
-    tmp.inds.A.type <- integer(0)
-  } else {
-    tmp.inds.A.type <- intersect(tmp.is.A, which(vertices.infos$GeneName %in% (vertices.apx.type.A[which(vertices.apx.type.A$Type %in% hide.types.A), "GeneName"]) ))
-  }
+  tmp.rm.X <- intersect(which(vertices.infos$ClusterName == act.A.clustername), which(vertices.infos$GeneName %in% hide.some.genes.X))  
   # B
-  tmp.is.B <- which(vertices.infos$ClusterName == act.B.clustername)
-  # B loc
-  if (is.null(hide.locations.B)) {
-    tmp.inds.B.loc <- integer(0)
-  } else {
-    tmp.inds.B.loc <- intersect(tmp.is.B, which(vertices.infos$Location %in% hide.locations.B))
-  }
-  # B type
-  if (is.null(hide.types.B)) {
-    tmp.inds.B.type <- integer(0)
-  } else {
-    tmp.inds.B.type <- intersect(tmp.is.B, which(vertices.infos$GeneName %in% (vertices.apx.type.B[which(vertices.apx.type.B$Type %in% hide.types.B), "GeneName"]) ))
-  }
+  tmp.rm.Y <- intersect(which(vertices.infos$ClusterName == act.B.clustername), which(vertices.infos$GeneName %in% hide.some.genes.Y))
   # merge hide inds
-  tmp.inds.hide <- c(tmp.inds.A.loc, tmp.inds.A.type, tmp.inds.B.loc, tmp.inds.B.type)
+  tmp.inds.hide <- c(tmp.hide.other, tmp.rm.X, tmp.rm.Y)
   # so then the vertices
   vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), tmp.inds.hide), ]
   # hide sole vertices
@@ -705,13 +666,8 @@ GetResultTgCellPlot <- function(
   this.plot.B.pmem <- data.frame(x = c(this.pm.stick.x[1], this.PM.curve.near.c$x.cc, this.pm.stick.x[2:3], this.PM.curve.away.c$x.cc, this.pm.stick.x[4]), 
     y = c(this.pm.stick.y[1], this.PM.curve.near.c$y.cc, this.pm.stick.y[2:3], this.PM.curve.away.c$y.cc, this.pm.stick.y[4]))
   # ECM not drawn
-
-  # [HIDE] area OTHER is plotted optionally
-  # this.plot.A.other <- data.frame(x = (-1) * this.other.stick.x, y = this.other.stick.y)
-  # this.plot.B.other <- data.frame(x = this.other.stick.x, y = this.other.stick.y)
-
+  
   ## plot the base
-  #tmpb.other.fill <- "white"; tmpb.other.colour <- "black"; tmpb.other.linetype <- "dotted"
   #tmpb.cellx.colour <- "black"; tmpb.cellx.linetype <- "solid"
   tmpb.cellbase.fill <- "#F8F5FA"; tmpb.cellbase.alpha <- 1; tmpb.cellbase.colour <- "#F8F5FA"; tmpb.cellbase.linetype <- "solid"
   tmpb.pmemx.fill <- "#B3AFC5"; tmpb.pmemx.alpha <- 1; tmpb.pmemx.colour <- "#B3AFC5"; tmpb.pmemx.linetype <- "solid"
@@ -719,9 +675,6 @@ GetResultTgCellPlot <- function(
   # extra: vertical split line
   tmpex.vline.colour <- "lightgrey"; tmpex.vline.linetype <- "dashed"
   this.graph.raw.base <- this.base.graph +
-      # [HIDE] other
-      #geom_polygon(data = this.plot.A.other, aes(x, y), 
-      #  fill = tmpb.other.fill, colour = tmpb.other.colour, linetype = tmpb.other.linetype) +
       geom_polygon(data = this.plot.A.cell.base, aes(x, y),
         fill = tmpb.cellbase.fill, alpha = tmpb.cellbase.alpha, colour = tmpb.cellbase.colour, linetype = tmpb.cellbase.linetype) + 
       #geom_path(data = this.plot.A.cell.path, aes(x, y), 
@@ -730,9 +683,6 @@ GetResultTgCellPlot <- function(
         fill = tmpb.pmemx.fill, alpha = tmpb.pmemx.alpha, colour = tmpb.pmemx.colour, linetype = tmpb.pmemx.linetype) + 
       geom_polygon(data = this.plot.A.nucleus, aes(x = x.cc, y = y.cc),
         fill = tmpb.nucleus.fill, alpha = tmpb.nucleus.alpha, colour = tmpb.nucleus.colour, linetype = tmpb.nucleus.linetype) + 
-      # [HIDE] other
-      #geom_polygon(data = this.plot.B.other, aes(x, y), 
-      #  fill = tmpb.other.fill, colour = tmpb.other.colour, linetype = tmpb.other.linetype) +
       geom_polygon(data = this.plot.B.cell.base, aes(x, y),
         fill = tmpb.cellbase.fill, alpha = tmpb.cellbase.alpha, colour = tmpb.cellbase.colour, linetype = tmpb.cellbase.linetype) + 
       #geom_path(data = this.plot.B.cell.path, aes(x, y),
@@ -745,6 +695,20 @@ GetResultTgCellPlot <- function(
       geom_path(data = this.vertical.plot.data, aes(x, y), 
         colour = tmpex.vline.colour, linetype = tmpex.vline.linetype)
 
+  # area OTHER is plotted optionally
+  if (hide.other.area == FALSE) {
+    this.plot.A.other <- data.frame(x = (-1) * this.other.stick.x, y = this.other.stick.y)
+    this.plot.B.other <- data.frame(x = this.other.stick.x, y = this.other.stick.y)
+
+    tmpb.other.fill <- "white"; tmpb.other.colour <- "black"; tmpb.other.linetype <- "dotted"
+
+    this.graph.raw.base <- this.graph.raw.base + 
+      geom_polygon(data = this.plot.A.other, aes(x, y), 
+        fill = tmpb.other.fill, colour = tmpb.other.colour, linetype = tmpb.other.linetype) +
+      geom_polygon(data = this.plot.B.other, aes(x, y), 
+        fill = tmpb.other.fill, colour = tmpb.other.colour, linetype = tmpb.other.linetype)    
+  }
+
   # label the cluster
   this.label.clusters <- data.frame(
     x.lc = c(-1 * this.label.cluster.dxy[1], this.label.cluster.dxy[1]), 
@@ -755,7 +719,6 @@ GetResultTgCellPlot <- function(
         mapping = aes(x = x.lc, y = y.lc, label = r.label.c),
         colour = "black", size = 4, 
         vjust = 0, hjust = 0.5)
-
 
   ### plot points
   this.graph.add.ps <- this.graph.raw.base
@@ -857,33 +820,35 @@ GetResultTgCellPlot <- function(
     enlarge.xy.ref = this.nucleus.B.ctp.xy, rotate.xy.ref = this.nucleus.B.ctp.xy)
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.nucleus.B.vx.ext)
   
-  ## plot Other [HIDE]
-  ## A
-  #this.other.A.ctp.xy <- c(-1 * this.other.cxy[1], this.other.cxy[2])
-  #this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], 
-  #  expand.outside.cut.percent.list$OTHER, this.other.A.ctp.xy, this.other.sct.rad, 
-  #  radius.gap.factor = expand.gap.radius.list$OTHER, 
-  #  sample.shift.degree = expand.shift.degree.list$OTHER, 
-  #  sample.gap.degree = expand.gap.degree.list$OTHER, 
-  #  density.half.near = expand.center.density.list$OTHER, 
-  #  coords.xy.colnames = c("gx", "gy"))
-  #this.other.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.A.vx.ext[, c("gx", "gy")], 
-  #  enlarge.xy.times = this.other.trans, rotate.degree = 0, 
-  #  enlarge.xy.ref = this.other.A.ctp.xy, rotate.xy.ref = this.other.A.ctp.xy)
-  #this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.A.vx.ext)
-  ## B
-  #this.other.B.ctp.xy <- this.other.cxy
-  #this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], 
-  #  expand.outside.cut.percent.list$OTHER, this.other.B.ctp.xy, this.other.sct.rad, 
-  #  radius.gap.factor = expand.gap.radius.list$OTHER, 
-  #  sample.shift.degree = expand.shift.degree.list$OTHER, 
-  #  sample.gap.degree = expand.gap.degree.list$OTHER, 
-  #  density.half.near = expand.center.density.list$OTHER, 
-  #  coords.xy.colnames = c("gx", "gy"))
-  #this.other.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.B.vx.ext[, c("gx", "gy")], 
-  #  enlarge.xy.times = this.other.trans, rotate.degree = 0, 
-  #  enlarge.xy.ref = this.other.B.ctp.xy, rotate.xy.ref = this.other.B.ctp.xy)
-  #this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.B.vx.ext)
+  ## plot Other (optional)
+  if (hide.other.area == FALSE) {
+    # A
+    this.other.A.ctp.xy <- c(-1 * this.other.cxy[1], this.other.cxy[2])
+    this.other.A.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.A.other, ], 
+      expand.outside.cut.percent.list$OTHER, this.other.A.ctp.xy, this.other.sct.rad, 
+      radius.gap.factor = expand.gap.radius.list$OTHER, 
+      sample.shift.degree = expand.shift.degree.list$OTHER, 
+      sample.gap.degree = expand.gap.degree.list$OTHER, 
+      density.half.near = expand.center.density.list$OTHER, 
+      coords.xy.colnames = c("gx", "gy"))
+    this.other.A.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.A.vx.ext[, c("gx", "gy")], 
+      enlarge.xy.times = this.other.trans, rotate.degree = 0, 
+      enlarge.xy.ref = this.other.A.ctp.xy, rotate.xy.ref = this.other.A.ctp.xy)
+    this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.A.vx.ext)
+    # B
+    this.other.B.ctp.xy <- this.other.cxy
+    this.other.B.vx.ext <- ScatterSimple.Plot(vertices.infos[this.inds.B.other, ], 
+      expand.outside.cut.percent.list$OTHER, this.other.B.ctp.xy, this.other.sct.rad, 
+      radius.gap.factor = expand.gap.radius.list$OTHER, 
+      sample.shift.degree = expand.shift.degree.list$OTHER, 
+      sample.gap.degree = expand.gap.degree.list$OTHER, 
+      density.half.near = expand.center.density.list$OTHER, 
+      coords.xy.colnames = c("gx", "gy"))
+    this.other.B.vx.ext[, c("gx", "gy")] <- Inside.TransCoords.Enlarge.Rotate(this.other.B.vx.ext[, c("gx", "gy")], 
+      enlarge.xy.times = this.other.trans, rotate.degree = 0, 
+      enlarge.xy.ref = this.other.B.ctp.xy, rotate.xy.ref = this.other.B.ctp.xy)
+    this.vx.ext.infos <- rbind(this.vx.ext.infos, this.other.B.vx.ext)
+  }
 
   ## plot Cytoplasm
   # A
@@ -906,7 +871,6 @@ GetResultTgCellPlot <- function(
     sample.gap.degree = expand.gap.degree.list$CTP, 
     coords.xy.colnames = c("gx", "gy"))
   this.vx.ext.infos <- rbind(this.vx.ext.infos, this.cyto.B.vx.ext)  
-
 
   ## set points size range by LogFC
   tmp.linear.size <- (nodes.size.range[2] - nodes.size.range[1]) / (max(abs(this.vx.ext.infos$LogFC)) - min(abs(this.vx.ext.infos$LogFC)))
@@ -1126,6 +1090,7 @@ GetResultTgCellPlot <- function(
       convertWidth(grobWidth(x), "cm", TRUE)
     }))
   )
+
   # create gtable
   table.act.width  <- c(.6, table.fit.width.for.text / 0.9)
   table.act.height.mode <- unit(c(.6, rep(1, times = length(L.mode.to.use)) * 0.6), "cm")
@@ -1159,7 +1124,6 @@ GetResultTgCellPlot <- function(
     leg.m.act <- gtable_add_grob(leg.m.act, L.act.eff.to.use[[i]], t = tmp.pos.at.act.eff + i, l = 1)
     leg.m.act <- gtable_add_grob(leg.m.act, T.act.eff.to.use[[i]], t = tmp.pos.at.act.eff + i, l = 2)
   }
-
 
   # merge ggplot2 and manual legend
   mleg.start.pos <- this.gGrob$layout[which(this.gGrob$layout$name == "guide-box"), c("t", "l")]

@@ -2,7 +2,7 @@
 % Please edit documentation in R/TgView-prep.R
 \name{GenerateMapDetailOnepairClusters}
 \alias{GenerateMapDetailOnepairClusters}
-\title{Generate interaction pairs with their actions}
+\title{Collect Gene Pairs with Actions}
 \usage{
 GenerateMapDetailOnepairClusters(clusters.onepair.select, actions.ref.db)
 }
@@ -18,7 +18,7 @@ GenerateMapDetailOnepairClusters(clusters.onepair.select, actions.ref.db)
 \value{
 A list.
 \itemize{
-  \item clusters.name: names of clusters involved. Its length is of 2.
+  \item clusters.name: names of clusters involved. Its length is 2.
   \item anno.infos: a list of lists. The sublists are 
         \itemize{
           \item location.A: it records locations of A in gene pairs formatted as A-B
@@ -30,6 +30,6 @@ A list.
 }
 }
 \description{
-This function uses actions.ref.db to distinguish as well as collect pairs whose direction of interact actions
-are known in some degree and are recorded, and pairs with no detailed informations.
+This function uses \code{actions.ref.db} to collect gene pairs with their action properties.
+Not-recording ones will be set as 'undirected' (no direction and no detailed action).
 }

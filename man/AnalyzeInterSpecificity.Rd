@@ -2,30 +2,31 @@
 % Please edit documentation in R/TgView-part3.R
 \name{AnalyzeInterSpecificity}
 \alias{AnalyzeInterSpecificity}
-\title{Find special genes in one pair of interacting clusters}
+\title{Analyze Gene Pairs by Specificity}
 \usage{
 AnalyzeInterSpecificity(
   object,
   to.cmp.cluster.groups = character(),
   extended.search = FALSE,
-  uq.cnt.range = c(1:100)
+  uq.cnt.options = c(1:100)
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{to.cmp.cluster.groups}{Character. It defines the cluster groups to be compared.}
+\item{to.cmp.cluster.groups}{It gives the interactions (cluster groups) to be compared. 
+\code{\link{ListClusterGroups}} helps to give the names of interactions.}
 
-\item{extended.search}{[TODO]}
+\item{extended.search}{Decide whether to add more gene pairs (those from compared cluster groups) into analysis.}
 
-\item{uq.cnt.range}{Integer. It defines the allowed shared-existence count of one gene pairs, which is one specific gene pairs getting 
-to exist in several cluster groups.}
+\item{uq.cnt.options}{Integer. It defines the allowed co-occurence count of one gene pair, and count goes larger impling 
+lower specificity. The recommended value is \code{1:(length(to.cmp.cluster.groups) + 1)}.}
 }
 \value{
-List of length 2. With one named "res" saving all result and the other 
-named "for.plot.use" saving all needed data for plotting by function \code{GetResult.SummarySpecialGenes}.
+A \code{InterCell} object.
 }
 \description{
-This function is used to find special genes in one pair of interacting clusters. Genes are special
-if it passes some limitations when comparing to other pairs of interacting clusters.
+This function is used to evaluate specificity for gene pairs from one interaction. In other word, 
+it explores every gene pair with all its occuring interactions. The one interaction is controlled by 
+\code{\link{FetchInterOI}}.
 }

@@ -2,13 +2,13 @@
 % Please edit documentation in R/utils.R
 \name{CheckSpeciesValidity}
 \alias{CheckSpeciesValidity}
-\title{[TODO]}
+\title{Check Species}
 \usage{
 CheckSpeciesValidity(species)
 }
 \arguments{
-\item{species}{[TODO]}
+\item{species}{Allowed species are 'human' and 'mouse'.}
 }
 \description{
-[TODO]
+This function helps to check species.
 }

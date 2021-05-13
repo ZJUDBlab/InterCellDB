@@ -2,23 +2,26 @@
 % Please edit documentation in R/TgView-prep.R
 \name{ExtractTargetOnepairClusters}
 \alias{ExtractTargetOnepairClusters}
-\title{Extract one pair of interaction}
+\title{Extract Pairs from One Interaction}
 \usage{
 ExtractTargetOnepairClusters(
   interact.pairs.acted,
   cluster.name.C,
   cluster.name.D,
-  kClustersSplit
+  kClustersSplit,
+  just.list = FALSE
 )
 }
 \arguments{
-\item{interact.pairs.acted}{A list. The return value of \code{\link{AnalyzeClustersInteracts}}.}
+\item{interact.pairs.acted}{The result of network analysis.}
 
-\item{cluster.name.C}{Character. Name of one cluster.}
+\item{cluster.name.C}{Name of one cluster.}
 
-\item{cluster.name.D}{Character. Name of one cluster.}
+\item{cluster.name.D}{Name of the other cluster.}
 
-\item{kClustersSplit}{[TODO]}
+\item{kClustersSplit}{Letters to split 2 interacting clusters.}
+
+\item{just.list}{If set TRUE, no automatic removing of NA will be performed for data.}
 }
 \value{
 A list.
@@ -35,7 +38,7 @@ A list.
 }
 }
 \description{
-`ExtractTargetOnepairClusters` returns one pair of interaction from user-given cluster names.
+This function returns one pair of interaction by giving names of 2 cell clusters.
 }
 \details{
 The direction of this function is C-D, corresponding to coordinates X-Y in plot, and 

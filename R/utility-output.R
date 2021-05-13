@@ -21,9 +21,9 @@ Tool.ShowGraph <- function(
 ) {
 	if (!is.null(formatted.result$plot)) {
 		plot.res <- formatted.result$plot
-		# for (each.item in list(...)) {
-		# 	plot.res <- plot.res + each.item
-		# }
+		for (each.item in list(...)) {
+			plot.res <- plot.res + each.item
+		}
 		plot.res  # return
 	} else {
 		plot.res <- formatted.result$grid.plot

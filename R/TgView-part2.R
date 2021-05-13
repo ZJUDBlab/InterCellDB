@@ -1,34 +1,34 @@
 
 
-#' Evaluation gene pairs for one pair of clusters
+#' Filter Important Gene Pairs in One Interaction
 #'
 #' @description
-#' This function evaluates the importance of some specific gene pairs of one pair of clusters, 
-#' and the default evaluation params are LogFC and PValAdj.
+#' This function help filter and rank the important gene pairs by evaluating both power and confidence, 
+#' which is calculated from 'LogFC' and 'PVal' respectively.
 #'
-#' @param object [TODO]
-#' @param plot.X.to.Y [TODO] if TRUE, X will be original X in fullview , Y will be original Y in fullview.
-#' @param colnames.to.cmp Character. The colnames to be used as evaluation params, currently only 2 params are supported.
-#' The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.
-#' @param range.to.use List. It specifies the user specified ranges for evaluation params.
-#' @param axis.order.xy Character. It determines how the gene names will be ordered in the axis when plotting.
-#' @param axis.order.xy.decreasing Logic. It determines whether the orders are of decreasing pattern or increasing pattern.
-#' @param plot.font.size.base Numeric. It defines the font size of texts such as labels and titles. 
-#' @param nodes.colour.seq Character. It specifies the colour sequence of the nodes.
-#' @param nodes.colour.value.seq Numeric. It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.
-#' @param nodes.size.range Numeric. It specifies the size range of the nodes.
+#' @inheritParams InsideObjectInterCell
+#' @param direction.X.to.Y Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
+#' The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.
+#' @param colnames.to.cmp The colnames to be used as evaluation params, currently only 2 options ('LogFC', 'PVal') are supported.
+#' The 1st one will be plotted by different size of nodes, and 2nd one will be distinguished by colour of nodes.
+#' @param range.to.use It specifies the user specified ranges for evaluation params.
+#' @param plot.X.to.Y The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
+#'  If set FALSE, switch the clusters drawn in x-axis and y-axis.
+#' @param axis.order.xy It determines how the gene names will be ordered in the axis when plotting.
+#' @param axis.order.xy.decreasing It determines whether the orders are of decreasing pattern or increasing pattern.
+#' @param plot.font.size.base It gives the font size of texts such as labels and titles. 
+#' @param nodes.colour.seq It specifies the colour sequence of the nodes.
+#' @param nodes.colour.value.seq It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.
+#' @param nodes.size.range It specifies the size range of the nodes.
 #' @param axis.text.x.pattern It defines the axis text style in x-axis. 
 #'
-#'
 #' @details
-#' This function uses user-selected gene pairs, and uses evalution params to calculate the relative importance of each gene pair.
-#' It calculates in default settings:
+#' The meaning for 2 used values is:
 #' \itemize{
-#'   \item LogFC: the log of fold changes, which indicates the relative gene expression.
-#'   \item PValAdj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
+#'   \item LogFC: the log fold change, which indicates the relative gene expression.
+#'   \item PVal: the confidence of discovering the gene as differently expressed genes. 
+#'               If it is generated from Seurat, it is orginally calculated by bonferroni correction.
 #' }
-#'
-#'
 #'
 #' @return
 #' List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
@@ -36,8 +36,6 @@
 #'   \item plot: the object of \pkg{ggplot2}.
 #'   \item table: a list of \code{data.frame}.
 #' }
-#'
-#'
 #'
 #' @import dplyr
 #' @import ggplot2
@@ -47,9 +45,10 @@
 #'
 GetResultTgCrosstalk <- function(
   object,
-  plot.X.to.Y = TRUE,
+  direction.X.to.Y = NULL,
   colnames.to.cmp = c("LogFC", "PVal"),
   range.to.use = list("LogFC" = c(-Inf, Inf), "PVal" = c(-Inf, Inf)),
+  plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
   axis.order.xy.decreasing = c(TRUE, TRUE),  # order direction
   plot.font.size.base = 12, 
@@ -70,7 +69,7 @@ GetResultTgCrosstalk <- function(
   if (length(tmp.range.not.valid) != 0) {
     warning("Find UNVALID names in given range: ", paste0(tmp.range.not.valid, collapse = ", "))
   }
-  tmp.not.in.range <- setdiff(colnames.to.cmp, colnames.to.cmp[which(colnames.to.cmp %in% names(range.to.use))])
+  tmp.not.in.range <- setdiff(colnames.to.cmp, names(range.to.use))
   if (length(tmp.not.in.range) != 0) {
     for (tmp.i in tmp.not.in.range) {
       range.to.use <- c(range.to.use, list(c(-Inf, Inf)))
@@ -78,8 +77,12 @@ GetResultTgCrosstalk <- function(
     }
     warning("Auto add ranges on: ", paste0(tmp.not.in.range, collapse = ", "))
   }
-  
 
+  # check node color
+  if (length(nodes.colour.seq) != length(nodes.colour.value.seq)) {
+    stop("Colors and their gradient values should be of same length! Check parameter `nodes.colour.seq` and `nodes.colour.value.seq`.")
+  }
+  
   # VEinfos
   act.A.clustername <- VEinfos$cluster.name.A
   act.B.clustername <- VEinfos$cluster.name.B
@@ -96,9 +99,10 @@ GetResultTgCrosstalk <- function(
   tmp.ind.new3 <- match(c("ClusterName", "GeneName"), colnames(edges.fullinfos))
   colnames(edges.fullinfos)[tmp.ind.new3] <- c("to.cluster", "to.gene")
   edges.fullinfos <- edges.fullinfos[, c("from.cluster", "to.cluster", "from.gene", "to.gene")]
+  
   # restrict to only one direction
-  if (!is.null(plot.X.to.Y)) {
-    if (plot.X.to.Y == TRUE) {
+  if (!is.null(direction.X.to.Y)) {
+    if (direction.X.to.Y == TRUE) {
       tmp.inds <- intersect(which(edges.fullinfos[, "from.cluster"] == act.A.clustername), which(edges.fullinfos[, "to.cluster"] == act.B.clustername))
       edges.fullinfos <- edges.fullinfos[tmp.inds, ]
     } else {
@@ -115,6 +119,14 @@ GetResultTgCrosstalk <- function(
     edges.fullinfos <- rbind(tmp.edges.conv, tmp.edges.rev)
   }
   edges.fullinfos <- unique(edges.fullinfos)
+
+  # change X and Y when plotting (from.* will be shown in x-axis, to.* will be shown in y-axis)
+  if (!is.null(plot.X.to.Y) && plot.X.to.Y == FALSE) {  # switch the x-axis and y-axis
+    tmp.colname <- colnames(edges.fullinfos)
+    edges.fullinfos <- edges.fullinfos[, ReverseOddEvenCols(4)]
+    colnames(edges.fullinfos) <- tmp.colname
+  }
+
   # compact on vertices.infos
   vertices.selinfos <- vertices.infos[, c(tmp.e2.col, colnames.to.cmp)]
   vertices.selinfos <- DoPartUnique(vertices.selinfos, match(tmp.e2.col, colnames(vertices.selinfos)))
@@ -194,5 +206,5 @@ GetResultTgCrosstalk <- function(
       background_grid() + 
       theme(axis.text.x = axis.text.x.pattern)
   # draw the final graph
-  return(list(plot = gp.res, tables = packed.infos))
+  return(list(plot = gp.res, table = packed.infos))
 }

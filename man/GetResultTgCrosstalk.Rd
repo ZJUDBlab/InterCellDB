@@ -2,13 +2,14 @@
 % Please edit documentation in R/TgView-part2.R
 \name{GetResultTgCrosstalk}
 \alias{GetResultTgCrosstalk}
-\title{Evaluation gene pairs for one pair of clusters}
+\title{Filter Important Gene Pairs in One Interaction}
 \usage{
 GetResultTgCrosstalk(
   object,
-  plot.X.to.Y = TRUE,
+  direction.X.to.Y = NULL,
   colnames.to.cmp = c("LogFC", "PVal"),
   range.to.use = list(LogFC = c(-Inf, Inf), PVal = c(-Inf, Inf)),
+  plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),
   axis.order.xy.decreasing = c(TRUE, TRUE),
   plot.font.size.base = 12,
@@ -19,26 +20,30 @@ GetResultTgCrosstalk(
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{plot.X.to.Y}{[TODO] if TRUE, X will be original X in fullview , Y will be original Y in fullview.}
+\item{direction.X.to.Y}{Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
+The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.}
 
-\item{colnames.to.cmp}{Character. The colnames to be used as evaluation params, currently only 2 params are supported.
-The 1st one will be plotted differently by different size of nodes, and 2nd one will be different by colour of nodes.}
+\item{colnames.to.cmp}{The colnames to be used as evaluation params, currently only 2 options ('LogFC', 'PVal') are supported.
+The 1st one will be plotted by different size of nodes, and 2nd one will be distinguished by colour of nodes.}
 
-\item{range.to.use}{List. It specifies the user specified ranges for evaluation params.}
+\item{range.to.use}{It specifies the user specified ranges for evaluation params.}
 
-\item{axis.order.xy}{Character. It determines how the gene names will be ordered in the axis when plotting.}
+\item{plot.X.to.Y}{The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
+If set FALSE, switch the clusters drawn in x-axis and y-axis.}
 
-\item{axis.order.xy.decreasing}{Logic. It determines whether the orders are of decreasing pattern or increasing pattern.}
+\item{axis.order.xy}{It determines how the gene names will be ordered in the axis when plotting.}
 
-\item{plot.font.size.base}{Numeric. It defines the font size of texts such as labels and titles.}
+\item{axis.order.xy.decreasing}{It determines whether the orders are of decreasing pattern or increasing pattern.}
 
-\item{nodes.colour.seq}{Character. It specifies the colour sequence of the nodes.}
+\item{plot.font.size.base}{It gives the font size of texts such as labels and titles.}
 
-\item{nodes.colour.value.seq}{Numeric. It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.}
+\item{nodes.colour.seq}{It specifies the colour sequence of the nodes.}
 
-\item{nodes.size.range}{Numeric. It specifies the size range of the nodes.}
+\item{nodes.colour.value.seq}{It is along with the param \code{nodes.colour.seq}, and changes the colour expansion.}
+
+\item{nodes.size.range}{It specifies the size range of the nodes.}
 
 \item{axis.text.x.pattern}{It defines the axis text style in x-axis.}
 }
@@ -50,14 +55,14 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 }
 }
 \description{
-This function evaluates the importance of some specific gene pairs of one pair of clusters, 
-and the default evaluation params are LogFC and PValAdj.
+This function help filter and rank the important gene pairs by evaluating both power and confidence, 
+which is calculated from 'LogFC' and 'PVal' respectively.
 }
 \details{
-This function uses user-selected gene pairs, and uses evalution params to calculate the relative importance of each gene pair.
-It calculates in default settings:
+The meaning for 2 used values is:
 \itemize{
-  \item LogFC: the log of fold changes, which indicates the relative gene expression.
-  \item PValAdj: the confidence of discovering the gene as differently expressed genes. In Seurat, it uses bonferroni correction.
+  \item LogFC: the log fold change, which indicates the relative gene expression.
+  \item PVal: the confidence of discovering the gene as differently expressed genes. 
+              If it is generated from Seurat, it is orginally calculated by bonferroni correction.
 }
 }

@@ -2,15 +2,14 @@
 % Please edit documentation in R/TgView-part4.R
 \name{GetResultTgCellPlot}
 \alias{GetResultTgCellPlot}
-\title{Draw CellPlot for one pair of clusters}
+\title{Get Result for Sptial Pattern}
 \usage{
 GetResultTgCellPlot(
   object,
   area.extend.times = 10,
-  hide.locations.A = c("Other"),
-  hide.types.A = NULL,
-  hide.locations.B = c("Other"),
-  hide.types.B = NULL,
+  hide.other.area = TRUE,
+  hide.some.genes.X = NULL,
+  hide.some.genes.Y = NULL,
   hide.sole.vertices = TRUE,
   expand.gap.radius.list = list(ECM = 2, CTP = 2, NC = 2, OTHER = 2),
   expand.shift.degree.list = list(ECM = 90, CTP = 30, NC = 30, OTHER = 30),
@@ -52,20 +51,19 @@ GetResultTgCellPlot(
 )
 }
 \arguments{
-\item{object}{[TODO]}
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
-\item{area.extend.times}{Numeric. Its default value is 10 which can handle most cases. If a warning given like "Cannot be located inside!" or something else, 
-one should change this paramemter to be larger to get all vertices allocated.}
+\item{area.extend.times}{Its default value is 10, which can handle most cases. If too many genes are collected,
+users should enlarge this value until those genes can be allocated.}
 
-\item{hide.locations.A}{Character. It applies extra limitation on the locations of A in gene pairs formatted as A-B.}
+\item{hide.other.area}{If set TRUE, genes with no subcellular location other than 'Other' will be removed from result 
+as well as plotting area:Other.}
 
-\item{hide.types.A}{Character. It applies extra limitation on the types(molecular functions) of A in gene pairs formatted as A-B.}
+\item{hide.some.genes.X}{It removes genes (from cluster.X) from result.}
 
-\item{hide.locations.B}{Character. It applies extra limitation on the locations of B in gene pairs formatted as A-B.}
+\item{hide.some.genes.Y}{It removes genes (from cluster.Y) from result.}
 
-\item{hide.types.B}{Character. It applies extra limitation on the types(molecular functions) of B in gene pairs formatted as A-B.}
-
-\item{hide.sole.vertices}{Character. It hides sole vertices which cannot form available edges anymore.}
+\item{hide.sole.vertices}{It decides whether to hide sole genes which have no available relation with other genes.}
 
 \item{expand.gap.radius.list}{Numeric. It defines the minimum distance between points(genes) for each plotting area.}
 
@@ -80,58 +78,57 @@ the center of the area, and lower value means more sparse.}
 \item{expand.outside.cut.percent.list}{Numeric. It is used to restrict plotting area range against center point in each plotting area. The value of this parameter 
 defines the width of outside not-drawing area, and if is set 0, means plotting over the total area, or if is set 0.5, means plotting inside circle of half radius.}
 
-\item{expand.PM.gap.len}{Numeric. It defines the gap of each points(genes) plotted in area:Plasma Membrane. The larger value means sparser the points being plotted, while smaller denser.}
+\item{expand.PM.gap.len}{It defines the gap of each points(genes) plotted in area:Plasma Membrane. The larger value means sparser the points being plotted, while smaller denser.}
 
-\item{locate.PM.method}{Character. It defines the way to allocate points(genes) plotted in area:Plasma Membrane. It supports 2 methods for now: 
-"random" and "uniform".}
+\item{locate.PM.method}{It defines the way to allocate points(genes) plotted in area:Plasma Membrane. It supports 2 methods for now: 
+'random' and 'uniform'.}
 
 \item{nodes.size.range}{Numeric of length 2. The former gives the minimum size, while the latter gives the maximum. Node(genes) sizes are reflecting the actual LogFC value of every gene.}
 
-\item{nodes.size.gap}{Numeric. It is used along with \code{nodes.size.range}. It defines the resolution of changing point sizes. For example, defines \code{nodes.size.range = c(3,6)} and 
-\code{nodes.size.gap = 1}, then point sizes are \code{c(3,4,5,6)}, and will be shown the same in graph legend.}
+\item{nodes.size.gap}{It is used along with \code{nodes.size.range}. It defines the resolution of changing point sizes. For example, defines \code{nodes.size.range = c(3,6)} and 
+\code{nodes.size.gap = 1}, then point sizes are \code{c(3,4,5,6)}.}
 
 \item{nodes.fill.updn}{Character of length 2. It defines the 2 colours used to distinguish the up-regulated and down-regulated nodes(genes).}
 
-\item{nodes.colour}{Character. Colour of nodes.}
+\item{nodes.colour}{Color of nodes.}
 
-\item{nodes.alpha}{Numeric. Alpha of nodes.}
+\item{nodes.alpha}{Alpha of nodes.}
 
-\item{nodes.shape}{Vector. Use shape reprentable IDs(in integer) or directly shape description(in character). 
+\item{nodes.shape}{Use shape reprentable IDs(in integer) or directly shape description(in character). 
 See \pkg{ggplot2} for details}
 
-\item{nodes.stroke}{Numeric. Stroke size of nodes. See details in \pkg{ggplot2}.}
+\item{nodes.stroke}{Stroke size of nodes. See details in \pkg{ggplot2}.}
 
-\item{label.size.nodes}{Numeric. It defines the size of label text on nodes(genes). If get length 2, the former defines size of nodes in the left part of graph, and 
+\item{label.size.nodes}{It defines the size of label text on nodes(genes). If get length 2, the former defines size of nodes in the left part of graph, and 
 the latter corresponds to the right part of graph.}
 
-\item{label.colour.nodes}{Character. It defines the colour of label.}
+\item{label.colour.nodes}{It defines the colour of label.}
 
-\item{label.vjust}{Numeric. It defines the vertical alignment value for labels.}
+\item{label.vjust}{It defines the vertical alignment value for labels.}
 
-\item{label.hjust}{Numeric. It defines the horizontal alignment value for labels.}
+\item{label.hjust}{It defines the horizontal alignment value for labels.}
 
-\item{label.nudge.x}{Numeric. It defines the slight adjustment movement along x-axis when plotting.}
+\item{label.nudge.x}{It defines the slight adjustment movement along x-axis when plotting.}
 
-\item{label.nudge.y}{Numeric. It defines the slight adjustment movement along y-axis when plotting.}
+\item{label.nudge.y}{It defines the slight adjustment movement along y-axis when plotting.}
 
-\item{label.padding.itself}{Numeric. It defines the padding size of label.}
+\item{label.padding.itself}{It defines the padding size of label.}
 
-\item{label.size.itself}{Numeric. It defines the size of label itself(includes padding, etc).}
+\item{label.size.itself}{It defines the size of label itself(includes padding, etc).}
 
-\item{link.size}{Numeric. Size of link width.}
+\item{link.size}{Size of link width.}
 
-\item{link.colour}{Character. Colour of links, the length should be same as \code{InterCellDB::kpred.action.mode}. Otherwise, named vector could be provided 
-with the desired colours corresponding to some of \code{InterCellDB::kpred.action.mode}.}
+\item{link.colour}{Colour of links, the length should be same as \code{kpred.action.mode}.}
 
-\item{link.alpha}{Numeric. Alpha of links.}
+\item{link.alpha}{Alpha of links.}
 
-\item{link.linetype}{Character. Linetype of links.}
+\item{link.linetype}{Linetype of links.}
 
-\item{link.arrow.angle}{Numeric. Angle of link arrow.}
+\item{link.arrow.angle}{Angle of link arrow.}
 
-\item{link.arrow.length}{Numeric. Length of link arrow.}
+\item{link.arrow.length}{Length of link arrow.}
 
-\item{link.arrow.type}{Character. Type of link arrow, either \code{open} or \code{closed}.}
+\item{link.arrow.type}{Type of link arrow, either \code{open} or \code{closed}.}
 
 \item{legend.show.fill.updn.label}{Character of length 2. It gives the labels putting in legend:fill.}
 
@@ -157,11 +154,12 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 }
 }
 \description{
-This function analyzes the interaction pairs between two target clusters, and gives one vivid two-cell
-graph and several result tables in the return values.
+This function collects gene pairs from one interaction (between 2 target clusters), and 
+related gene attributes (subcellular location, expression), action properties (action mode and action effect).
+Then, all those informations are summarized.
 }
 \details{
-All parameters starts with 'label.' can be specified of 2 values or only 1 value. As the graph contains 2 cells(drawn like it), with 1 cell put in the 
+All parameters starts with 'label.' can be specified of 2 values or only 1 value. As the graph contains 2 cells (drawn like it), with 1 cell put in the 
 left side and the other put in right side, there are some situations that number of nodes(genes) is quite unbalanced between them. The label may hard to 
 be placed properly. To deal with this problem, this function gives the way to specify different label patterns for each part. That's why parameters started with 
 'label.' can be set of 2 values as well as 1 value.

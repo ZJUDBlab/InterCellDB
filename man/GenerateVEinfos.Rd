@@ -2,7 +2,7 @@
 % Please edit documentation in R/TgView-prep.R
 \name{GenerateVEinfos}
 \alias{GenerateVEinfos}
-\title{Generate data about vertices and edges}
+\title{Generate Standard Data for One Interaction}
 \usage{
 GenerateVEinfos(
   onepair.gmoc,
@@ -17,9 +17,10 @@ GenerateVEinfos(
 \item{fgenes.remapped.all}{Data.frame. Informations about feature genes(markers), prefer using return value of 
 \code{\link{DataPrep.RemapClustersMarkers}} and similar functions start with \code{DataPrep.} here.}
 
-\item{direction.X.to.Y}{[TODO]}
+\item{direction.X.to.Y}{Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
+The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.}
 
-\item{if.ignore.location}{Logic. Logic. It is passed to \code{GenerateVEinfos}. If TRUE, genes with different locations or types documented will
+\item{if.ignore.location}{If set TRUE, genes with different locations or types documented will
 be treated as the same, and only one row information will be reserved.}
 }
 \value{
@@ -33,13 +34,14 @@ A list.
 }
 }
 \description{
-This function uses detailed informations about one interaction pair(return value of 
-\code{GenerateMapDetailOnepairClusters()}), to generate data for drawing relation plot.
+This function uses detailed informations about one gene pair(return value of 
+\code{GenerateMapDetailOnepairClusters()}), to generate standard data with genes and 
+gene pairs stored seperately.
 }
 \details{
-This function uses actions that are recorded in STRING act database, but only a small part of 
+This function uses actions that are recorded in STRING action database, but only a small part of 
 actions are thoroughly difined in the database.
-This function is used to generate formatted data structure(with vertices and edges).
+This function is used to generate formatted data structure (with vertices and edges).
 
 In vertices, all gene informations are well recorded, and every gene is given one unique ID.
 

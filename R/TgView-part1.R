@@ -1,21 +1,19 @@
 
-
-#' Collect gene pairs by expression change and action effects
+#' Analysis Composition of Actions
 #' 
 #' @description
-#' This function gets to collect gene pairs by their expression change (total 4 category) and 
-#' action effects (total 4 category).
+#' This function gets to group gene pairs by their expression change, action mode and 
+#' action effect.
 #'
-#' @param object [TODO]
-#' @param limits.exprs.change It specifies the range of expression change status that needs to be collected. 
-#' @param limits.action.mode [TODO]
-#' @param limits.action.effect It specifies the range of action effects that need to be collected. 
+#' @inheritParams InsideObjectInterCell
+#' @param limits.exprs.change Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.
+#'  It collects the gene pairs matching to given expression change.
+#' @param limits.action.mode Options are listed in \code{kpred.action.mode}. It specifies 
+#'  the range of used action mode.
+#' @param limits.action.effect Options are listed in \code{kpred.action.effect}. It specifies 
+#'  the range of used action effect.
 #' 
-#' @details
-#' This function is to collect hierachical information inside the raw data, which is collecting gene pairs 
-#' and grouping them by expression change status and action effects.
-#'
-#' @return [TODO]
+#' @return A \code{InterCell} object.
 #'
 #' @importFrom dplyr left_join
 #'
@@ -135,28 +133,38 @@ AnalyzeInterInAction <- function(
 
 
 
-#' Give composition proportion of action mode
+
+
+#' Get Result for Composition of Action Mode
 #'
 #' @description
 #' This function focuses on one interaction pair and its detailed information(expression changes, 
 #' gene-gene action mode), and get result from it.
 #'
-#' @param object [TODO]
-#' @param limits.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
-#' @param limits.action.mode Character. Select some action effects to be put in the result. 
-#' @param color.action.mode [TODO]
-#' @param legend.title It sets the content of legend title.
-#' @param legend.title.size It sets size of legend title.
+#' @inheritParams InsideObjectInterCell
+#' @param limits.exprs.change Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'. It selects 
+#'  the part of result to be shown.
+#' @param limits.action.mode Options are listed in \code{kpred.action.mode}. It specifies 
+#'  the range of shown action mode.
+#' @param color.action.mode The colors to be used. It is one-to-one matching with \code{limits.action.mode}.
+#' @param legend.title The content of legend title.
+#' @param legend.title.size The size of legend title.
 #' @param legend.key.size The size of keys in legend. 
-#' @param legend.text.size It sets size of legend text.
-#' @param legend.box.margin It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.
-#' @param show.note [TODO]
-#' @param note.label.size [TODO]
-#' @param note.lineheight [TODO]
-#' @param note.postion.xy [TODO]
-#' @param note.hjust [TODO]
-#' @param note.vjust [TODO]
+#' @param legend.text.size The size of legend text.
+#' @param legend.box.margin The margin of legend box, and should be given in \code{margin()}. See \code{?margin} for further help.
+#' @param show.note If set TRUE, the note will be shown in the graph.
+#' @param note.label.size Numeric. The size of note label.
+#' @param note.lineheight Numeric. The lineheight of note.
+#' @param note.postion.xy The position of note, should be 2 numbers that give the coordinate. Allowed range is (0~1, 0~1).
+#' @param note.hjust The horizontal alignment of note. Allowed range is 0~1.
+#' @param note.vjust The vertical alignment of note. Allowed range is 0~1.
 #'
+#' @return A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
+#' \itemize{
+#'   \item plot: NULL.
+#'   \item grid.plot: the graph.
+#'   \item table: a list of \code{data.frame}.
+#' }
 #'
 #' @import dplyr ggplot2
 #' @importFrom cowplot draw_label get_legend ggdraw plot_grid
@@ -324,44 +332,38 @@ GetResultPieActionMode <- function(
 
 
 
-#' Give composition proportion of action effect
+
+
+#' Get Result for Composition of Action Effect
 #'
 #' @description
 #' This function focuses on one interaction pair and its detailed information(expression changes, 
-#' gene-gene action effects), and get result from it.
+#' gene-gene action effect), and get result from it.
 #'
-#' @param object [TODO]
-#' @param limits.exprs.change Character. Use exprssion level change of clusters to select part of data to be shown.
-#' @param limits.ext.action.effect [TODO]
-#' @param color.ext.action.effect [TODO]
-#' @param legend.title [TODO]
-#' @param legend.title.size It sets the attributes of legend title, and should be \code{element_text()}.
-#' @param legend.key.size The size of keys in legend. It should be in unit format, see \code{?unit} for further help.
-#' @param legend.text.size It sets the attributes of legend annotation texts, and should be \code{element_text()}.
-#' @param legend.box.margin It sets the margin of legend box, and should be \code{margin()}, see \code{?margin} for further help.
-#' @param show.note [TODO]
-#' @param note.label.size [TODO]
-#' @param note.lineheight [TODO]
-#' @param note.postion.xy [TODO]
-#' @param note.hjust [TODO]
-#' @param note.vjust [TODO]
+#' @inheritParams InsideObjectInterCell
+#' @param limits.exprs.change Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'. It selects 
+#'  the part of result to be shown.
+#' @param limits.ext.action.effect Options are listed in \code{kpred.ext.action.effect}. It specifies 
+#'  the range of shown extended action effect.
+#' @param color.ext.action.effect The colors to be used. It is one-to-one matching with \code{limits.ext.action.effect}.
+#' @param legend.title The content of legend title.
+#' @param legend.title.size The size of legend title.
+#' @param legend.key.size The size of keys in legend. 
+#' @param legend.text.size The size of legend text.
+#' @param legend.box.margin The margin of legend box, and should be given in \code{margin()}. See \code{?margin} for further help.
+#' @param show.note If set TRUE, the note will be shown in the graph.
+#' @param note.label.size Numeric. The size of note label.
+#' @param note.lineheight Numeric. The lineheight of note.
+#' @param note.postion.xy The position of note, should be 2 numbers that give the coordinate. Allowed range is (0~1, 0~1).
+#' @param note.hjust The horizontal alignment of note. Allowed range is 0~1.
+#' @param note.vjust The vertical alignment of note. Allowed range is 0~1.
 #'
 #' @return A list. Use \code{Tool.ShowGraph()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
-#'   \item plot: the object of \pkg{ggplot2}.
+#'   \item plot: NULL.
+#'   \item grid.plot: the graph.
 #'   \item table: a list of \code{data.frame}.
 #' }
-#'
-#' @examples
-#' # select only Xup.Yup
-#' \dontrun{
-#' GetResult.SummaryOnepairClusters(
-#'   onepair.gmoc,
-#'   limits.exprs.change = c("Xup.Yup")
-#' )
-#' }
-#'
-#'
 #'
 #' @importFrom scales colour_ramp
 #' @importFrom gridExtra arrangeGrob
@@ -535,9 +537,8 @@ GetResultPieActionEffect <- function(
 			heights = c(4, 1))
 	}
 
-	#print(paste0("Generating plot for composition of action effect for gene pairs between ", ActionComp$clusters.name$cluster.X,
-	#	"(X) and ", ActionComp$clusters.name$cluster.Y, "(Y). Genes from X are denoted as A, while those from Y as B."))
-	
 	# return
 	return(list(plot = NULL, grid.plot = res.plot, table = c(list(plot.data.effect.result), collect.effect.result)))
 }
+
+

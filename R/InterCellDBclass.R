@@ -30,7 +30,8 @@ kpred.action.mode <- c("activation", "inhibition", "binding", "catalysis", "reac
 #' @rdname pred-action-mode
 #' @export
 #'
-kpred.color.mode <- c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
+kpred.color.mode <- c("#D70051", "#00913A", "#1296D4", "#956134", "#F46D42", "#0A0AFF", "#762A83", "#B5B5B6")
+#c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
 
 #' Predefined Action Effect & Color Usage for It
 #'
@@ -1081,7 +1082,8 @@ setMethod(
 #' confidence level, action properties (mode and effect) will be used. The result from different evidence sources
 #' will be \bold{union} in default settings. The result from action properties could be either intersection result or union.
 #' 
-#' @param object A \code{InterCellDBPack} or \code{InterCell} object.
+#' @param object A \code{InterCellDBPack} or \code{InterCell} object. \code{SelectDBSubset.default} uses
+#'  \code{InterCellDBPack} as input.
 #' @param combined.score.range The combined score from all evidence sources, which works on the whole database.
 #' @param use.exp It adds the data whose evidence is experimentally validatd. 
 #' @param exp.score.range It controls the score range when selecting subset by experimentally validatd evidence, i.e. when \code{use.exp = TRUE}. 
@@ -1879,22 +1881,23 @@ ReplaceClusterName <- function(
 #' This function is to fetch genes of interest by selecting on subcellular locations, 
 #' molecular functions and GO terms.
 #'
-#' @inheritParams InsideObjectInterCell
-#' @param select.location Use subcellular location of gene product to select gene, and options are listed 
+#' @param object A \code{InterCell} object or \code{InterCellDBPack} object. \code{FetchGeneOI.default}
+#'  gets \code{InterCellDBPack} as input.
+#' @param sel.location Use subcellular location of gene product to select gene, and options are listed 
 #'  in \code{\link{ListAllGeneLocation}}.
-#' @param select.location.score The score of corresponding subcellular location, range from 1 to 5. Consider \code{score = c(4, 5)} 
+#' @param sel.location.score The score of corresponding subcellular location, range from 1 to 5. Consider \code{score = c(4, 5)} 
 #'  as high and common usage.
-#' @param select.type Use molecular function of gene product to select gene, and options are listed in 
+#' @param sel.type Use molecular function of gene product to select gene, and options are listed in 
 #'  \code{\link{ListAllGeneType}}.
-#' @param select.merge.type The merged types. Comparing to \code{select.type}, it has less options, which are given 
+#' @param sel.merge.type The merged types. Comparing to \code{sel.type}, it has less options, which are given 
 #'  in \code{\link{ListAllGeneMergeType}}. See details for help.
-#' @param select.go.terms Use GO terms to select gene, and supported options are listed in \code{\link{ListAllGeneGOTerm}}.
+#' @param sel.go.terms Use GO terms to select gene, and supported options are listed in \code{\link{ListAllGeneGOTerm}}.
 #' @param go.use.relative Decide if the go terms in the related GO term tree are used. See details for help.
 #' @param go.relative.option Decide which relation to the selected GO term is used. Options are 
 #'  'ancestor', 'parents', 'offspring', 'children'. See details for help.
 #'
 #' @details
-#' The parameter \code{select.merge.type} is the summary for \code{select.type}. The options in \code{select.type} are originally 
+#' The parameter \code{sel.merge.type} is the summary for \code{sel.type}. The options in \code{sel.type} are originally 
 #' generated directly from Uniprot, which comprises over 100 types. For the convenience of usage, we summarize those types and gather
 #' them to 16 merged types, which comprise the common used types: 'Receptor', 'Cytokine', 'Growth Factor', etc.
 #'
@@ -1915,65 +1918,65 @@ ReplaceClusterName <- function(
 #' @export
 #'
 FetchGeneOI.default <- function(
-	object,  # InterCellDBPack
-	select.location = NULL,
-	select.location.score = c(1:5),
-	select.type = NULL,
-	select.merge.type = NULL,  # merged type only have 16 options. Prioritize upon select.type
-	select.go.terms = NULL,  # ID and Term are supported
+	object,
+	sel.location = NULL,
+	sel.location.score = c(1:5),
+	sel.type = NULL,
+	sel.merge.type = NULL,  # merged type only have 16 options. Prioritize upon sel.type
+	sel.go.terms = NULL,  # ID and Term are supported
 	go.use.relative = TRUE, 
 	go.relative.option = "offspring"
 ) {
 	## input parameter process
 	# check location
-	if (!is.null(select.location)) {
+	if (!is.null(sel.location)) {
 		avb.opt.location <- unique(object@anno.location.db$GO.Term.target)
-		not.valid.location <- setdiff(select.location, avb.opt.location)
+		not.valid.location <- setdiff(sel.location, avb.opt.location)
 		if (length(not.valid.location) > 0) {
 			warning("Given undefined location: ", paste0(not.valid.location, collapse = ", ", ". "))
 		}
-		select.location <- intersect(select.location, avb.opt.location)
-		if (length(select.location) == 0) {
-			select.location <- NULL
+		sel.location <- intersect(sel.location, avb.opt.location)
+		if (length(sel.location) == 0) {
+			sel.location <- NULL
 		}
 	}
-	if ((length(select.location.score) > 1 && !is.integer(select.location.score)) || 
-		(length(select.location.score) == 1 && !is.numeric(select.location.score))) {
+	if ((length(sel.location.score) > 1 && !is.integer(sel.location.score)) || 
+		(length(sel.location.score) == 1 && !is.numeric(sel.location.score))) {
 		stop("Location score ranges from 1 to 5, and only those 5 integers are supported!")
 	}
-	if (!is.null(select.location.score)) {
+	if (!is.null(sel.location.score)) {
 		avb.location.score <- c(1:5)
-		not.valid.location.score <- setdiff(select.location.score, avb.location.score)
+		not.valid.location.score <- setdiff(sel.location.score, avb.location.score)
 		if (length(not.valid.location.score) > 0) {
 			warning("Given invalid location score: ", paste0(not.valid.location.score, collapse = ", ", ". "))
 		}
-		select.location.score <- intersect(select.location.score, avb.location.score)
+		sel.location.score <- intersect(sel.location.score, avb.location.score)
 	}
 
 	# check type
-	if (!is.null(select.type)) {
+	if (!is.null(sel.type)) {
 		avb.opt.type <- unique(object@anno.type.db$Keyword.Name)
-		not.valid.type <- setdiff(select.type, avb.opt.type)
+		not.valid.type <- setdiff(sel.type, avb.opt.type)
 		if (length(not.valid.type) > 0) {
 			warning("Given undefined type: ", paste0(not.valid.type, collapse = ", ", ". "))
 		}
-		select.type <- intersect(select.type, avb.opt.type)
-		if (length(select.type) == 0) {
-			select.type <- NULL
+		sel.type <- intersect(sel.type, avb.opt.type)
+		if (length(sel.type) == 0) {
+			sel.type <- NULL
 		}
 	}
 	# check merged type (if given, then override type) and overwrite type
-	if (!is.null(select.merge.type)) {
-		if (!is.null(select.type)) {
-			warning("Select genes using both parameter 'select.type' & 'select.merge.type'. Only the options in 'select.merge.type' are used!")
+	if (!is.null(sel.merge.type)) {
+		if (!is.null(sel.type)) {
+			warning("Select genes using both parameter 'sel.type' & 'sel.merge.type'. Only the options in 'sel.merge.type' are used!")
 		}
 		avb.opt.mg.type <- unique(object@accessory.db$merge.type.list$merged.molecular.function)
-		select.merge.type <- CheckParamStd(select.merge.type, avb.opt.mg.type, "merged type", stop.on.zero = FALSE)
-		if (length(select.merge.type) == 0) {
-			select.type <- NULL
-		} else {  # overwrite select.type
+		sel.merge.type <- CheckParamStd(sel.merge.type, avb.opt.mg.type, "merged type", stop.on.zero = FALSE)
+		if (length(sel.merge.type) == 0) {
+			sel.type <- NULL
+		} else {  # overwrite sel.type
 			ref.db <- object@accessory.db$merge.type.list
-			select.type <- ref.db[which(ref.db$merged.molecular.function %in% select.merge.type), "orig.uniprot.keywords"]
+			sel.type <- ref.db[which(ref.db$merged.molecular.function %in% sel.merge.type), "orig.uniprot.keywords"]
 		}
 	}
 
@@ -1991,17 +1994,17 @@ FetchGeneOI.default <- function(
 		return(gene.oi.res)
 	}
 	# use location
-	if (!is.null(select.location)) {
-		gene.oi.from.locs <- object@anno.location.db[intersect(which(object@anno.location.db$GO.Term.target %in% select.location), 
-			which(object@anno.location.db$score %in% select.location.score)), "Gene.name"]
+	if (!is.null(sel.location)) {
+		gene.oi.from.locs <- object@anno.location.db[intersect(which(object@anno.location.db$GO.Term.target %in% sel.location), 
+			which(object@anno.location.db$score %in% sel.location.score)), "Gene.name"]
 		ret.gene.oi <- inside.set.gene.oi(ret.gene.oi, gene.oi.from.locs)
 	}
-	if (!is.null(select.type)) {
-		gene.oi.from.type <- object@anno.type.db[which(object@anno.type.db$Keyword.Name %in% select.type), "Gene.name"]
+	if (!is.null(sel.type)) {
+		gene.oi.from.type <- object@anno.type.db[which(object@anno.type.db$Keyword.Name %in% sel.type), "Gene.name"]
 		ret.gene.oi <- inside.set.gene.oi(ret.gene.oi, gene.oi.from.type)
 	}
-	if (!is.null(select.go.terms)) {
-		gene.oi.from.go <- Tool.FindGenesFromGO(select.go.terms, object@genes.db, object@go.ref.db, 
+	if (!is.null(sel.go.terms)) {
+		gene.oi.from.go <- Tool.FindGenesFromGO(sel.go.terms, object@genes.db, object@go.ref.db, 
 			go.use.relative = go.use.relative, go.relative.option = go.relative.option)
 		gene.oi.from.go <- as.character(unlist(gene.oi.from.go))
 		ret.gene.oi <- inside.set.gene.oi(ret.gene.oi, gene.oi.from.go)
@@ -2060,6 +2063,10 @@ setMethod(
 #'
 #' @param gene.pairs.table 2-column table, and each column records one list of genes.
 #' @inheritParams InsideParam.species
+#'
+#' @details
+#' The formatting process will remap the genes in 1st column from input to 'inter.*.A' columns in result.
+#' The result of 2nd column from input will be put in 'inter.*.B' columns.
 #'
 #' @return A list with \code{$result} storing the formatted gene pairs.
 #'
