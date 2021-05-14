@@ -32,7 +32,7 @@ Character. Names of cluster groups.
 This function is to help on listing all or some of cluster groups (i.e. interacting clusters).
 }
 \examples{
-\dontrun {
+\dontrun{
  ListClusterGroups(object, use.former = TRUE, cluster.former = "T_cell")
  # the output of this will be "T_cell~Macrophage", "T_cell~B_cell" and things like that, depending on available clusters.
 

@@ -60,7 +60,7 @@ used.color.mode <- c("#FB8072", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FD
 # check Myeloid ~ CAF 1
 tmp.obj <- FetchInterOI(tmp.obj, "Myeloid", "CAF 1")
 tmp.obj <- AnalyzeInterInAction(tmp.obj)
-Tool.ShowGraph(GetResultPieActionMode(tmp.obj, limits.exprs.change = c("Xup.Yup"), 
+Tool.WriteTables(GetResultPieActionMode(tmp.obj, limits.exprs.change = c("Xup.Yup"), 
 	limits.action.mode = used.action.mode,
 	color.action.mode = used.color.mode))
 
@@ -132,7 +132,7 @@ result.sptialpattern <- GetResultTgCellPlot(tmp.obj,
 	link.alpha = 0.8,
 	legend.manual.left.spacing = unit(0.1, "cm"))
 
-# draw ideal graph
+# draw ideal graph (only for result.sptialpattern)
 pdf('./spatial-1.pdf', height = 12, width = 16)
 Tool.ShowGraph(result.sptialpattern)
 dev.off()

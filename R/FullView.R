@@ -591,7 +591,7 @@ GetResultFullView <- function(
 #' @return Character. Names of cluster groups.
 #'
 #' @examples
-#' \dontrun {
+#' \dontrun{
 #'  ListClusterGroups(object, use.former = TRUE, cluster.former = "T_cell")
 #'  # the output of this will be "T_cell~Macrophage", "T_cell~B_cell" and things like that, depending on available clusters.
 #' 
