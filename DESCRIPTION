@@ -21,7 +21,7 @@ Imports:
 	utils,
 	GO.db (>= 3.8.2)
 Description: This tool provides databases covering human and mouse, and provides bunches of functions for analyzing on scRNA-seq data. The database collects a variety of public sources, including STRING, NCBI-gene, COMPARTMENTS, GO, Uniprot, etc. The analysis process starts with network analysis on all interactions, and then performs intercellular analysis on 2 specific cell clusters for exploring composition of actions, gene pair specificity, etc., and finally filters out some important gene pairs.
-License: Creative Commons BY 4.0
+License: CC BY 4.0
 LazyData: true
 RoxygenNote: 7.1.1
 Encoding: UTF-8
