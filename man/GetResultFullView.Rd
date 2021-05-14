@@ -43,6 +43,8 @@ GetResultFullView(
 
 \item{power.min.limit}{One number that specifies the lower limit of power, and power lower than this value will be coerced to this value.}
 
+\item{cnt.max.limit}{One number that specifies the upper limit of count, and larger ones will be coerced to this.}
+
 \item{cnt.min.limit}{Numeric. Specify the lower limit of count, and lower ones will be coerced to this.}
 
 \item{plot.power.range}{This will extend the plotting range beyond actual value range for power.}
@@ -68,8 +70,6 @@ See parameter \code{values} in \code{ggplot2::scale_colour_gradientn} for detail
 \item{plot.axis.x.name}{X-axis name when plotting.}
 
 \item{plot.axis.y.name}{Y-axis name when plotting.}
-
-\item{cnt.max.limitOne}{number that specifies the upper limit of count, and larger ones will be coerced to this.}
 }
 \value{
 List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.

@@ -302,7 +302,7 @@ AnalyzeInterInFullView <- function(
 #'  'diagonal*' is recommended when same restrictions are applied to clusters in X and Y.
 #' @param power.max.limit One number that specifies the upper limit of power, and power larger than this value will be coerced to this value.
 #' @param power.min.limit One number that specifies the lower limit of power, and power lower than this value will be coerced to this value.
-#' @param cnt.max.limitOne number that specifies the upper limit of count, and larger ones will be coerced to this.
+#' @param cnt.max.limit One number that specifies the upper limit of count, and larger ones will be coerced to this.
 #' @param cnt.min.limit Numeric. Specify the lower limit of count, and lower ones will be coerced to this.
 #' @param plot.power.range This will extend the plotting range beyond actual value range for power.
 #' @param hide.power.label If set TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.
