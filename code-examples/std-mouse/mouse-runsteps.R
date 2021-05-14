@@ -6,7 +6,7 @@
 library(InterCellDB)
 
 # read differentially expressed genes
-tmp.markers <- read.csv("./DEGs-all-clusters.csv", stringsAsFactors = FALSE)
+tmp.markers <- read.csv("./DEGs-mouse-clusters.csv", stringsAsFactors = FALSE)
 # select the subset of passing bonferroni correction
 fgenes.all <- tmp.markers[which(tmp.markers$p_val_adj < 0.05), ]  # 66332 rows left
 # format the input data, to match the input requirement of InterCellDB
@@ -60,7 +60,7 @@ used.color.mode <- c("#FB8072", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FD
 # check Myeloid ~ CAF 1
 tmp.obj <- FetchInterOI(tmp.obj, "Myeloid", "CAF 1")
 tmp.obj <- AnalyzeInterInAction(tmp.obj)
-Tool.WriteTables(GetResultPieActionMode(tmp.obj, limits.exprs.change = c("Xup.Yup"), 
+Tool.ShowGraph(GetResultPieActionMode(tmp.obj, limits.exprs.change = c("Xup.Yup"), 
 	limits.action.mode = used.action.mode,
 	color.action.mode = used.color.mode))
 
@@ -110,7 +110,7 @@ tmp.target.cluster.groups <- ListClusterGroups(tmp.obj, use.former = TRUE, clust
 tmp.obj <- AnalyzeInterSpecificity(tmp.obj, to.cmp.cluster.groups = tmp.target.cluster.groups)
 
 # show the result of exploration on specificity
-GetResultTgSpecificity(tmp.obj,
+result.specificity <- GetResultTgSpecificity(tmp.obj,
 	sel.uq.cnt.options = 1:10,  # this should be within the 1:(length(tmp.target.cluster.groups) + 1)
 	sel.gene.pairs = NULL,
 	plot.uq.cnt.merged = TRUE, 
@@ -120,6 +120,7 @@ GetResultTgSpecificity(tmp.obj,
 	dot.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
 	dot.colour.value.seq = c(0.0, 0.5, 1.0)
 	)
+Tool.ShowGraph(result.specificity)
 
 # Show the result of spatial pattern of selected gene pairs (Not used)
 tmp.hide.locations <- setdiff(ListAllGeneLocation(tmp.obj), c("Plasma Membrane", "Extracellular Region"))
@@ -130,7 +131,8 @@ result.sptialpattern <- GetResultTgCellPlot(tmp.obj,
 	hide.locations.Y = tmp.hide.locations,
 	link.size = 0.3,
 	link.alpha = 0.8,
-	legend.manual.left.spacing = unit(0.1, "cm"))
+	legend.manual.left.spacing = grid::unit(0.1, "cm"))
+Tool.ShowGraph(result.sptialpattern)
 
 # draw ideal graph (only for result.sptialpattern)
 pdf('./spatial-1.pdf', height = 12, width = 16)
