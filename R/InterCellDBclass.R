@@ -613,6 +613,7 @@ setMethod(
 		}
 		object@inter.fullview <- new.inter.fullview
 		object@tg.action.pairs <- list()
+		object@tg.action.comp <- list()
 		object@tg.veinfo <- list()
 		object@tg.spgenes <- list()
 		return(object)

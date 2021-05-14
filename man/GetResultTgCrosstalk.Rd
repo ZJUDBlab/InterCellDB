@@ -23,7 +23,8 @@ GetResultTgCrosstalk(
 \item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
 
 \item{direction.X.to.Y}{Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
-The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs.}
+The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs. 
+See details for help.}
 
 \item{colnames.to.cmp}{The colnames to be used as evaluation params, currently only 2 options ('LogFC', 'PVal') are supported.
 The 1st one will be plotted by different size of nodes, and 2nd one will be distinguished by colour of nodes.}
@@ -65,4 +66,13 @@ The meaning for 2 used values is:
   \item PVal: the confidence of discovering the gene as differently expressed genes. 
               If it is generated from Seurat, it is orginally calculated by bonferroni correction.
 }
+
+Illustration for \code{direction.X.to.Y}:
+When running this function, gene pairs have been combined with their actions. As a result, gene pairs 
+get to have direction for their action, e.g. IL6->IL6R, which means IL6 gets to activate IL6R, and the direction
+should be IL6 to IL6R. Suppose IL6 is expressed by cell cluster X, IL6R is expressed by cell cluster Y, then 
+IL6->IL6R will be reserved if \code{direction.X.to.Y} is set either 'NULL' or 'TRUE', but not 'FALSE'. 
+The cluster X and Y is aligned with what users specified in \code{link{AnalyzeInterInFullView}}, and X corresponds to 
+those clusters shown in x-axis and Y corresponds to those in y-axis. More closely, the X and Y are corresponding to 
+\code{cluster.x} and \code{cluster.y} given by \code{\link{FetchInterOI}}.
 }

@@ -61,8 +61,6 @@ Tool.GenStdGenePairs.from.VEinfos <- function(
 #' @return A \code{InterCell} object.
 #'
 #' @import dplyr
-#' @import ggplot2
-#' @import cowplot
 #' 
 #' @export
 #'
@@ -126,7 +124,11 @@ AnalyzeInterSpecificity <- function(
 		gp.pvaladj.B = target.gene.pairs.df[, "inter.PVal.B"], 
 		stringsAsFactors = FALSE)
 	# further check if comparison of itself exist, which may cause error in downstream analysis
-	to.cmp.cluster.groups <- setdiff(to.cmp.cluster.groups, this.pair.name)
+	if (this.pair.name %in% to.cmp.cluster.groups == TRUE) {
+		warning("It cannot compare with itself. Automatically remove ", this.pair.name, " from to-comparing cluster groups.")
+		to.cmp.cluster.groups <- setdiff(to.cmp.cluster.groups, this.pair.name)	
+	}
+	
 
 	if (length(to.cmp.cluster.groups) == 0) {
 		stop("No cluster groups are ready to compare. Please check parameter `to.cmp.cluster.groups`. ",

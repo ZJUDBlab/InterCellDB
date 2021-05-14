@@ -6,7 +6,14 @@ std.index.colname.end.dual <- 4
 # This indicate the data format for processed InterCellDB gene pairs
 proc.index.colname.end.dual <- 8
 
-# For utility, illustrate the expression change options
+#' Options for Expression Change
+#'
+#' \code{kexprs.change} defines the options to be used for selecting 
+#' gene pairs under specific expression-change status.
+#'
+#' @rdname pred-exprs-change
+#' @export
+#'
 kexprs.change <- c("Xup.Yup", "Xup.Ydn", "Xdn.Yup", "Xdn.Ydn")
 
 

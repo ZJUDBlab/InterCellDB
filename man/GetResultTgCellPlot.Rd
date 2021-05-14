@@ -8,6 +8,8 @@ GetResultTgCellPlot(
   object,
   area.extend.times = 10,
   hide.other.area = TRUE,
+  hide.locations.X = NULL,
+  hide.locations.Y = NULL,
   hide.some.genes.X = NULL,
   hide.some.genes.Y = NULL,
   hide.sole.vertices = TRUE,
@@ -58,6 +60,10 @@ users should enlarge this value until those genes can be allocated.}
 
 \item{hide.other.area}{If set TRUE, genes with no subcellular location other than 'Other' will be removed from result 
 as well as plotting area:Other.}
+
+\item{hide.locations.X}{It removes genes (from cluster.X) in given subcellular locations from result.}
+
+\item{hide.locations.Y}{It removes genes (from cluster.Y) in given subcellular locations from result.}
 
 \item{hide.some.genes.X}{It removes genes (from cluster.X) from result.}
 

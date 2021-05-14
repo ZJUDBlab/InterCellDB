@@ -327,7 +327,7 @@ GetResultPieActionMode <- function(
 	#	"(X) and ", ActionComp$clusters.name$cluster.Y, "(Y). Genes from X are denoted as A, while those from Y as B."))
 	
 	#end# return
-	return(list(plot = NULL, grid.plot = res.plot, table = c(list(plot.data.mode.result), collect.mode.result)))
+	return(list(plot = NULL, grid.plot = res.plot, table = c(list(comp.res.action.mode = plot.data.mode.result), collect.mode.result)))
 }
 
 
@@ -538,7 +538,7 @@ GetResultPieActionEffect <- function(
 	}
 
 	# return
-	return(list(plot = NULL, grid.plot = res.plot, table = c(list(plot.data.effect.result), collect.effect.result)))
+	return(list(plot = NULL, grid.plot = res.plot, table = c(list(comp.res.action.effect = plot.data.effect.result), collect.effect.result)))
 }
 
 

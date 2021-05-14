@@ -290,6 +290,8 @@ Inside.GetCoords.PartialCircle <- function(
 #'  users should enlarge this value until those genes can be allocated.
 #' @param hide.other.area If set TRUE, genes with no subcellular location other than 'Other' will be removed from result 
 #'  as well as plotting area:Other.
+#' @param hide.locations.X It removes genes (from cluster.X) in given subcellular locations from result.
+#' @param hide.locations.Y It removes genes (from cluster.Y) in given subcellular locations from result.
 #' @param hide.some.genes.X It removes genes (from cluster.X) from result.
 #' @param hide.some.genes.Y It removes genes (from cluster.Y) from result.
 #' @param hide.sole.vertices It decides whether to hide sole genes which have no available relation with other genes.
@@ -362,6 +364,8 @@ GetResultTgCellPlot <- function(
   object,
   area.extend.times = 10, 
   hide.other.area = TRUE,
+  hide.locations.X = NULL,
+  hide.locations.Y = NULL,
   hide.some.genes.X = NULL,
   hide.some.genes.Y = NULL,
   hide.sole.vertices = TRUE, 
@@ -468,12 +472,17 @@ GetResultTgCellPlot <- function(
   if (hide.other.area == TRUE) {
     tmp.hide.other <- which(vertices.infos$Location == "Other")
   }
-  # A
+  # hide locations for other areas
+  # A locations
+  tmp.rm.loc.X <- intersect(which(vertices.infos$ClusterName == act.A.clustername), which(vertices.infos$Location %in% hide.locations.X))
+  # B locations
+  tmp.rm.loc.Y <- intersect(which(vertices.infos$ClusterName == act.B.clustername), which(vertices.infos$Location %in% hide.locations.Y))
+  # A genes
   tmp.rm.X <- intersect(which(vertices.infos$ClusterName == act.A.clustername), which(vertices.infos$GeneName %in% hide.some.genes.X))  
-  # B
+  # B genes
   tmp.rm.Y <- intersect(which(vertices.infos$ClusterName == act.B.clustername), which(vertices.infos$GeneName %in% hide.some.genes.Y))
   # merge hide inds
-  tmp.inds.hide <- c(tmp.hide.other, tmp.rm.X, tmp.rm.Y)
+  tmp.inds.hide <- c(tmp.hide.other, tmp.rm.loc.X, tmp.rm.loc.Y, tmp.rm.X, tmp.rm.Y)
   # so then the vertices
   vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), tmp.inds.hide), ]
   # hide sole vertices
