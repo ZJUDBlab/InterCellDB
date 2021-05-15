@@ -501,6 +501,9 @@ GetResultTgCellPlot <- function(
   tmp.inds.A.cyto.reserve <- as.integer(unlist(lapply(tmp.inds.A.cyto.list, function(x) { x[[1]] })))
   vertices.infos$Location[tmp.inds.A.cyto.reserve] <- rep("Cytoplasm", times = length(tmp.inds.A.cyto.reserve))
   vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), setdiff(tmp.inds.A.cyto.getall, tmp.inds.A.cyto.reserve)), ]
+  # after merging, reset pred.loc.common.A
+  pred.loc.common.A <- setdiff(unique(vertices.infos$Location[which(vertices.infos$ClusterName == act.A.clustername)]), pred.loc.special)
+
   # B
   tmp.inds.B.cyto.locs <- intersect(which(vertices.infos$ClusterName == act.B.clustername), 
     which(vertices.infos$Location %in% pred.loc.common.B))
@@ -510,20 +513,25 @@ GetResultTgCellPlot <- function(
   tmp.inds.B.cyto.reserve <- as.integer(unlist(lapply(tmp.inds.B.cyto.list, function(x) { x[[1]] })))
   vertices.infos$Location[tmp.inds.B.cyto.reserve] <- rep("Cytoplasm", times = length(tmp.inds.B.cyto.reserve))
   vertices.infos <- vertices.infos[setdiff(seq_len(nrow(vertices.infos)), setdiff(tmp.inds.B.cyto.getall, tmp.inds.B.cyto.reserve)), ]
+  # after merging, reset pred.loc.common.B
+  pred.loc.common.B <- setdiff(unique(vertices.infos$Location[which(vertices.infos$ClusterName == act.B.clustername)]), pred.loc.special)
+
   # check if no edges left
   tmp.is.A <- which(vertices.infos$ClusterName == act.A.clustername)
   tmp.is.B <- which(vertices.infos$ClusterName == act.B.clustername)
   if (length(tmp.is.A) == 0 || length(tmp.is.B) == 0) {
     stop("Hide too much vertices to be NO available edges at all.")
   }
+  tmp.vx.old.id <- vertices.infos$UID
   vertices.infos$UID <- seq_len(nrow(vertices.infos))
-  inds.part.new.id.from <- match(edges.infos[, "from"], rownames(vertices.infos))
-  inds.part.new.id.to   <- match(edges.infos[, "to"], rownames(vertices.infos))
+  inds.part.new.id.from <- match(edges.infos[, "from"], tmp.vx.old.id)
+  inds.part.new.id.to   <- match(edges.infos[, "to"], tmp.vx.old.id)
   edges.infos[, "from"] <- vertices.infos$UID[inds.part.new.id.from]
   edges.infos[, "to"] <- vertices.infos$UID[inds.part.new.id.to]
   # remove NAs
   edges.infos <- edges.infos[intersect(which(!is.na(edges.infos[, "from"])), which(!is.na(edges.infos[, "to"]))), ]
   rownames(vertices.infos) <- NULL  # make rownames be equal to UID
+
   # set the apx* vars
   tmp.inds.A.apx.types <- which(vertices.apx.type.A[, "GeneName"] %in% vertices.infos[which(vertices.infos$ClusterName == act.A.clustername), "GeneName"])
   vertices.apx.type.A <- vertices.apx.type.A[tmp.inds.A.apx.types, ]
@@ -940,6 +948,7 @@ GetResultTgCellPlot <- function(
   inds.e.to.match <- match(edges.infos$to, this.vx.ext.infos$UID)
   edges.infos[, c("from.gx", "from.gy")] <- this.vx.ext.infos[inds.e.from.match, c("gx", "gy")]
   edges.infos[, c("to.gx", "to.gy")] <- this.vx.ext.infos[inds.e.to.match, c("gx", "gy")]
+
   #
   show.mode.val <- levels(factor(edges.infos$mode))
   show.action.effect.val <- levels(factor(edges.infos$action.effect))
@@ -957,6 +966,7 @@ GetResultTgCellPlot <- function(
     if (!(kpred.action.effect[j] %in% show.action.effect.val)) {
       next
     }
+
     this.edges.infos <- edges.infos[which(edges.infos[, "action.effect"] == kpred.action.effect[j]), ]
     this.graph.gplot <- this.graph.gplot + geom_segment(data = this.edges.infos,
       mapping = aes(x = from.gx, y = from.gy, xend = to.gx, yend = to.gy, colour = mode),
