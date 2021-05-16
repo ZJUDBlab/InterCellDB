@@ -42,6 +42,7 @@ tmp.obj <- AnalyzeInterSpecificity(tmp.obj,
 	extended.search = TRUE)
 result.specificity <- GetResultTgSpecificity(tmp.obj,
 	sel.uq.cnt.options = 1:10,  # this should be within the 1:(length(tmp.target.cluster.groups) + 1)
+	sel.gene.pairs = tmp.sel.gene.pairs,  # order those gene pairs as desired
 	prioritize.cluster.groups = tmp.to.cmp.cluster.groups[c(1,3,6,4,2,5,7,8,9,10)],
 	plot.uq.cnt.merged = TRUE, 
 	plot.name.X.to.Y = TRUE,
