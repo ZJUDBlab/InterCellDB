@@ -4,13 +4,16 @@
 \alias{FormatCustomGenePairs}
 \title{Format User Given Gene Pairs}
 \usage{
-FormatCustomGenePairs(gene.pairs.table, species)
+FormatCustomGenePairs(gene.pairs.table, species, extend.reverse = FALSE)
 }
 \arguments{
 \item{gene.pairs.table}{2-column table, and each column records one list of genes.}
 
 \item{species}{\pkg{InterCellDB} supports species in either 'human' or 'mouse'.
 Other species are not supported to be used for analysis.}
+
+\item{extend.reverse}{Decide whether to extend pairs with the reverse pairs. It is useful
+when analytic process requires cell-cluster-aligned gene pairs, e.g. \code{\link{AnalyzeInterInFullView}}.}
 }
 \value{
 A list with \code{$result} storing the formatted gene pairs.
@@ -24,4 +27,8 @@ reference database embedded in this package.
 \details{
 The formatting process will remap the genes in 1st column from input to 'inter.*.A' columns in result.
 The result of 2nd column from input will be put in 'inter.*.B' columns.
+
+Explanation on \code{extend.reverse}:
+For example, given pair C3~C3ar1, if set \code{extend.reverse = TRUE}, then 
+both C3~C3ar1 and C3ar1~C3 will be generated in result.
 }
