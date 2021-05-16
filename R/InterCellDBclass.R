@@ -2064,10 +2064,16 @@ setMethod(
 #'
 #' @param gene.pairs.table 2-column table, and each column records one list of genes.
 #' @inheritParams InsideParam.species
+#' @param extend.reverse Decide whether to extend pairs with the reverse pairs. It is useful
+#'  when analytic process requires cell-cluster-aligned gene pairs, e.g. \code{\link{AnalyzeInterInFullView}}.
 #'
 #' @details
 #' The formatting process will remap the genes in 1st column from input to 'inter.*.A' columns in result.
 #' The result of 2nd column from input will be put in 'inter.*.B' columns.
+#'
+#' Explanation on \code{extend.reverse}:
+#' For example, given pair C3~C3ar1, if set \code{extend.reverse = TRUE}, then 
+#' both C3~C3ar1 and C3ar1~C3 will be generated in result.
 #'
 #' @return A list with \code{$result} storing the formatted gene pairs.
 #'
@@ -2075,7 +2081,8 @@ setMethod(
 #'
 FormatCustomGenePairs <- function(
 	gene.pairs.table,
-	species
+	species,
+	extend.reverse = FALSE
 ) {
 	# check input
 	if (class(gene.pairs.table) != "data.frame") {
@@ -2117,6 +2124,12 @@ FormatCustomGenePairs <- function(
 		inter.GeneName.A = result.list[[1]],
 		inter.GeneName.B = result.list[[2]],
 		stringsAsFactors = FALSE)
+
+	if (extend.reverse == TRUE) {
+		tmp.rev <- result.IT[, ReverseOddEvenCols(4)]
+		colnames(tmp.rev) <- colnames(result.IT)
+		result.IT <- rbind(result.IT, tmp.rev)
+	}
 
 	# return
 	list(result = result.IT, match.status = apx.list)

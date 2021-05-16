@@ -499,7 +499,6 @@ GetResultTgSpecificity <- function(
 		std.spgenes,
 		show.genepairs.order,  # ordered as it is in sel.gene.pairs
 		prioritize.cluster.groups,
-		plot.name.X.to.Y,
 		std.width.col = 2,  # may be export as param, so as the gap
 		std.width.gap = 3
 	) {
@@ -536,16 +535,6 @@ GetResultTgSpecificity <- function(
 		if (nrow(tmp.df.res) == 0) {
 			stop("No available gene pairs in current settings. Consider enlarge the range of `sel.uq.cnt.options`, like set 1:100 or larger.")
 		}
-
-		# re-align cluster orders, conv or rev
-		if (plot.name.X.to.Y == FALSE) {
-			uq.name.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.name"],
-				to.split.by = kGenesSplit, res.colnames = c("gene.A", "gene.B"))
-			uq.label.split.df <- Tool.SplitToGenDataFrame(tmp.df.res[, "uq.label"],
-				to.split.by = kClustersSplit, res.colnames = c("cluster.A", "cluster.B"))
-			tmp.df.res$uq.name <- paste(uq.name.split.df$gene.B, uq.name.split.df$gene.A, sep = kGenesSplit)
-			tmp.df.res$uq.label <- paste(uq.label.split.df$cluster.B, uq.label.split.df$cluster.A, sep = kClustersSplit)
-		}  # not change if set as conv
 		return(tmp.df.res)
 	}
 
@@ -558,7 +547,7 @@ GetResultTgSpecificity <- function(
 		}
 		tmp.sel.gpairs <- inside.fetch.sel.genepairs(plot.data.uq, VEinfos, sel.gene.pairs, sel.gene.pairs.method, sel.by.method.count, sel.by.method.decreasing, ...)
 		plot.data.uq <- plot.data.uq[which(names(plot.data.uq) %in% tmp.sel.gpairs)]
-		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups, plot.name.X.to.Y)
+		plot.data.uq.df <- inside.trans.coords.uq(plot.data.uq, tmp.sel.gpairs, prioritize.cluster.groups)
 	} else {
 		plot.data.uq.notm.list <- list()
 		tmp.uq.cnt.valid.list <- integer()
@@ -569,7 +558,7 @@ GetResultTgSpecificity <- function(
 			if (length(tmp.spgenes) == 0) {
 				next  # not added to the result list
 			}
-			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups, plot.name.X.to.Y)
+			tmp.spgenes.trans <- inside.trans.coords.uq(tmp.spgenes, tmp.sel.gpairs, prioritize.cluster.groups)
 			plot.data.uq.notm.list <- c(plot.data.uq.notm.list, list(tmp.spgenes.trans))
 			tmp.uq.cnt.valid.list <- c(tmp.uq.cnt.valid.list, iuq)
 		}
@@ -579,8 +568,24 @@ GetResultTgSpecificity <- function(
 	inside.uq.bar.plot <- function(
 		plot.data,
 		prioritize.cluster.groups,
+		plot.name.X.to.Y,
 		bar.colour
 	) {
+		# re-align cluster orders, conv or rev
+		if (plot.name.X.to.Y == FALSE) {
+			uq.name.split.df <- Tool.SplitToGenDataFrame(plot.data[, "uq.name"],
+				to.split.by = kGenesSplit, res.colnames = c("gene.A", "gene.B"))
+			uq.label.split.df <- Tool.SplitToGenDataFrame(plot.data[, "uq.label"],
+				to.split.by = kClustersSplit, res.colnames = c("cluster.A", "cluster.B"))
+			plot.data$uq.name <- paste(uq.name.split.df$gene.B, uq.name.split.df$gene.A, sep = kGenesSplit)
+			plot.data$uq.label <- paste(uq.label.split.df$cluster.B, uq.label.split.df$cluster.A, sep = kClustersSplit)
+			#
+			# prioritized cluster group changes as well
+			tmp.rev.pcg <- Tool.SplitToGenDataFrame(prioritize.cluster.groups,
+				to.split.by = kClustersSplit, res.colnames = c("cluster.A", "cluster.B"))
+			prioritize.cluster.groups <- paste(tmp.rev.pcg$cluster.B, tmp.rev.pcg$cluster.A, sep = kClustersSplit)
+		}  # not change if set as conv
+
 		# generate template 20 colours to fit most circumstances
 		colours.group <- brewer.pal.info[brewer.pal.info$category == 'seq', ]
 		colour.sel.author.prefer <- unlist(mapply(brewer.pal, colours.group$maxcolors, rownames(colours.group)))
@@ -638,11 +643,28 @@ GetResultTgSpecificity <- function(
 	inside.uq.dot.plot <- function(
 		plot.data,
 		prioritize.cluster.groups,
+		plot.name.X.to.Y,
 		dot.range.to.use,
 		dot.colour.seq,
 		dot.colour.value.seq,
 		dot.size.range
 	) {
+		# re-align cluster orders, conv or rev
+		if (plot.name.X.to.Y == FALSE) {
+			uq.name.split.df <- Tool.SplitToGenDataFrame(plot.data[, "uq.name"],
+				to.split.by = kGenesSplit, res.colnames = c("gene.A", "gene.B"))
+			uq.label.split.df <- Tool.SplitToGenDataFrame(plot.data[, "uq.label"],
+				to.split.by = kClustersSplit, res.colnames = c("cluster.A", "cluster.B"))
+			plot.data$uq.name <- paste(uq.name.split.df$gene.B, uq.name.split.df$gene.A, sep = kGenesSplit)
+			plot.data$uq.label <- paste(uq.label.split.df$cluster.B, uq.label.split.df$cluster.A, sep = kClustersSplit)
+			#
+			# prioritized cluster group changes as well
+			tmp.rev.pcg <- Tool.SplitToGenDataFrame(prioritize.cluster.groups,
+				to.split.by = kClustersSplit, res.colnames = c("cluster.A", "cluster.B"))
+			prioritize.cluster.groups <- paste(tmp.rev.pcg$cluster.B, tmp.rev.pcg$cluster.A, sep = kClustersSplit)
+		}  # not change if set as conv
+
+
 		# move the data range
 		#plot.data$uq.y.axis  # LogFC
 		#plot.data$uq.z.axis  # PValAdj
@@ -712,13 +734,13 @@ GetResultTgSpecificity <- function(
 	## process: draw plots
 	if (barplot.or.dotplot == TRUE) {
 		if (plot.uq.cnt.merged == TRUE) {
-			this.plot.mg <- inside.uq.bar.plot(plot.data.uq.df, prioritize.cluster.groups, bar.colour)
+			this.plot.mg <- inside.uq.bar.plot(plot.data.uq.df, prioritize.cluster.groups, plot.name.X.to.Y, bar.colour)
 			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 		} else {
 			this.notm.plot.list <- list()
 			this.notm.ret.table.list <- list()
 			for (i.item in names(plot.data.uq.notm.list)) {
-				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.bar.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, bar.colour)))
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.bar.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, plot.name.X.to.Y, bar.colour)))
 				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 			}
 			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)
@@ -727,13 +749,13 @@ GetResultTgSpecificity <- function(
 		}
 	} else {
 		if (plot.uq.cnt.merged == TRUE) {
-			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)
+			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, plot.name.X.to.Y, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)
 			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 		} else {
 			this.notm.plot.list <- list()
 			this.notm.ret.table.list <- list()
 			for (i.item in names(plot.data.uq.notm.list)) {
-				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)))
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, plot.name.X.to.Y, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)))
 				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 			}
 			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)

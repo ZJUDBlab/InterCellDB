@@ -77,6 +77,7 @@ AnalyzeInterInFullView <- function(
 	force.process = FALSE,
 	verbose = TRUE
 ) {
+	kGenesSplit <- getGenePairSplit(object)
 	# check sel.clusters.*
 	inside.check.sel.clusters <- function(allowed.clusters, sel.clusters, suffix = c("X", "Y")) {
 		if (is.null(sel.clusters)) {
@@ -177,8 +178,20 @@ AnalyzeInterInFullView <- function(
 	}
 	# the used gene pairs 
 	used.proc.pairs.db <- object@database@pairs.db
+	# pre-slim for used database
 	if (!is.null(sel.gene.pairs)) {
-		used.proc.pairs.db <- sel.gene.pairs
+		tmp.ref.gpairs <- paste0(used.proc.pairs.db$inter.GeneName.A, used.proc.pairs.db$inter.GeneName.B, sep = kGenesSplit)
+		#
+		tmp.used.conv <- paste0(sel.gene.pairs$inter.GeneName.A, sel.gene.pairs$inter.GeneName.B, sep = kGenesSplit)
+		tmp.used.rev  <- paste0(sel.gene.pairs$inter.GeneName.B, sel.gene.pairs$inter.GeneName.A, sep = kGenesSplit)
+		# set the pairs database
+		used.proc.pairs.db <- sel.gene.pairs[union(which(tmp.used.conv %in% tmp.ref.gpairs), which(tmp.used.rev %in% tmp.ref.gpairs)), ]
+	} else {  # slim for some genes
+		tmp.used.genes <- c(sel.some.genes.X, sel.some.genes.Y)
+		if (length(tmp.used.genes) > 0) {
+			used.proc.pairs.db <- used.proc.pairs.db[union(which(used.proc.pairs.db$inter.GeneName.A %in% tmp.used.genes), 
+				which(used.proc.pairs.db$inter.GeneName.B %in% tmp.used.genes)), ]
+		}
 	}
 
 	# the process
@@ -648,6 +661,12 @@ ListClusterGroups <- function(
 			}
 		)
 		res.cg <- c(res.cg, as.character(unlist(latter.res.list)))
+	}
+
+	# if nothing is specified return all cluster groups
+	if (use.former == FALSE && length(cluster.former) == 0 &&
+		use.latter == FALSE && length(cluster.latter) == 0) {
+		res.cg <- this.allowed.names
 	}
 
 	res.cg <- unique(res.cg)
