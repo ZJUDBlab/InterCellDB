@@ -22,11 +22,12 @@ The installation steps are given as follows:
 
 ``` R
 install.packages("devtools")
-devtools::install_version(package = "GO.db", version = "3.8.2")
+install.packages("BiocManager")
+BiocManager::install(pkgs="GO.db", version="3.9")
 devtools::install_github("ZJUDBlab/InterCellDB")
 ```
 
-This code is tested to function well in R version 3.6.3. The dependent package `GO.db` is recommended to be version 3.8.2 to accomplish full compatibility.
+This code is tested to function well in R version 3.6.3. The dependent package `GO.db` is recommended to be downloaded from Bioconductor to accomplish full compatibility.
 
 ## Usage of InterCellDB
 
