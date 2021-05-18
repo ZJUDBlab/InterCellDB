@@ -20,8 +20,6 @@
 
 The installation steps are given as follows: 
 
-# [TODO] check this installation code
-
 ``` R
 install.packages("devtools")
 devtools::install_version(package = "GO.db", version = "3.8.2")
