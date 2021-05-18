@@ -400,8 +400,12 @@ GetResultTgSpecificity <- function(
 		sel.uq.cnt.options <- sel.uq.cnt.options[tmp.inds.valid.uq]
 	}
 
-	# check cluster group given
+	# check and properly set cluster group given
 	this.property.valid.cluster.group <- unique(as.character(unlist(lapply(this.spgenes, function(x) { x$uq.details$gp.belongs }))))
+	# if not set prioritize.cluster.groups, use the original order of cluster groups
+	if (length(prioritize.cluster.groups) == 0) {
+		prioritize.cluster.groups <- this.property.valid.cluster.group
+	}
 	tmp.inds.valid.cluster.group <- which(prioritize.cluster.groups %in% this.property.valid.cluster.group)
 	if (length(tmp.inds.valid.cluster.group) != length(prioritize.cluster.groups)) {
 		warning("Given cluster group order has some items not existed: ",
@@ -409,6 +413,7 @@ GetResultTgSpecificity <- function(
 			", which will be automatically removed!")
 	}
 	prioritize.cluster.groups <- prioritize.cluster.groups[tmp.inds.valid.cluster.group]
+
 
 	# check dot plot parameters
 	given.range.to.use <- CheckParamStd(names(dot.range.to.use), c("LogFC", "PVal"), "range", stop.on.zero = FALSE)
