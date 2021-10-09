@@ -8,7 +8,8 @@ CreateInterCellObject(
   DEG.table,
   species,
   cluster.split = "~",
-  gene.pair.split = "-~-"
+  gene.pair.split = "-~-",
+  remap.genes = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ using \code{setClusterSplit} if not decided yet.}
 
 \item{gene.pair.split}{The letters used to split 2 gene partners in one gene pair. It can also be modified later by 
 using \code{setGenePairSplit} if not decided yet.}
+
+\item{remap.genes}{This decides whether to use \pkg{InterCellDB} integrated gene database to
+standardize all genes to get more perfectly matched with protein/gene pairs database. Default is \code{FALSE}.}
 }
 \value{
 A \code{InterCell} object.
