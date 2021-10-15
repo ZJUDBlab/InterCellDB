@@ -388,3 +388,106 @@ Tool.FindGenesFromGO <- function(
 
 	return(go.res.final)
 }
+
+
+
+# [TODO] count.matrix should be normalized ? 
+# [TODO] if genes are remapped, use somewhere to store the mapping list and used here
+# [TODO] consider this step be put inside the fullview, as the order of genes are the same when genenrating from Seurat
+# import pbapply future future_apply Matrix
+# export
+# 
+Tool.GenPermutation <- function(
+	count.matrix,
+	cells.meta = NULL,
+	genes.name = NULL,
+	perm.times = 1000
+) {
+	if (is.data.frame(count.matrix)) {  # transform data.frame to matrix
+		count.matrix <- as.matrix(count.matrix)
+	}
+	if (!is.null(nrow(count.matrix)) && !is.null(ncol(count.matrix)) && 
+		nrow(count.matrix) > 0 && ncol(count.matrix) > 0) {  # further transform to sparse matrix
+		count.matrix <- as(count.matrix, "sparseMatrix")
+	}
+	
+	if (!is.null(cells.meta)) {  # use cells.meta to overwrite the columns of count.matrix
+		if (length(cells.meta) != ncol(count.matrix)) {
+			stop("Provided meta data on cells is not equal to actual cell count (columns in count matrix).")
+		}
+		cells.meta <- as.character(cells.meta)  # force character
+	}
+	
+	if (!is.null(genes.name)) {
+		if (length(genes.name) != nrow(count.matrix)) {
+			stop("Provided gene names are not equal to rows in count matrix.")
+		}
+		genes.name <- as.character(genes.name)  # force character
+	}
+	
+
+	# set dimnames
+	if (!is.null(cells.meta) & !is.null(genes.name)) {
+		dimnames(count.matrix) <- list(genes.name, cells.meta)
+	} else {
+		if (!is.null(cells.meta)) {
+			dimnames(count.matrix) <- list(rownames(count.matrix), cells.meta)
+		}
+		if (!is.null(genes.name)) {
+			dimnames(count.matrix) <- list(genes.name, colnames(count.matrix))
+		}
+	}
+	# check if matrix are unqiue in colnames and rownames
+	if (anyDuplicated(rownames(count.matrix))) {
+		stop("Provided gene names have duplicated items, which is not allowed!")
+	}
+
+
+	cellgroup <- unique(colnames(count.matrix))
+	run.func <- function(x, counts, cellgroup) {
+		ret.data <- matrix(data = NA, nrow = nrow(count.matrix), ncol = length(cellgroup), 
+						   dimnames = list(rownames(count.matrix), cellgroup))
+		# cell label permutation
+		new.cells.meta <- sample(colnames(count.matrix), ncol(count.matrix), replace = FALSE)
+		dimnames(count.matrix) <- list(rownames(count.matrix), new.cells.meta)
+		
+		for (i in cellgroup) {
+			tmp.ind.it <- which(colnames(count.matrix) == i)
+			ret.data[, i] <- as.numeric(rowSums(count.matrix[, tmp.ind.it, drop = FALSE])) / length(tmp.ind.it)
+		}
+		return(as(ret.data, "sparseMatrix"))
+	}
+	# run permutation expression
+	if (nbrOfWorkers() == 1) {
+		tmp.perm.retlist <- pblapply(seq_len(perm.times), counts = count.matrix, cellgroup = cellgroup,
+			FUN = run.func
+		)
+	} else {
+		tmp.perm.retlist <- future_lapply(seq_len(perm.times), counts = count.matrix, cellgroup = cellgroup,
+			FUN = run.func, future.seed = TRUE
+		)
+	}
+
+	# add actual expression matrix and average gene expression over all cell clusters
+	tmp.actual.list <- list()
+	# actual expression matrix
+	actual.exprs.mat <- matrix(data = NA, nrow = nrow(count.matrix), ncol = length(cellgroup),
+							   dimnames = list(rownames(count.matrix), cellgroup))
+	for (i in cellgroup) {
+		tmp.ind.it <- which(colnames(count.matrix) == i)
+		actual.exprs.mat[, i] <- as.numeric(rowSums(count.matrix[, tmp.ind.it, drop = FALSE])) / length(tmp.ind.it)
+	}
+	actual.exprs.mat <- as(actual.exprs.mat, "sparseMatrix")
+	# all average
+	actual.all.avg.data <- rowSums(count.matrix) / ncol(count.matrix)
+	names(actual.all.avg.data) <- rownames(count.matrix)
+	tmp.actual.list <- c(tmp.actual.list, actual = list(actual.exprs.mat), allavg = list(actual.all.avg.data))
+
+	# return
+	tmp.ret.list <- list(actual = tmp.actual.list, perm = tmp.perm.retlist)
+	
+	return(tmp.ret.list)
+}
+
+
+

@@ -22,6 +22,9 @@
 #'  gene pair to have at least one gene either in \code{sel.some.genes.X} or \code{sel.some.genes.Y}.
 #' @param sel.gene.pairs Directly specify the desired gene pairs. It should be given in standard table that is generated 
 #'  by \code{\link{FormatCustomGenePairs}}. To note, it's strictly aligned to clusters, see details.
+#' @param run.permutation [TODO]
+#' @param perm.expression [TODO]
+#' @param perm.pval.cutoff [TODO]
 #' @param force.process It stops the program when no subset of genes are selected either by \code{sel.some.genes.X} and \code{sel.some.genes.Y}
 #'  or by \code{sel.gene.pairs}, which may take long time to process. To force process, set this to TRUE.
 #' @param verbose If set TRUE, the progress bar will be shown.
@@ -62,6 +65,7 @@
 #'
 #' @importFrom dplyr bind_rows left_join
 #' @import progress
+#' @import pbapply future future.apply ## [TODO]
 #'
 #' @export
 #'
@@ -74,6 +78,9 @@ AnalyzeInterInFullView <- function(
 	sel.some.genes.Y = NULL,
 	sel.genes.option = "intersect", 
 	sel.gene.pairs = NULL,
+	run.permutation = FALSE,
+	perm.expression = NULL,
+	perm.pval.cutoff = 0.05,  # two-sided p val
 	force.process = FALSE,
 	verbose = TRUE
 ) {
@@ -160,6 +167,36 @@ AnalyzeInterInFullView <- function(
 		stop("No expression change selection is given in parameter `sel.exprs.change`. Options are 'Xup.Yup', 'Xup.Ydn', 'Xdn.Yup', 'Xdn.Ydn'.")
 	}
 
+	# check if permutation test is used
+	actual.exprs <- NA
+	if (run.permutation == TRUE) {
+		# check permutation
+		if (is.null(perm.expression)) {
+			stop("Attempt to run with permutation but data not given. Please give it in parameter 'perm.expression'.")
+		}
+		if (!is.list(perm.expression) || (is.list(perm.expression) && !all(c("actual", "perm") %in% names(perm.expression))) ) {
+			stop("Given invalid permutation data, please use function 'Tool.GenPermutation' to generate it.")
+		}
+		# split perm and actual
+		actual.exprs <- perm.expression$actual
+		perm.expression <- perm.expression$perm
+		# check if all result are unified (just the rows and columns for simiple checking)
+		tmp.simple.check.p <- t(vapply(perm.expression, function(x) { c(nrow(x), ncol(x)) }, FUN.VALUE = integer(2)))
+		if (!all(tmp.simple.check.p[, 1] == tmp.simple.check.p[1, 1]) ||
+			!all(tmp.simple.check.p[, 2] == tmp.simple.check.p[1, 2])) {
+			stop("Non-unified permutation matrices are given! Please recheck data format.")
+		}
+		# check if all involved genes are given. After simple checking, here think every permutation is the same
+		tmp.gene.p.check <- unique(object@fgenes$gene) %in% rownames(perm.expression[[1]])
+		if (all(!tmp.gene.p.check)) {
+			stop("No valid genes are given in permutation matrix! If you give the wrong element?")
+		}
+		if (!all(tmp.gene.p.check)) {
+			warning("Those marker genes are unexpectly not detected in permutation matrix: ",
+				paste0(setdiff(unique(object@fgenes$gene), rownames(perm.expression[[1]])), collapse = ", "), ".")
+		}
+	}
+
 	## analyze interaction network
 	interact.pairs.all <- list(
 		list.clusters = list(x.axis = sel.clusters.X, y.axis = sel.clusters.Y),
@@ -233,16 +270,24 @@ AnalyzeInterInFullView <- function(
 				gpairs.result <- gpairs.result[sel.genes.func(inds.sel.X, inds.sel.Y), ]
 			}
 
-			# add logfc, pval data from fgenes
+			# add logfc, pval data from fgenes, as well as Exprs from fgenes
 			tmp.sel.cols <- setdiff(object@misc$musthave.colnames, "cluster")
+			tmp.tomodf.cnt <- length(tmp.sel.cols) - 2  # as substraction below starts from 0, -2 / one for gene, one for index shift to start from 0
+			if (tmp.tomodf.cnt < 0) {
+				stop("Unexpected must have columns not matched!")
+			}
 			gpairs.result <- left_join(gpairs.result, fgenes.t.X[, tmp.sel.cols], by = c("inter.GeneName.A" = "gene"))
-			tmp.change.cols <- ncol(gpairs.result) - (length(tmp.sel.cols) - 2):0
+			tmp.change.cols <- ncol(gpairs.result) - (tmp.tomodf.cnt):0
 			colnames(gpairs.result)[tmp.change.cols] <- paste("inter", colnames(gpairs.result)[tmp.change.cols], "A", sep = ".")
 			gpairs.result <- left_join(gpairs.result, fgenes.t.Y[, tmp.sel.cols], by = c("inter.GeneName.B" = "gene"))
-			tmp.change.cols <- ncol(gpairs.result) - (length(tmp.sel.cols) - 2):0
+			tmp.change.cols <- ncol(gpairs.result) - (tmp.tomodf.cnt):0
 			colnames(gpairs.result)[tmp.change.cols] <- paste("inter", colnames(gpairs.result)[tmp.change.cols], "B", sep = ".")
 			# reorder the result table
-			tmp.paired.order.cols <- paste("inter", rep(c("GeneID", "GeneName", "LogFC", "PVal"), each = 2), c("A", "B"), sep = ".")
+			if ("Exprs" %in% object@misc$musthave.colnames) {
+				tmp.paired.order.cols <- paste("inter", rep(c("GeneID", "GeneName", "LogFC", "PVal", "Exprs"), each = 2), c("A", "B"), sep = ".")
+			} else {
+				tmp.paired.order.cols <- paste("inter", rep(c("GeneID", "GeneName", "LogFC", "PVal"), each = 2), c("A", "B"), sep = ".")
+			}
 			gpairs.result <- gpairs.result[, c(tmp.paired.order.cols, setdiff(colnames(gpairs.result), tmp.paired.order.cols))]
 			
 			# check exprs change
@@ -275,7 +320,24 @@ AnalyzeInterInFullView <- function(
 			# type
 			this.A.types <- object@database@anno.type.db[which(object@database@anno.type.db$GeneID %in% gpairs.result$inter.GeneID.A), ]
 			this.B.types <- object@database@anno.type.db[which(object@database@anno.type.db$GeneID %in% gpairs.result$inter.GeneID.B), ]
-			
+		
+			# add power and pval in data
+			if (run.permutation == TRUE) {
+				tmp.formula.exprs <- object@formulae[[("TG.EXPRS")]]
+				gpairs.result[, "inter.Power"] <- tmp.formula.exprs(gpairs.result[, "inter.Exprs.A"], gpairs.result[, "inter.Exprs.B"])
+				gpairs.result[, "inter.Specificity"] <- 1  # wait for all done and merge add p value
+				gpairs.result[, "inter.ToCheck.A"] <- ix
+				gpairs.result[, "inter.ToCheck.B"] <- jy
+			} else {
+				tmp.formula.to.use <- object@formulae[c("TG.LOGFC", "TG.PVAL")]
+				names(tmp.formula.to.use) <- c("LogFC", "PVal")
+				gpairs.result[, "inter.Power"] <- tmp.formula.to.use[["LogFC"]](gpairs.result[, "inter.LogFC.A"], gpairs.result[, "inter.LogFC.B"])
+				gpairs.result[, "inter.Specificity"] <- tmp.formula.to.use[["PVal"]](gpairs.result[, "inter.PVal.A"], gpairs.result[, "inter.PVal.B"])
+				# save result when not use permutation
+				interact.pairs.all$cnt.allpairs <- c(interact.pairs.all$cnt.allpairs, nrow(gpairs.result))
+				interact.pairs.all$strength.allpairs <- c(interact.pairs.all$strength.allpairs, sum(gpairs.result[, "inter.Power"]))
+			}
+
 			# get result saved
 			interact.pairs.all$data.allpairs[[interact.name]] <- gpairs.result
 			interact.pairs.all$anno.allpairs$location.A[[interact.name]] <- this.A.locations
@@ -283,14 +345,62 @@ AnalyzeInterInFullView <- function(
 			interact.pairs.all$anno.allpairs$type.A[[interact.name]] <- this.A.types
 			interact.pairs.all$anno.allpairs$type.B[[interact.name]] <- this.B.types
 			interact.pairs.all$name.allpairs <- c(interact.pairs.all$name.allpairs, interact.name)
-			interact.pairs.all$cnt.allpairs <- c(interact.pairs.all$cnt.allpairs, nrow(gpairs.result))
-			interact.pairs.all$strength.allpairs <- c(interact.pairs.all$strength.allpairs,
-				object@formulae$FULLVIEW(gpairs.result, c("inter.LogFC.A", "inter.LogFC.B")))
+			
 			if (verbose == TRUE) {
 				prog.bar.fv$tick()
 			}
 		}
 	}
+
+	# if use permutation, here add pval
+	if (run.permutation == TRUE) {
+		tmp.all.result <- bind_rows(interact.pairs.all$data.allpairs)
+		tmp.inv.ga <- unique(tmp.all.result[, c("inter.GeneName.A", "inter.ToCheck.A")])
+		tmp.inv.gb <- unique(tmp.all.result[, c("inter.GeneName.B", "inter.ToCheck.B")])
+		colnames(tmp.inv.ga) <- colnames(tmp.inv.gb) <- c("gene", "cluster")
+		tmp.involved.gdf <- unique(rbind(tmp.inv.ga, tmp.inv.gb))
+		# slim perm result
+		perm.expression <- vapply(perm.expression, inv.gdf = tmp.involved.gdf,
+			function(mat, inv.gdf) {  # [TODO] default use sparse matrix
+				as.numeric(mat[cbind(match(inv.gdf$gene, rownames(mat)), match(inv.gdf$cluster, colnames(mat)))])
+			}, FUN.VALUE = double(nrow(tmp.involved.gdf)))
+
+		# get permutation result
+		tmp.all.result[, "inter.Specificity"] <- apply(tmp.all.result, MARGIN = 1,
+			perm.expression = perm.expression, actual.exprs = actual.exprs,
+			inv.gdf = tmp.involved.gdf,
+			function(x, perm.expression, actual.exprs, inv.gdf) {
+				# actual
+				tmp.avg.it <- actual.exprs$allavg[which(names(actual.exprs$allavg) == x["inter.GeneName.A"])] * 
+							  actual.exprs$allavg[which(names(actual.exprs$allavg) == x["inter.GeneName.B"])]				
+				# perm
+				inds.ga <- intersect(which(inv.gdf$gene == x["inter.GeneName.A"]), which(inv.gdf$cluster == x["inter.ToCheck.A"]))
+				inds.gb <- intersect(which(inv.gdf$gene == x["inter.GeneName.B"]), which(inv.gdf$cluster == x["inter.ToCheck.B"]))
+				nulldist.power <- perm.expression[inds.ga, ] * perm.expression[inds.gb]
+				nulldist.power <- nulldist.power[order(nulldist.power, decreasing = TRUE)]
+				nulldist.power <- nulldist.power - tmp.avg.it
+				sum(abs(as.numeric(x["inter.Power"]) - tmp.avg.it) <= abs(nulldist.power)) / length(nulldist.power)
+			})
+
+		# truncate data by pval
+		tmp.all.result <- subset(tmp.all.result, inter.Specificity < perm.pval.cutoff)
+		# redist and fetch result
+		tmp.all.result[, "inter.Distr.interact"] <- paste(tmp.all.result[, "inter.ToCheck.A"], tmp.all.result[, "inter.ToCheck.B"], sep = object@tool.vars$cluster.split)
+		for (i.inter in unique(tmp.all.result[, "inter.Distr.interact"])) {
+			tmp.df <- subset(tmp.all.result, inter.Distr.interact == i.inter)
+			interact.pairs.all$data.allpairs[[i.inter]] <- tmp.df[, setdiff(colnames(tmp.df), c("inter.ToCheck.A", "inter.ToCheck.B", "inter.Distr.interact"))]
+			# location
+			interact.pairs.all$anno.allpairs$location.A[[i.inter]] <- interact.pairs.all$anno.allpairs$location.A[[i.inter]][which(interact.pairs.all$anno.allpairs$location.A[[i.inter]]$GeneID %in% tmp.df$inter.GeneID.A), ]
+			interact.pairs.all$anno.allpairs$location.B[[i.inter]] <- interact.pairs.all$anno.allpairs$location.B[[i.inter]][which(interact.pairs.all$anno.allpairs$location.B[[i.inter]]$GeneID %in% tmp.df$inter.GeneID.B), ]
+			# type
+			interact.pairs.all$anno.allpairs$type.A[[i.inter]] <- interact.pairs.all$anno.allpairs$type.A[[i.inter]][which(interact.pairs.all$anno.allpairs$type.A[[i.inter]]$GeneID %in% tmp.df$inter.GeneID.A), ]
+			interact.pairs.all$anno.allpairs$type.B[[i.inter]] <- interact.pairs.all$anno.allpairs$type.B[[i.inter]][which(interact.pairs.all$anno.allpairs$type.B[[i.inter]]$GeneID %in% tmp.df$inter.GeneID.B), ]
+			# strength and count
+			interact.pairs.all$cnt.allpairs <- c(interact.pairs.all$cnt.allpairs, nrow(tmp.df))
+			interact.pairs.all$strength.allpairs <- c(interact.pairs.all$strength.allpairs, sum(tmp.df[, "inter.Power"]))
+		}
+	}
+	
 
 	# result
 	object <- setFullViewResult(object, interact.pairs.all)
