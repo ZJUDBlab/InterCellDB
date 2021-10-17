@@ -20,6 +20,7 @@ Imports:
 	methods, 
 	utils,
 	GO.db (>= 3.8.2),
+	Matrix,
 	pbapply,
 	future,
 	future.apply

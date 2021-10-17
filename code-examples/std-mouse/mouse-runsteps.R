@@ -14,8 +14,15 @@ fgenes.all <- tmp.markers[which(tmp.markers$p_val_adj < 0.05), ]  # 66332 rows l
 colnames(fgenes.all)[3] <- "LogFC"
 colnames(fgenes.all)[6] <- "PVal"
 
+# [TODO] HERE to add [AddExprs to InterCell  structure]
+
+
 # process
 tmp.obj <- CreateInterCellObject(fgenes.all, species = "mouse")
+# [TODO] HERE, inside add the expression data to fgenes
+
+# prep for permutation of expression
+# [TODO] This is the stand-alone step, will not influence the main process
 
 # settle cluster names
 ListAllClusters(tmp.obj)
@@ -37,7 +44,13 @@ genes.sender <- FetchGeneOI(tmp.obj,
 	sel.go.terms = "GO:0006955"
 	)
 
+# [TODO] add permutation here
+tmp.permlist <- Tool.GenPermutation(seurat.obj, cells.meta, genes.name, perm.times = 1000)
+
+
 # do network analysis
+# [TODO] add switch here, whether to use the permutation test to get valid interactions
+# [TODO] or just use the differentially expressed genes to quickly explore the interactions
 tmp.obj <- AnalyzeInterInFullView(tmp.obj, 
 	sel.some.genes.X = genes.receiver,
 	sel.some.genes.Y = genes.sender,
