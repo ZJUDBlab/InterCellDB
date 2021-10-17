@@ -9,14 +9,10 @@ GetResultFullView(
   show.clusters.in.x = NULL,
   show.clusters.in.y = NULL,
   sel.cluster.group.method = "all",
-  power.max.limit = NULL,
-  power.min.limit = NULL,
-  cnt.max.limit = NULL,
-  cnt.min.limit = NULL,
+  power.apply.func = NULL,
+  cnt.apply.func = NULL,
   plot.power.range = NULL,
-  hide.power.label = FALSE,
   plot.cnt.range = NULL,
-  hide.cnt.label = FALSE,
   nodes.size.range = c(1, 6),
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   nodes.colour.value.seq = c(0, 0.5, 1),
@@ -39,21 +35,13 @@ GetResultFullView(
 'all' is recommended for most cases, and 
 'diagonal*' is recommended when same restrictions are applied to clusters in X and Y.}
 
-\item{power.max.limit}{One number that specifies the upper limit of power, and power larger than this value will be coerced to this value.}
+\item{power.apply.func}{The function used to modify the power value, usually \code{log1p}, etc.}
 
-\item{power.min.limit}{One number that specifies the lower limit of power, and power lower than this value will be coerced to this value.}
-
-\item{cnt.max.limit}{One number that specifies the upper limit of count, and larger ones will be coerced to this.}
-
-\item{cnt.min.limit}{Numeric. Specify the lower limit of count, and lower ones will be coerced to this.}
+\item{cnt.apply.func}{The function used to modify the count value, usually \code{sqrt} to avoid extremes problem.}
 
 \item{plot.power.range}{This will extend the plotting range beyond actual value range for power.}
 
-\item{hide.power.label}{If set TRUE, the label appended for power value will be hidden, otherwise, the label will be kept.}
-
 \item{plot.cnt.range}{This will extend the plotting range beyond actual value range for count.}
-
-\item{hide.cnt.label}{If set TRUE, the label appended for count value will be hidden, otherwise, the label will be kept.}
 
 \item{nodes.size.range}{2 numbers that specifies the range of sizes of the nodes shown in the graph.}
 

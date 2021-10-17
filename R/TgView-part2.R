@@ -10,9 +10,9 @@
 #' @param direction.X.to.Y Options are 'NULL', 'TRUE', 'FALSE'. It selects subset of data based on direction.
 #'  The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs. 
 #'  See details for help.
-#' @param colnames.to.cmp The colnames to be used as evaluation params, currently only 2 options ('LogFC', 'PVal') are supported.
-#'  The 1st one will be plotted by different size of nodes, and 2nd one will be distinguished by colour of nodes.
-#' @param range.to.use It specifies the user specified ranges for evaluation params.
+#' @param bound.to.use It specifies the user specified bound for evaluation params. The values out of bound will be coerced to 
+#'  either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]
+#' @param func.to.use The function used to further tranform the values, e.g. \code{log1p}. 
 #' @param plot.X.to.Y The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
 #'  If set FALSE, switch the clusters drawn in x-axis and y-axis.
 #' @param axis.order.xy It determines how the gene names will be ordered in the axis when plotting.
@@ -47,6 +47,7 @@
 #'   \item table: a list of \code{data.frame}.
 #' }
 #'
+#'
 #' @import dplyr
 #' @import ggplot2
 #' @import cowplot
@@ -56,8 +57,8 @@
 GetResultTgCrosstalk <- function(
   object,
   direction.X.to.Y = NULL,
-  colnames.to.cmp = c("LogFC", "PVal"),
-  range.to.use = list("LogFC" = c(-Inf, Inf), "PVal" = c(-Inf, Inf)),
+  bound.to.use = list("Power" = c(-Inf, Inf), "Specificity" = c(-Inf, Inf)),
+  func.to.use = list("Power" = function(x) {x}, "Specificity" = function(x) {x}),
   plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
   axis.order.xy.decreasing = c(TRUE, TRUE),  # order direction
@@ -67,40 +68,52 @@ GetResultTgCrosstalk <- function(
   nodes.size.range = c(2, 8),
   axis.text.x.pattern = element_text(angle = 30, hjust = 1)
 ) {
+  ITinfos <- getTgItInfo(object)
   VEinfos <- getTgVEInfo(object)
+  this.musthave.colnames <- object@misc$musthave.colnames
   fgenes.remapped.all <- object@fgenes
-  formula.to.use <- object@formulae[c("TG.LOGFC", "TG.PVAL")]
-  names(formula.to.use) <- c("LogFC", "PVal")
+  columns.to.use <- c("Power", "Specificity")
+
   # pre-check
-  if (!all(colnames.to.cmp %in% c("LogFC", "PVal"))) {
-    stop("Invalid colnames detected, only 'LogFC' and 'PVal' are supported yet.")
-  }
-  tmp.range.not.valid <- setdiff(names(range.to.use), colnames.to.cmp)
-  if (length(tmp.range.not.valid) != 0) {
-    warning("Find UNVALID names in given range: ", paste0(tmp.range.not.valid, collapse = ", "))
-  }
-  tmp.not.in.range <- setdiff(colnames.to.cmp, names(range.to.use))
-  if (length(tmp.not.in.range) != 0) {
-    for (tmp.i in tmp.not.in.range) {
-      range.to.use <- c(range.to.use, list(c(-Inf, Inf)))
-      names(range.to.use)[length(range.to.use)] <- tmp.i
+  tmp.valid.boundnames <- CheckParamStd(names(bound.to.use), columns.to.use, "Bound names", stop.on.zero = FALSE)
+  bound.to.use <- bound.to.use[tmp.valid.boundnames]
+  tmp.valid.funcnames <- CheckParamStd(names(func.to.use), columns.to.use, "Tranform functions", stop.on.zero = FALSE)
+  func.to.use <- func.to.use[tmp.valid.funcnames]
+
+  # add default bounds
+  tmp.not.in.bound <- setdiff(columns.to.use, tmp.valid.boundnames)
+  if (length(tmp.not.in.bound) != 0) {
+    for (tmp.i in tmp.not.in.bound) {
+      bound.to.use <- c(bound.to.use, list(c(-Inf, Inf)))
+      names(bound.to.use)[length(bound.to.use)] <- tmp.i
     }
-    warning("Auto add ranges on: ", paste0(tmp.not.in.range, collapse = ", "))
   }
+  # add default functions
+  tmp.not.in.func <- setdiff(columns.to.use, tmp.valid.funcnames)
+  if (length(tmp.not.in.func) != 0) {
+    for (tmp.j in tmp.not.in.func) {
+      func.to.use <- c(func.to.use, list(function(x) {x}))
+      names(func.to.use)[length(func.to.use)] <- tmp.j
+    }
+  }
+
+  # settle with columns names
+  colnames.to.cmp <- paste0("inter.", columns.to.use)
+  names(bound.to.use) <- paste0("inter.", names(bound.to.use))
+  names(func.to.use) <- paste0("inter.", names(func.to.use))
 
   # check node color
   if (length(nodes.colour.seq) != length(nodes.colour.value.seq)) {
     stop("Colors and their gradient values should be of same length! Check parameter `nodes.colour.seq` and `nodes.colour.value.seq`.")
   }
   
-  # VEinfos
+
+  # go with VEinfos
   act.A.clustername <- VEinfos$cluster.name.A
   act.B.clustername <- VEinfos$cluster.name.B
   edges.infos <- VEinfos$edges.infos
   vertices.infos <- VEinfos$vertices.infos
-
-  ## make one portable table
-  # re-sync edges with vertices
+  # make one portable table and re-sync edges with vertices
   tmp.e2.col <- c("ClusterName", "GeneName")
   edges.fullinfos <- left_join(edges.infos, vertices.infos[, c("UID", tmp.e2.col)], by = c("from" = "UID"))
   tmp.ind.new3 <- match(c("ClusterName", "GeneName"), colnames(edges.fullinfos))
@@ -137,37 +150,42 @@ GetResultTgCrosstalk <- function(
     colnames(edges.fullinfos) <- tmp.colname
   }
 
-  # compact on vertices.infos
-  vertices.selinfos <- vertices.infos[, c(tmp.e2.col, colnames.to.cmp)]
-  vertices.selinfos <- DoPartUnique(vertices.selinfos, match(tmp.e2.col, colnames(vertices.selinfos)))
-  # merge all
-  packed.infos <- left_join(edges.fullinfos, vertices.selinfos, by = c("from.cluster" = "ClusterName", "from.gene" = "GeneName"))
-  tmp.add2.col <- match(colnames.to.cmp, colnames(packed.infos))
-  colnames(packed.infos)[tmp.add2.col] <- paste("from", colnames.to.cmp, sep = ".")
-  packed.infos <- left_join(packed.infos, vertices.selinfos, by = c("to.cluster" = "ClusterName", "to.gene" = "GeneName"))
-  tmp.add2.col <- match(colnames.to.cmp, colnames(packed.infos))
-  colnames(packed.infos)[tmp.add2.col] <- paste("to", colnames.to.cmp, sep = ".")
+  # use itinfo and add cluster info
+  tmp.cluster.A <- ITinfos$clusters.name[1]
+  tmp.cluster.B <- ITinfos$clusters.name[2]
+  itused.infos <- ITinfos$bt.pairs
+  itused.infos$inter.Cluster.A <- tmp.cluster.A
+  itused.infos$inter.Cluster.B <- tmp.cluster.B
+  # pack infos
+  tmp.used.m.cols <- c(paste("inter", c("GeneName", "Cluster"), rep(c("A", "B"), each = 2), sep = "."), "inter.Power", "inter.Specificity")
+  pack1.infos <- left_join(subset(edges.fullinfos, from.cluster == tmp.cluster.A & to.cluster == tmp.cluster.B), 
+    itused.infos[, tmp.used.m.cols],
+    by = c("from.cluster" = "inter.Cluster.A", "to.cluster" = "inter.Cluster.B",
+      "from.gene" = "inter.GeneName.A", "to.gene" = "inter.GeneName.B"))
+  pack2.infos <- left_join(subset(edges.fullinfos, from.cluster == tmp.cluster.B & to.cluster == tmp.cluster.A), 
+    itused.infos[, tmp.used.m.cols],
+    by = c("from.cluster" = "inter.Cluster.B", "to.cluster" = "inter.Cluster.A",
+      "from.gene" = "inter.GeneName.B", "to.gene" = "inter.GeneName.A"))
+  packed.infos <- rbind(pack1.infos, pack2.infos)
+  
   ## apply user-defined formula
-  for (i in 1:length(colnames.to.cmp)) {
+  for (i in seq_along(colnames.to.cmp)) {
     tmp.colname <- colnames.to.cmp[i]
-    tmp.sel.cols <- paste(c("from", "to"), tmp.colname, sep = ".")
-    tmp.res <- formula.to.use[[tmp.colname]](packed.infos[, tmp.sel.cols[1]], packed.infos[, tmp.sel.cols[2]])
-    tmp.res <- as.numeric(tmp.res)
-    tmp.res.coln <- paste("res", tmp.colname, sep = ".")
+    tmp.res <- as.numeric(func.to.use[[tmp.colname]](packed.infos[, tmp.colname]))
     # use max and min limit
-    tmp.min <- range.to.use[[tmp.colname]][1]  # min
-    tmp.max <- range.to.use[[tmp.colname]][2]  # max
+    tmp.min <- bound.to.use[[tmp.colname]][1]  # min
+    tmp.max <- bound.to.use[[tmp.colname]][2]  # max
     # avoid to be too far away from the real value
     tmp.min <- ifelse(tmp.min < min(tmp.res), min(tmp.res), tmp.min)
     tmp.max <- ifelse(tmp.max > max(tmp.res), max(tmp.res), tmp.max)
-    # apply the range
+    # apply the bound
     if (is.numeric(tmp.min) && !is.na(tmp.min) && 
       is.numeric(tmp.max) && !is.na(tmp.max)) {
       tmp.res <- unlist(lapply(tmp.res, min = tmp.min, max = tmp.max, function(x, max, min) {
         ifelse(x < min, min, ifelse(x > max, max, x))
       }))
     }
-    packed.infos[, tmp.res.coln] <- tmp.res
+    packed.infos[, tmp.colname] <- tmp.res
   }
 
   ## draw the graph
@@ -202,14 +220,15 @@ GetResultTgCrosstalk <- function(
   y.axis.names <- unique(y.axis.names)
   ##
   gp.res <- ggplot(packed.infos, aes(x = from.gene, y = to.gene))
-  tmp.sym.size <- sym(paste("res", colnames.to.cmp[1], sep = "."))
-  tmp.sym.colour <- sym(paste("res", colnames.to.cmp[2], sep = "."))
+  tmp.sym.size <- sym("inter.Power")
+  tmp.sym.colour <- sym("inter.Specificity")
   gp.res <- gp.res + 
       geom_point(aes(size = !!tmp.sym.size, colour = !!tmp.sym.colour)) + 
       scale_x_discrete(limits = x.axis.names, breaks = x.axis.names) + 
       scale_y_discrete(limits = y.axis.names, breaks = y.axis.names) + 
-      scale_size(name = colnames.to.cmp[1], range = nodes.size.range) + 
-      scale_colour_gradientn(name = colnames.to.cmp[2], colours = nodes.colour.seq, values = nodes.colour.value.seq)
+      scale_size(name = "Power", range = nodes.size.range) + 
+      scale_colour_gradientn(name = "Specificity",
+        colours = nodes.colour.seq, values = nodes.colour.value.seq)
   gp.res <- gp.res + 
       labs(x = packed.infos[1, "from.cluster"], y = packed.infos[1, "to.cluster"]) + 
       theme_half_open(font_size = plot.font.size.base) + 

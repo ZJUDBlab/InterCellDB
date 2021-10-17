@@ -4,7 +4,7 @@
 \alias{TgView.formula.onPVal.default}
 \title{Formula on Confidence for One Gene Pair}
 \usage{
-TgView.formula.onPVal.default(data.f, data.b, pval.log.max = 1000)
+TgView.formula.onPVal.default(data.f, data.b, pval.log.max = 300)
 }
 \arguments{
 \item{data.f}{vector. The PVal values for one list of gene partners. PVal values are 

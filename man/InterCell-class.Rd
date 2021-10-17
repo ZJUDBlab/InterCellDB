@@ -15,13 +15,16 @@ It incoporates the necessary databases, and stores every important intermediate 
 \item{\code{fgenes}}{InterCellDB needs the differential expressed genes and their belonging clusters as input. 
 The given data need to have columns named 'gene', 'cluster', 'LogFC', 'PVal'. Those each means, 'gene': the 
 authorized gene names, 'cluster': cell cluster, 'LogFC': the log transformed fold change of genes, 'PVal': the 
-P val for regarding one gene as differentially expressed one.}
+P val for regarding one gene as differentially expressed one. 
+The expression level of each gene is also needed when statistical test is required and it should be stored in column named 'Exprs'.}
 
 \item{\code{database}}{Database stored in \code{InterCellDBPack} object.}
 
 \item{\code{formulae}}{The default formulae to be used in analysis.}
 
 \item{\code{inter.fullview}}{This is used to store the result of network analysis.}
+
+\item{\code{tg.itinfo}}{This stores information about one intercellular communication.}
 
 \item{\code{tg.action.pairs}}{This is used to store the intermediate result of action properties and gene pairs.}
 

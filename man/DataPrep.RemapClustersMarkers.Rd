@@ -4,7 +4,12 @@
 \alias{DataPrep.RemapClustersMarkers}
 \title{Remap Gene Symbols to Their Authorized Genenames}
 \usage{
-DataPrep.RemapClustersMarkers(markers.all, species, if.used.inside = FALSE)
+DataPrep.RemapClustersMarkers(
+  markers.all,
+  species,
+  if.used.inside = FALSE,
+  final.dup.rm = TRUE
+)
 }
 \arguments{
 \item{markers.all}{Data.frame. Feature genes that are generated from \code{Seurat::FindAllMarkers()} or 
@@ -14,6 +19,9 @@ similar functions in other packages.}
 Other species are not supported to be used for analysis.}
 
 \item{if.used.inside}{Logic. If used inside, some process will not run.}
+
+\item{final.dup.rm}{Logic. If set TRUE, duplicated genes of each cluster in final mapping result will be 
+removed. If set FALSE, those genes will be applied with function \code{make.unique}.}
 }
 \description{
 Use species-specific reference database to remap genes to their authorized genenames.

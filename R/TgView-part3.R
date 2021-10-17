@@ -1,49 +1,5 @@
 
 
-#' Generate Gene Pairs in Standard Format
-#' 
-#' @description
-#' This function generates gene pairs in standard format(in data frame), 
-#' and gets these pairs easier to be compared with others.
-#'
-#' @param VEinfos standard storage for one interaction.
-#'
-#' @details
-#' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 
-#' participated in each gene pair are recorded in columns named "inter.GeneName.A" and "inter.GeneName.B".
-#'
-#' @importFrom dplyr left_join
-#'
-Tool.GenStdGenePairs.from.VEinfos <- function(
-  VEinfos
-) {
-  vertices.infos <- VEinfos$vertices.infos
-  edges.infos <- VEinfos$edges.infos
-  #
-  tmp.res <- left_join(edges.infos[, c("from", "to")], vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PVal")], by = c("from" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.A", "inter.GeneName.A", "inter.LogFC.A", "inter.PVal.A")
-  tmp.res <- left_join(tmp.res, vertices.infos[, c("UID", "ClusterName", "GeneName", "LogFC", "PVal")], by = c("to" = "UID"))
-  colnames(tmp.res)[c(ncol(tmp.res) - 3:0)] <- c("inter.Cluster.B", "inter.GeneName.B", "inter.LogFC.B", "inter.PVal.B")
-  # form std data.frame
-  align.colnames <- c("inter.GeneName.A", "inter.GeneName.B", "inter.LogFC.A", "inter.LogFC.B", "inter.PVal.A", "inter.PVal.B", "inter.Cluster.A", "inter.Cluster.B")
-  tmp.res <- tmp.res[, match(align.colnames, colnames(tmp.res))]
-
-  # match cluster
-  # get conv ones
-  std.res.conv <- tmp.res[intersect(which(tmp.res$inter.Cluster.A == VEinfos$cluster.name.A), which(tmp.res$inter.Cluster.B == VEinfos$cluster.name.B)), ]
-  # get rev ones
-  std.res.rev <- tmp.res[intersect(which(tmp.res$inter.Cluster.A == VEinfos$cluster.name.B), which(tmp.res$inter.Cluster.B == VEinfos$cluster.name.A)), ]
-  std.res.rev <- std.res.rev[, ReverseOddEvenCols(length(align.colnames))]  # reverse all paired columns
-  colnames(std.res.rev) <- colnames(std.res.conv)
-  # get the result
-  std.res.all <- rbind(std.res.conv, std.res.rev)
-  std.res.all <- DoPartUnique(std.res.all, 1:2)
-
-  return(std.res.all)
-}
-
-
-
 #' Analyze Gene Pairs by Specificity
 #'
 #' @description
@@ -72,10 +28,10 @@ AnalyzeInterSpecificity <- function(
 ) {
 	interact.pairs.acted <- getFullViewResult(object)
 	VEinfos <- getTgVEInfo(object)
-	formula.to.use.onLogFC <- object@formulae$TG.LOGFC
-	formula.to.use.onPValAdj <- object@formulae$TG.PVAL
+	Itinfos <- getTgItInfo(object)
 	kGenesSplit <- getGenePairSplit(object)
 	kClustersSplit <- getClusterSplit(object)
+	musthave.colnames <- object@misc$musthave.colnames
 
 	# check those cluster groups to compare
 	not.valid.cluster.groups <- setdiff(to.cmp.cluster.groups, interact.pairs.acted$name.allpairs)
@@ -92,15 +48,6 @@ AnalyzeInterSpecificity <- function(
 	) {
 		paste(tmp.pairs[, "inter.GeneName.A"], tmp.pairs[, "inter.GeneName.B"], sep = tmp.sep)
 	}
-	# calculate the logfc
-	inside.calc.upon.gp.std <- function(
-		tmp.pairs,
-		tmp.formula,
-		tmp.colnames = c("inter.LogFC.A", "inter.LogFC.B"),
-		...
-	) {
-		tmp.formula(tmp.pairs[, tmp.colnames[1]], tmp.pairs[, tmp.colnames[2]], ...)
-	}
 
 	# all pairs
 	all.pairs.names <- interact.pairs.acted$name.allpairs
@@ -111,24 +58,24 @@ AnalyzeInterSpecificity <- function(
 	if ((this.pair.name %in% all.pairs.names) == FALSE) {
 		stop("Given name of cluster pairs NOT exist!")
 	}
-	target.gene.pairs.df <- Tool.GenStdGenePairs.from.VEinfos(VEinfos)
+	target.gene.pairs.df <- DataPrep.GenStdGenePairs.from.VEinfos(VEinfos, musthave.colnames)
+	# add power and specificity here
+	tmp.ref.colnames <- c(paste("inter", rep(c("GeneName"), each = 2), c("A", "B"), sep = "."), "inter.Power", "inter.Specificity")
+	target.gene.pairs.df <- left_join(target.gene.pairs.df, Itinfos$bt.pairs[, tmp.ref.colnames], 
+		by = c("inter.GeneName.A", "inter.GeneName.B"))
 	
 	this.clusters.separate <- strsplit(this.pair.name, split = kClustersSplit, fixed = TRUE)[[1]]
 	this.pair.interacts <- inside.c.short.interacts(target.gene.pairs.df, kGenesSplit)
-	# this.pair.logfc.mul <- inside.calc.upon.gp.logfc(target.gene.pairs.df, formula.to.use.onLogFC)
 	this.gene.pairs <- data.frame(gp.name = this.pair.interacts, 
 		gp.belongs = rep(this.pair.name, times = length(this.pair.interacts)), 
-		gp.logfc.A = target.gene.pairs.df[, "inter.LogFC.A"], 
-		gp.logfc.B = target.gene.pairs.df[, "inter.LogFC.B"], 
-		gp.pvaladj.A = target.gene.pairs.df[, "inter.PVal.A"],
-		gp.pvaladj.B = target.gene.pairs.df[, "inter.PVal.B"], 
+		gp.power = target.gene.pairs.df[, "inter.Power"], 
+		gp.specificity = target.gene.pairs.df[, "inter.Specificity"],
 		stringsAsFactors = FALSE)
 	# further check if comparison of itself exist, which may cause error in downstream analysis
 	if (this.pair.name %in% to.cmp.cluster.groups == TRUE) {
 		warning("It cannot compare with itself. Automatically remove ", this.pair.name, " from to-comparing cluster groups.")
 		to.cmp.cluster.groups <- setdiff(to.cmp.cluster.groups, this.pair.name)	
 	}
-	
 
 	if (length(to.cmp.cluster.groups) == 0) {
 		stop("No cluster groups are ready to compare. Please check parameter `to.cmp.cluster.groups`. ",
@@ -163,10 +110,8 @@ AnalyzeInterSpecificity <- function(
 			tmp.inds.tg <- which(tmp.pairs.interacts %in% tg.pairs)
 			res.df <- data.frame(gp.name = tmp.pairs.interacts[tmp.inds.tg], 
 				gp.belongs = rep(x, times = length(tmp.inds.tg)), 
-				gp.logfc.A = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.A"], 
-				gp.logfc.B = tmp.pairs.df[tmp.inds.tg, "inter.LogFC.B"], 
-				gp.pvaladj.A = tmp.pairs.df[tmp.inds.tg, "inter.PVal.A"],
-				gp.pvaladj.B = tmp.pairs.df[tmp.inds.tg, "inter.PVal.B"],
+				gp.power = tmp.pairs.df[tmp.inds.tg, "inter.Power"], 
+				gp.specificity = tmp.pairs.df[tmp.inds.tg, "inter.Specificity"],
 				stringsAsFactors = FALSE)
 			res.df
 		})
@@ -183,9 +128,6 @@ AnalyzeInterSpecificity <- function(
 	tmp.inds.uq.valid <- this.uq.cnts %in% uq.cnt.options
 	this.uq.cnts <- this.uq.cnts[tmp.inds.uq.valid]
 	this.uq.indices <- this.uq.indices[tmp.inds.uq.valid]
-	# other settings
-	tmp.pval.collect <- c(this.all.gp.packed$gp.pvaladj.A, this.all.gp.packed$gp.pvaladj.B)
-	this.minimum.pval.log10.abs <- abs(log10(min(tmp.pval.collect[which(tmp.pval.collect > 0)])))
 
 	# collect by gene pairs each
 	tmp.diff.res.mat <- vector(mode = "list", length = length(this.uq.indices))
@@ -193,17 +135,13 @@ AnalyzeInterSpecificity <- function(
 	prog.bar.use.plot.collect$tick(0)
 	tmp.diff.res.mat <- lapply(names(this.uq.indices), all.gp = this.all.gp.packed, 
 	diff.cnts = this.uq.cnts, diff.indices = this.uq.indices, 
-	formula.to.use = list(formula.to.use.onLogFC, formula.to.use.onPValAdj), 
-	opt.PValAdj.replace = this.minimum.pval.log10.abs,
-		function(x, all.gp, diff.cnts, diff.indices, formula.to.use, opt.PValAdj.replace) {
+		function(x, all.gp, diff.cnts, diff.indices) {
 			tmp.i <- which(names(diff.cnts) == x)  # must be the same as it is in diff.indices
 			tmp.cnt <- diff.cnts[tmp.i]
 			names(tmp.cnt) <- NULL  # remove the name
 			tmp.indices <- diff.indices[[tmp.i]]
-			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")]
-			tmp.properties$gp.logfc.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[1]], tmp.colnames = c("gp.logfc.A", "gp.logfc.B"))
-			tmp.properties$gp.pvaladj.calc <- inside.calc.upon.gp.std(tmp.properties, formula.to.use[[2]], tmp.colnames = c("gp.pvaladj.A", "gp.pvaladj.B"), pval.log.max = opt.PValAdj.replace)
-			tmp.properties <- tmp.properties[order(tmp.properties$gp.logfc.calc, decreasing = TRUE), ]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.power", "gp.specificity")]
+			tmp.properties <- tmp.properties[order(tmp.properties$gp.power, decreasing = TRUE), ]
 			prog.bar.use.plot.collect$tick()  # tick
 			# return
 			list(uq.cnt = tmp.cnt, uq.details = tmp.properties)
@@ -220,14 +158,14 @@ AnalyzeInterSpecificity <- function(
 			tmp.indices <- diff.indices[[tmp.i]]
 			tmp.genepair <- names(diff.indices[tmp.i])  # get the gene pair name
 			tmp.gene.part <- strsplit(tmp.genepair, split = kGenesSplit, fixed = TRUE)[[1]]
-			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.power", "gp.specificity")]
 			tmp.clusters.prop.df <- Tool.SplitToGenDataFrame(tmp.properties[, "gp.belongs"], to.split.by = kClustersSplit, 
 				res.colnames = c("Cluster.X", "Cluster.Y"))
 			tmp.res.df <- cbind(data.frame(gp.name = rep(tmp.genepair, times = nrow(tmp.properties)), 
 					inter.GeneName.A = rep(tmp.gene.part[1], times = nrow(tmp.properties)),
 					inter.GeneName.B = rep(tmp.gene.part[2], times = nrow(tmp.properties)),
 					stringsAsFactors = FALSE), 
-				tmp.properties[, "gp.belongs", drop = FALSE], tmp.clusters.prop.df, tmp.properties[, c("gp.logfc.A", "gp.logfc.B", "gp.pvaladj.A", "gp.pvaladj.B")], stringsAsFactors = FALSE)
+				tmp.properties[, "gp.belongs", drop = FALSE], tmp.clusters.prop.df, tmp.properties[, c("gp.power", "gp.specificity")], stringsAsFactors = FALSE)
 			prog.bar.for.res.collect$tick()
 			# result
 			tmp.res.df
@@ -254,8 +192,8 @@ Inside.sel.gene.pairs.method.random.default <- function(
 }
 Inside.sel.gene.pairs.method.random.IT <- Inside.sel.gene.pairs.method.random.default
 
-# GetResult.SummarySpecialGenes Select Gene Pairs Method: LogFC sum(decreasing or increasing)
-Inside.sel.gene.pairs.method.logfc.sum.default <- function(
+# GetResult.SummarySpecialGenes Select Gene Pairs Method: By Power(decreasing or increasing)
+Inside.sel.gene.pairs.method.power.default <- function(
 	this.spgenes, 
 	VEinfos, 
 	sel.by.method.count, 
@@ -270,7 +208,7 @@ Inside.sel.gene.pairs.method.logfc.sum.default <- function(
 		spgenes = this.spgenes, tg.gp.name = tmp.gp.name, 
 		function(x, spgenes, tg.gp.name) {
 			tmp.df <- spgenes[[x]]$uq.details
-			tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.logfc.calc"]
+			tmp.df[which(tmp.df$gp.belongs == tg.gp.name), "gp.power"]
 		}))
 	# max -> min or min -> max
 	tmp.inds.sel <- order(tmp.tg.calc, decreasing = sel.by.method.decreasing)
@@ -279,21 +217,7 @@ Inside.sel.gene.pairs.method.logfc.sum.default <- function(
 	sel.gene.pairs <- names(this.spgenes)[tmp.inds.sel]
 	return(sel.gene.pairs)
 }
-Inside.sel.gene.pairs.method.logfc.sum.IT <- Inside.sel.gene.pairs.method.logfc.sum.default
-
-#Inside.sel.gene.pairs.method.diff.logfc.sum.default <- function(
-#	this.spgenes, 
-#	VEinfos, 
-#	sel.by.method.count, 
-#	sel.by.method.decreasing = TRUE, 
-#	...
-#) {
-#}
-#Inside.sel.gene.pairs.method.diff.logfc.sum.IT <- Inside.sel.gene.pairs.method.diff.logfc.sum.default
-# method name is "diff-logfc-sum"
-#select.by.method.diff.option = "1-mean",  # only used in diff-logfc-sum, mean-mean, 1-1, 1-mean, mean-1
-#
-
+Inside.sel.gene.pairs.method.power.IT <- Inside.sel.gene.pairs.method.power.default
 
 #' Get Result for Specificity Analysis
 #'
@@ -307,12 +231,12 @@ Inside.sel.gene.pairs.method.logfc.sum.IT <- Inside.sel.gene.pairs.method.logfc.
 #' @param sel.gene.pairs Directly specify the desired gene pairs. It should be given in standard table that is generated 
 #'  by \code{\link{FormatCustomGenePairs}}. The order of gene pairs will be implicitly used for result graph and table.
 #'  In addition, it's strictly aligned to clusters, which is illustrated in \code{\link{AnalyzeInterInFullView}}.
-#' @param sel.gene.pairs.method Options are: "random", "logfc-sum" or not to use (by set NULL). It works only when no specific gene pairs are given in 
-#'  parameter \code{sel.gene.pairs}. Method "random" will randomly pick up some gene pairs. Method "logfc-sum" will calculate the sum of LogFCs of 
+#' @param sel.gene.pairs.method Options are: "random", "by-power" or not to use (by set NULL). It works only when no specific gene pairs are given in 
+#'  parameter \code{sel.gene.pairs}. Method "random" will randomly pick up some gene pairs. Method "by-power" will calculate the power of 
 #'  the 2 genes in every gene pairs, and order them by the calculated values. 
 #'  The order of gene pairs generated by method will be implicitly used for result graph and table.
 #' @param sel.by.method.count It defines the maximum number of gene pairs to be fetched by any method.
-#' @param sel.by.method.decreasing It works for method "logfc-sum". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.
+#' @param sel.by.method.decreasing It works for method "by-power". If TRUE, result will be ordered in decreasing way, otherwise the increasing direction.
 #' @param prioritize.cluster.groups It defines the most concerning cluster groups, and those cluster groups given in this parameter, will be 
 #'  finally plotted from the most left-side to right. 
 #' @param plot.name.X.to.Y If set FALSE, switch the position of 2 involving clusters in the original names of interaction. If set TRUE, keep still.
@@ -370,7 +294,7 @@ GetResultTgSpecificity <- function(
 	bar.facet.background = element_rect(fill = "lightgrey", colour = "white"), 
 	bar.colour = character(),
 	bar.width = 0.8, 
-	dot.range.to.use = list("LogFC" = c(-Inf, +Inf), "PVal" = c(-Inf, +Inf)), 
+	dot.range.to.use = list("Power" = c(-Inf, +Inf), "Specificity" = c(-Inf, +Inf)), 
 	dot.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
 	dot.colour.value.seq = c(0.0, 0.5, 1.0),
 	dot.size.range = c(2, 8), 
@@ -416,8 +340,8 @@ GetResultTgSpecificity <- function(
 
 
 	# check dot plot parameters
-	given.range.to.use <- CheckParamStd(names(dot.range.to.use), c("LogFC", "PVal"), "range", stop.on.zero = FALSE)
-	tmp.not.in.range <- setdiff(c("LogFC", "PVal"), given.range.to.use)
+	given.range.to.use <- CheckParamStd(names(dot.range.to.use), c("Power", "Specificity"), "range", stop.on.zero = FALSE)
+	tmp.not.in.range <- setdiff(c("Power", "Specificity"), given.range.to.use)
 	if (length(tmp.not.in.range) != 0) {
 		for (tmp.i in tmp.not.in.range) {
 			dot.range.to.use <- c(dot.range.to.use, list(c(-Inf, Inf)))
@@ -427,7 +351,7 @@ GetResultTgSpecificity <- function(
 	}
 	#
 	if (length(dot.colour.seq) != length(dot.colour.value.seq)) {
-    stop("Colors and their gradient values should be of same length! Check parameter `dot.colour.seq` and `dot.colour.value.seq`.")
+	stop("Colors and their gradient values should be of same length! Check parameter `dot.colour.seq` and `dot.colour.value.seq`.")
   }
 
 	# fetch selected gene pairs
@@ -452,7 +376,7 @@ GetResultTgSpecificity <- function(
 				# select by methods
 				sel.gene.pairs <- switch(sel.gene.pairs.method, 
 					"random" = Inside.sel.gene.pairs.method.random.IT(input.spgenes, sel.by.method.count, ...), 
-					"logfc-sum" = Inside.sel.gene.pairs.method.logfc.sum.IT(input.spgenes, VEinfos, sel.by.method.count, sel.by.method.decreasing, kClustersSplit, ...), 
+					"by-power" = Inside.sel.gene.pairs.method.power.IT(input.spgenes, VEinfos, sel.by.method.count, sel.by.method.decreasing, kClustersSplit, ...), 
 					stop("Undefined method for selecting gene pairs. Please re-check the given param: sel.gene.pairs.method!!")
 				)
 			}
@@ -495,7 +419,7 @@ GetResultTgSpecificity <- function(
 		tmp.spgenes <- all.spgenes[tmp.inds]
 		tmp.spgenes <- lapply(tmp.spgenes, topn = topn.it, function(x, topn) {
 			tmp.selrows <- ifelse(nrow(x$uq.details) > topn, topn, nrow(x$uq.details))
-			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.logfc.calc", "gp.pvaladj.calc")])
+			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.power", "gp.specificity")])
 			})
 		# remove those with NO valid uq.cnt 
 		tmp.check.0row <- unlist(lapply(tmp.spgenes, function(x) { nrow(x$uq.details) }))
@@ -535,8 +459,8 @@ GetResultTgSpecificity <- function(
 					uq.label = tmp.belongs[c(tmp.inds.prior, tmp.inds.inferior)], 
 					uq.cnt = rep(tmp.n.items, times = tmp.ref.rows), 
 					uq.x.axis = tmp.coords.seq[seq_len(tmp.ref.rows)], 
-					uq.y.axis = std.spgenes[[x]]$uq.details$gp.logfc.calc[c(tmp.inds.prior, tmp.inds.inferior)],
-					uq.z.axis = std.spgenes[[x]]$uq.details$gp.pvaladj.calc[c(tmp.inds.prior, tmp.inds.inferior)],
+					uq.y.axis = std.spgenes[[x]]$uq.details$gp.power[c(tmp.inds.prior, tmp.inds.inferior)],
+					uq.z.axis = std.spgenes[[x]]$uq.details$gp.specificity[c(tmp.inds.prior, tmp.inds.inferior)],
 					stringsAsFactors = FALSE)
 				})
 		tmp.df.res <- bind_rows(tmp.df.list)
@@ -638,7 +562,7 @@ GetResultTgSpecificity <- function(
 			scale_fill_manual(name = "Cluster Group", 
 				values = colour.sel.it, 
 				breaks = colour.sel.cor.breaks) + 
-			labs(x = "Cluster Groups", y = "LogFC Calc")
+			labs(x = "Cluster Groups", y = "Power")
 		this.plot <- this.plot + 
 			theme_half_open(font_size = plot.font.size.base) + 
 			theme(axis.text.x = axis.text.x.pattern,
@@ -674,24 +598,24 @@ GetResultTgSpecificity <- function(
 
 
 		# move the data range
-		#plot.data$uq.y.axis  # LogFC
-		#plot.data$uq.z.axis  # PValAdj
-		# get and recalc LogFC range
-		tmp.logfc.range <- dot.range.to.use[["LogFC"]]
-		tmp.logfc <- plot.data$uq.y.axis
-		tmp.logfc[which(tmp.logfc > tmp.logfc.range[2])] <- tmp.logfc.range[2]
-		tmp.logfc[which(tmp.logfc < tmp.logfc.range[1])] <- tmp.logfc.range[1]
-		# resize upon the LogFC result
-		#tmp.size.skew <- (max(tmp.logfc) - min(tmp.logfc)) / (dot.size.range[2] - dot.size.range[1])
-		#plot.data$plot.dot.size <- (tmp.logfc - min(tmp.logfc)) / tmp.size.skew + dot.size.range[1]
-		plot.data$plot.dot.size <- tmp.logfc
+		#plot.data$uq.y.axis  # Power
+		#plot.data$uq.z.axis  # specificity
+		# get and recalc Power range
+		tmp.power.range <- dot.range.to.use[["Power"]]
+		tmp.power <- plot.data$uq.y.axis
+		tmp.power[which(tmp.power > tmp.power.range[2])] <- tmp.power.range[2]
+		tmp.power[which(tmp.power < tmp.power.range[1])] <- tmp.power.range[1]
+		# resize upon Power result
+		#tmp.size.skew <- (max(tmp.power) - min(tmp.power)) / (dot.size.range[2] - dot.size.range[1])
+		#plot.data$plot.dot.size <- (tmp.power - min(tmp.power)) / tmp.size.skew + dot.size.range[1]
+		plot.data$plot.dot.size <- tmp.power
 
-		# get and recalc PValAdj range
-		tmp.pvaladj.range <- dot.range.to.use[["PVal"]]
-		tmp.pvaladj <- plot.data$uq.z.axis
-		tmp.pvaladj[which(tmp.pvaladj > tmp.pvaladj.range[2])] <- tmp.pvaladj.range[2]
-		tmp.pvaladj[which(tmp.pvaladj < tmp.pvaladj.range[1])] <- tmp.pvaladj.range[1]
-		plot.data$plot.dot.colour <- tmp.pvaladj
+		# get and Specificity range
+		tmp.specificity.range <- dot.range.to.use[["Specificity"]]
+		tmp.specificity <- plot.data$uq.z.axis
+		tmp.specificity[which(tmp.specificity > tmp.specificity.range[2])] <- tmp.specificity.range[2]
+		tmp.specificity[which(tmp.specificity < tmp.specificity.range[1])] <- tmp.specificity.range[1]
+		plot.data$plot.dot.colour <- tmp.specificity
 
 		# before plot, get gene pairs ordered correctly
 		if (dot.y.order.in.alphabet == TRUE) {
@@ -710,8 +634,8 @@ GetResultTgSpecificity <- function(
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.name))
 		this.plot <- this.plot + 
 			geom_point(aes(colour = plot.dot.colour, size = plot.dot.size)) + 
-			scale_colour_gradientn(name = "PVal.Calc", colours = dot.colour.seq, values = dot.colour.value.seq) + 
-			scale_size(name = "LogFC.Calc", range = dot.size.range) + 
+			scale_colour_gradientn(name = "Specificity", colours = dot.colour.seq, values = dot.colour.value.seq) + 
+			scale_size(name = "Power", range = dot.size.range) + 
 			labs(x = "Cluster Groups", y = "Gene Pairs")
 		this.plot <- this.plot + 
 			theme_half_open(font_size = plot.font.size.base) + 
@@ -725,7 +649,7 @@ GetResultTgSpecificity <- function(
 		ret.data
 	) {
 		ret.res <- ret.data[, c("uq.name", "uq.label", "uq.cnt", "uq.y.axis", "uq.z.axis")]
-		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.logfc.calc", "gp.pvaladj.calc")
+		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.power", "gp.specificity")
 		ret1.genepairs.df <- Tool.SplitToGenDataFrame(ret.res[, "gene.pairs"], 
 			to.split.by = kGenesSplit, 
 			res.colnames = c("inter.GeneName.A", "inter.GeneName.B"))
@@ -734,7 +658,7 @@ GetResultTgSpecificity <- function(
 			res.colnames = c("Cluster.X", "Cluster.Y"))
 		ret.res <- cbind(ret.res[, "gene.pairs", drop = FALSE], 
 			ret1.genepairs.df, ret.res[, "cluster.groups", drop = FALSE], 
-			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.logfc.calc", "gp.pvaladj.calc")],
+			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.power", "gp.specificity")],
 			stringsAsFactors = FALSE)
 		return(ret.res)
 	}

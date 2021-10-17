@@ -391,23 +391,38 @@ Tool.FindGenesFromGO <- function(
 
 
 
-# [TODO] count.matrix should be normalized ? 
-# [TODO] if genes are remapped, use somewhere to store the mapping list and used here
-# [TODO] consider this step be put inside the fullview, as the order of genes are the same when genenrating from Seurat
-# import pbapply future future_apply Matrix
-# export
-# 
+#' Generate Permutations of Count Matrix
+#'
+#' This function uses cell label permutation to generate one list of normalized count matrix.
+#'
+#' @param object A \code{InterCell} object.
+#' @param count.matrix Normalized count matrix, with columns as cell barcodes and rows as gene names.
+#' @param cells.meta cell group labels, which are used to group cells in several groups rather all different barcodes.
+#' @param genes.name Readable gene names, which should be the same set as genes given in \code{DEG.table}.
+#'  To be noted, if genes are remapped when created \code{InterCell} object, it will be automatically applied to this.
+#' @param perm.times Permutation times. Default is set to 1000.
+#'
+#' @importFrom pbapply pblapply
+#' @importFrom future.apply future_lapply 
+#' @import Matrix
+#'
+#' @export
+#'
 Tool.GenPermutation <- function(
+	object,
 	count.matrix,
 	cells.meta = NULL,
 	genes.name = NULL,
 	perm.times = 1000
 ) {
+	if (is.null(ncol(count.matrix)) || ncol(count.matrix) == 0 ||
+		is.null(nrow(count.matrix)) || nrow(count.matrix) == 0) {
+		stop("Please provided valid matrix or data.frame to use.")
+	}
+	
 	if (is.data.frame(count.matrix)) {  # transform data.frame to matrix
 		count.matrix <- as.matrix(count.matrix)
-	}
-	if (!is.null(nrow(count.matrix)) && !is.null(ncol(count.matrix)) && 
-		nrow(count.matrix) > 0 && ncol(count.matrix) > 0) {  # further transform to sparse matrix
+	} else {
 		count.matrix <- as(count.matrix, "sparseMatrix")
 	}
 	
@@ -424,22 +439,27 @@ Tool.GenPermutation <- function(
 		}
 		genes.name <- as.character(genes.name)  # force character
 	}
-	
-
 	# set dimnames
-	if (!is.null(cells.meta) & !is.null(genes.name)) {
-		dimnames(count.matrix) <- list(genes.name, cells.meta)
-	} else {
-		if (!is.null(cells.meta)) {
-			dimnames(count.matrix) <- list(rownames(count.matrix), cells.meta)
-		}
-		if (!is.null(genes.name)) {
-			dimnames(count.matrix) <- list(genes.name, colnames(count.matrix))
-		}
+	if (!is.null(cells.meta)) {
+		colnames(count.matrix) <- cells.meta
 	}
+	if (!is.null(genes.name)) {
+		rownames(count.matrix) <- genes.name
+	}
+
+
 	# check if matrix are unqiue in colnames and rownames
 	if (anyDuplicated(rownames(count.matrix))) {
-		stop("Provided gene names have duplicated items, which is not allowed!")
+		warning("Provided gene names or original rownames of count matrix have duplicated items, which may cause unexpected result!")
+	}
+
+	# remapping genes
+	if (object@misc$if.remap.genes == TRUE) {
+		dummy.gdf <- data.frame(gene = rownames(count.matrix), ID = seq_len(nrow(count.matrix)), cluster = "IT", stringsAsFactors = FALSE)
+		dummy.remap.res <- DataPrep.RemapClustersMarkers(dummy.gdf, object@database@species, if.used.inside = TRUE, final.dup.rm = FALSE)
+		colnames(dummy.gdf)[1] <- c("orig.gene")
+		dummy.gdf[, "mapped.gene"] <- dummy.remap.res$result[order(dummy.remap.res$result$ID), "gene"]
+		rownames(count.matrix) <- dummy.gdf[match(rownames(count.matrix), dummy.gdf[, "orig.gene"]), "mapped.gene"]
 	}
 
 

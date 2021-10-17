@@ -1,8 +1,8 @@
 Package: InterCellDB
 Type: Package
 Title: Tool and Database for Analyzing Interactions
-Version: 0.9.0
-Date: 2021-05-13
+Version: 0.9.1
+Date: 2021-10-17
 Authors@R: c(person("Jin Ziyang", "Developer", role = c("aut", "cre"), email = "454785187@qq.com"),
   person("Shi Ligen", "Developer", role = c("aut", "rev"), email = "slg0904@163.com"),
   person("Zhang Xiaotao", "Developer", role = c("aut", "dtc"), email = "zhangxiaotao@zju.edu.cn"))
@@ -19,7 +19,10 @@ Imports:
 	progress, 
 	methods, 
 	utils,
-	GO.db (>= 3.8.2)
+	GO.db (>= 3.8.2),
+	pbapply,
+	future,
+	future.apply
 Description: This tool provides databases covering human and mouse, and provides bunches of functions for analyzing on scRNA-seq data. The database collects a variety of public sources, including STRING, NCBI-gene, COMPARTMENTS, GO, Uniprot, etc. The analysis process starts with network analysis on all interactions, and then performs intercellular analysis on 2 specific cell clusters for exploring composition of actions, gene pair specificity, etc., and finally filters out some important gene pairs.
 License: CC BY 4.0
 LazyData: true

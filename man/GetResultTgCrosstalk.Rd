@@ -7,8 +7,9 @@
 GetResultTgCrosstalk(
   object,
   direction.X.to.Y = NULL,
-  colnames.to.cmp = c("LogFC", "PVal"),
-  range.to.use = list(LogFC = c(-Inf, Inf), PVal = c(-Inf, Inf)),
+  bound.to.use = list(Power = c(-Inf, Inf), Specificity = c(-Inf, Inf)),
+  func.to.use = list(Power = function(x) {     x }, Specificity = function(x) {     x
+    }),
   plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),
   axis.order.xy.decreasing = c(TRUE, TRUE),
@@ -26,10 +27,10 @@ GetResultTgCrosstalk(
 The 'NULL' will keep 2-way interacting pairs, 'TRUE' keeps the X-to-Y pairs and 'FALSE' keeps the Y-to-X pairs. 
 See details for help.}
 
-\item{colnames.to.cmp}{The colnames to be used as evaluation params, currently only 2 options ('LogFC', 'PVal') are supported.
-The 1st one will be plotted by different size of nodes, and 2nd one will be distinguished by colour of nodes.}
+\item{bound.to.use}{It specifies the user specified bound for evaluation params. The values out of bound will be coerced to 
+either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]}
 
-\item{range.to.use}{It specifies the user specified ranges for evaluation params.}
+\item{func.to.use}{The function used to further tranform the values, e.g. \code{log1p}.}
 
 \item{plot.X.to.Y}{The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
 If set FALSE, switch the clusters drawn in x-axis and y-axis.}

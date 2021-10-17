@@ -538,6 +538,7 @@ FetchInterOI <- function(
 	# check cluster.x cluster.y are embeded in `ExtractTargetOnepairClusters()`
 	# process
 	tg.inter <- ExtractTargetOnepairClusters(fullview.result, cluster.x, cluster.y, kClustersSplit)
+	object <- setTgItInfo(object, tg.inter)
 	object <- setTgActionPairs(object, GenerateMapDetailOnepairClusters(tg.inter, object@database@actions.db))
 	object <- setTgVEInfo(object, 
 		GenerateVEinfos(getTgActionPairs(object), object@fgenes, 
@@ -627,11 +628,35 @@ SelectInterSubset <- function(
 	edges.all.infos <- VEinfos$edges.infos
 	vertices.A.apx.types <- VEinfos$vertices.apx.type.A
 	vertices.B.apx.types <- VEinfos$vertices.apx.type.B
+
 	### select target edges.part.infos and vertices.part.infos by some genes
 	if (is.null(sel.gene.pairs) && (!is.null(sel.some.genes.X) || !is.null(sel.some.genes.Y))) {
 		# check merge option
 		sel.genes.option <- CheckParamStd(sel.genes.option, c("union", "intersect"), "merge option", stop.on.zero = TRUE)
 		# process
+		# check if it is with property 
+		sel.property.X <- sel.property.Y <- NULL
+		if (!is.null(sel.some.genes.X)) {
+			if (is.list(sel.some.genes.X) && all(c("genes", "property") %in% names(sel.some.genes.X))) {
+				sel.property.X <- sel.some.genes.X$property
+				sel.some.genes.X <- sel.some.genes.X$genes
+			} else {
+				if (!is.character(sel.some.genes.X)) {
+					sel.some.genes.X <- as.character(sel.some.genes.X)
+				}
+			}
+		}
+		if (!is.null(sel.some.genes.Y)) {
+			if (is.list(sel.some.genes.Y) && all(c("genes", "property") %in% names(sel.some.genes.Y))) {
+				sel.property.Y <- sel.some.genes.Y$property
+				sel.some.genes.Y <- sel.some.genes.Y$genes
+			} else {
+				if (!is.character(sel.some.genes.Y)) {
+					sel.some.genes.Y <- as.character(sel.some.genes.Y)
+				}
+			}
+		}
+		# gene selection
 		uid.somegenes.sel.A <- uid.somegenes.sel.B <- integer()
 		if (is.null(sel.some.genes.X)) {
 			uid.somegenes.sel.A <- vertices.all.infos[which(vertices.all.infos$ClusterName == afterV.A.clustername), "UID"]
@@ -643,6 +668,28 @@ SelectInterSubset <- function(
 		} else {
 			uid.somegenes.sel.B <- vertices.all.infos[intersect(which(vertices.all.infos$ClusterName == afterV.B.clustername), which(vertices.all.infos$GeneName %in% sel.some.genes.Y)), "UID"]    
 		}
+		# property selection
+		if (!is.null(sel.property.X)) {
+			# location part will be merge to gene selection part
+			if (!is.null(sel.property.X$location) && length(sel.property.X$location) > 0) {
+				uid.somegenes.sel.A <- intersect(uid.somegenes.sel.A, vertices.all.infos[which(vertices.all.infos$Location %in% sel.property.X$location), "UID"])
+			}
+			# type is stand-alone
+			if (!is.null(sel.property.X$type) && length(sel.property.X$type) > 0) {
+				vertices.A.apx.types <- vertices.A.apx.types[which(vertices.A.apx.types$Type %in% sel.property.X$type), ]
+			}
+		}
+		if (!is.null(sel.property.Y)) {
+			# location part will be merge to gene selection part
+			if (!is.null(sel.property.Y$location) && length(sel.property.Y$location) > 0) {
+				uid.somegenes.sel.B <- intersect(uid.somegenes.sel.B, vertices.all.infos[which(vertices.all.infos$Location %in% sel.property.Y$location), "UID"])
+			}
+			# type is stand-alone
+			if (!is.null(sel.property.Y$type) && length(sel.property.Y$type) > 0) {
+				vertices.B.apx.types <- vertices.B.apx.types[which(vertices.B.apx.types$Type %in% sel.property.Y$type), ]
+			}
+		}
+
 		inds.somegenes.result <- integer()
 		if (sel.genes.option == "intersect") {
 			# conv

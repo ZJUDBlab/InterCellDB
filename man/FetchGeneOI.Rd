@@ -19,6 +19,7 @@ FetchGeneOI.default(
   sel.location.score = c(1:5),
   sel.type = NULL,
   sel.merge.type = NULL,
+  ret.with.property = TRUE,
   sel.go.terms = NULL,
   go.use.relative = TRUE,
   go.relative.option = "offspring"
@@ -41,6 +42,8 @@ as high and common usage.}
 
 \item{sel.merge.type}{The merged types. Comparing to \code{sel.type}, it has less options, which are given 
 in \code{\link{ListAllGeneMergeType}}. See details for help.}
+
+\item{ret.with.property}{It decides whether the return values are attached with gene properties(location, type, etc).}
 
 \item{sel.go.terms}{Use GO terms to select gene, and supported options are listed in \code{\link{ListAllGeneGOTerm}}.}
 
