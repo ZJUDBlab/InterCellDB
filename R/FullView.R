@@ -468,8 +468,8 @@ AnalyzeInterInFullView <- function(
 		tmp.all.result <- subset(tmp.all.result, inter.Specificity < perm.pval.cutoff)
 		# redist and fetch result
 		tmp.all.result[, "inter.Distr.interact"] <- paste(tmp.all.result[, "inter.ToCheck.A"], tmp.all.result[, "inter.ToCheck.B"], sep = object@tool.vars$cluster.split)
-		tmp.allinters.names <- paste(rep(sel.clusters.X, times = length(sel.clusters.Y)),
-			rep(sel.clusters.Y, each = length(sel.clusters.X)), sep = object@tool.vars$cluster.split)
+		tmp.allinters.names <- paste(rep(sel.clusters.X, each = length(sel.clusters.Y)),
+			rep(sel.clusters.Y, times = length(sel.clusters.X)), sep = object@tool.vars$cluster.split)
 		for (i.inter in tmp.allinters.names) {
 			tmp.df <- subset(tmp.all.result, inter.Distr.interact == i.inter)
 			interact.pairs.all$data.allpairs[[i.inter]] <- tmp.df[, setdiff(colnames(tmp.df), c("inter.ToCheck.A", "inter.ToCheck.B", "inter.Distr.interact"))]

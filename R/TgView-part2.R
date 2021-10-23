@@ -15,7 +15,8 @@
 #' @param func.to.use The function used to further tranform the values, e.g. \code{log1p}. 
 #' @param plot.X.to.Y The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
 #'  If set FALSE, switch the clusters drawn in x-axis and y-axis.
-#' @param axis.order.xy It determines how the gene names will be ordered in the axis when plotting.
+#' @param axis.order.xy It determines how the gene names will be ordered in the axis when plotting. 
+#'  Default is \code{AlphaBet}, options are \code{Power} and \code{Specificity}.
 #' @param axis.order.xy.decreasing It determines whether the orders are of decreasing pattern or increasing pattern.
 #' @param plot.font.size.base It gives the font size of texts such as labels and titles. 
 #' @param nodes.colour.seq It specifies the colour sequence of the nodes.
@@ -58,7 +59,7 @@ GetResultTgCrosstalk <- function(
   object,
   direction.X.to.Y = NULL,
   bound.to.use = list("Power" = c(-Inf, Inf), "Specificity" = c(-Inf, Inf)),
-  func.to.use = list("Power" = function(x) {x}, "Specificity" = function(x) {x}),
+  func.to.use = list("Power" = function(x) {x}, "Specificity" = function(x) {1/(1+x)}),
   plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
   axis.order.xy.decreasing = c(TRUE, TRUE),  # order direction
@@ -106,7 +107,12 @@ GetResultTgCrosstalk <- function(
   if (length(nodes.colour.seq) != length(nodes.colour.value.seq)) {
     stop("Colors and their gradient values should be of same length! Check parameter `nodes.colour.seq` and `nodes.colour.value.seq`.")
   }
-  
+
+  # check order settings
+  allowed.order.xy <- c("AlphaBet", "Power", "Specificity")
+  axis.order.xy[1] <- CheckParamStd(axis.order.xy[1], allowed.order.xy, "Order on X axis", stop.on.zero = TRUE)
+  axis.order.xy[2] <- CheckParamStd(axis.order.xy[2], allowed.order.xy, "Order on Y axis", stop.on.zero = TRUE)
+
 
   # go with VEinfos
   act.A.clustername <- VEinfos$cluster.name.A
@@ -114,14 +120,14 @@ GetResultTgCrosstalk <- function(
   edges.infos <- VEinfos$edges.infos
   vertices.infos <- VEinfos$vertices.infos
   # make one portable table and re-sync edges with vertices
-  tmp.e2.col <- c("ClusterName", "GeneName")
+  tmp.e2.col <- c("ClusterName", "GeneName", "LogFC")
   edges.fullinfos <- left_join(edges.infos, vertices.infos[, c("UID", tmp.e2.col)], by = c("from" = "UID"))
-  tmp.ind.new3 <- match(c("ClusterName", "GeneName"), colnames(edges.fullinfos))
-  colnames(edges.fullinfos)[tmp.ind.new3] <- c("from.cluster", "from.gene")
+  tmp.ind.new3 <- match(c("ClusterName", "GeneName", "LogFC"), colnames(edges.fullinfos))
+  colnames(edges.fullinfos)[tmp.ind.new3] <- c("from.cluster", "from.gene", "from.LogFC")
   edges.fullinfos <- left_join(edges.fullinfos, vertices.infos[, c("UID", tmp.e2.col)], by = c("to" = "UID"))
-  tmp.ind.new3 <- match(c("ClusterName", "GeneName"), colnames(edges.fullinfos))
-  colnames(edges.fullinfos)[tmp.ind.new3] <- c("to.cluster", "to.gene")
-  edges.fullinfos <- edges.fullinfos[, c("from.cluster", "to.cluster", "from.gene", "to.gene")]
+  tmp.ind.new3 <- match(c("ClusterName", "GeneName", "LogFC"), colnames(edges.fullinfos))
+  colnames(edges.fullinfos)[tmp.ind.new3] <- c("to.cluster", "to.gene", "to.LogFC")
+  edges.fullinfos <- edges.fullinfos[, paste0(rep(c("from.", "to."), times = length(tmp.e2.col)), rep(c("cluster", "gene", "LogFC"), each = 2))]
   
   # restrict to only one direction
   if (!is.null(direction.X.to.Y)) {
@@ -137,7 +143,7 @@ GetResultTgCrosstalk <- function(
     tmp.inds.conv <- intersect(which(edges.fullinfos[, "from.cluster"] == act.A.clustername), which(edges.fullinfos[, "to.cluster"] == act.B.clustername))
     tmp.edges.conv <- edges.fullinfos[tmp.inds.conv, ]
     tmp.inds.rev <- intersect(which(edges.fullinfos[, "to.cluster"] == act.A.clustername), which(edges.fullinfos[, "from.cluster"] == act.B.clustername))
-    tmp.edges.rev <- edges.fullinfos[tmp.inds.rev, ReverseOddEvenCols(4)]
+    tmp.edges.rev <- edges.fullinfos[tmp.inds.rev, ReverseOddEvenCols(6)]
     colnames(tmp.edges.rev) <- colnames(tmp.edges.conv)  # treat reverse one as the conv one, that is to remove the direction meanings of gene pairs
     edges.fullinfos <- rbind(tmp.edges.conv, tmp.edges.rev)
   }
@@ -146,7 +152,7 @@ GetResultTgCrosstalk <- function(
   # change X and Y when plotting (from.* will be shown in x-axis, to.* will be shown in y-axis)
   if (!is.null(plot.X.to.Y) && plot.X.to.Y == FALSE) {  # switch the x-axis and y-axis
     tmp.colname <- colnames(edges.fullinfos)
-    edges.fullinfos <- edges.fullinfos[, ReverseOddEvenCols(4)]
+    edges.fullinfos <- edges.fullinfos[, ReverseOddEvenCols(6)]
     colnames(edges.fullinfos) <- tmp.colname
   }
 
@@ -192,32 +198,29 @@ GetResultTgCrosstalk <- function(
   if (nrow(packed.infos) == 0) {
     stop("No available data!")
   }
-  x.axis.data <- packed.infos[, grep("^from\\.", colnames(packed.infos))]
+  x.axis.data <- packed.infos[, setdiff(colnames(packed.infos), grep("^to\\.", colnames(packed.infos)))]
   x.axis.names <- x.axis.data[, "from.gene"]
-  y.axis.data <- packed.infos[, grep("^to\\.", colnames(packed.infos))]
+  y.axis.data <- packed.infos[, setdiff(colnames(packed.infos), grep("^from\\.", colnames(packed.infos)))] 
   y.axis.names <- y.axis.data[, "to.gene"]
 
-  # set order for names of x-y-axises 
-  if (axis.order.xy[1] == "AlphaBet") {
-    x.axis.names <- x.axis.data[order(x.axis.data[, "from.gene"], decreasing = axis.order.xy.decreasing[1]), "from.gene"]
-  } else {
-    if (axis.order.xy[1] %in% colnames.to.cmp) {
-      x.axis.names <- x.axis.data[order(x.axis.data[, paste("from", axis.order.xy[1], sep = ".")], decreasing = axis.order.xy.decreasing[1]), "from.gene"]
-    } else {
-      stop("Invalid order name is given upon x-axis!")
-    }
-  }
+  # set order for names of x-y-axises
+  x.axis.names <- switch(axis.order.xy[1],
+    "AlphaBet"    = x.axis.data[order(x.axis.data[, "from.gene"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
+    "Power"       = x.axis.data[order(x.axis.data[, "inter.Power"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
+    "Specificity" = x.axis.data[order(x.axis.data[, "inter.Specificity"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
+    stop("Invalid order name is given upon x-axis!")
+    )
   x.axis.names <- unique(x.axis.names)
-  if (axis.order.xy[2] == "AlphaBet") {
-    y.axis.names <- y.axis.data[order(y.axis.data[, "to.gene"], decreasing = axis.order.xy.decreasing[2]), "to.gene"]
-  } else {
-    if (axis.order.xy[2] %in% colnames.to.cmp) {
-      y.axis.names <- y.axis.data[order(y.axis.data[, paste("to", axis.order.xy[2], sep = ".")], decreasing = axis.order.xy.decreasing[2]), "to.gene"]
-    } else {
-      stop("Invalid order name is given upon y-axis!")
-    }
-  }
+  #
+  y.axis.names <- switch(axis.order.xy[2],
+    "AlphaBet"    = y.axis.data[order(y.axis.data[, "to.gene"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
+    "Power"       = y.axis.data[order(y.axis.data[, "inter.Power"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
+    "Specificity" = y.axis.data[order(y.axis.data[, "inter.Specificity"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
+    stop("Invalid order name is given upon x-axis!")
+    )
   y.axis.names <- unique(y.axis.names)
+
+
   ##
   gp.res <- ggplot(packed.infos, aes(x = from.gene, y = to.gene))
   tmp.sym.size <- sym("inter.Power")
