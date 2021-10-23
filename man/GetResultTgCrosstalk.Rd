@@ -8,8 +8,8 @@ GetResultTgCrosstalk(
   object,
   direction.X.to.Y = NULL,
   bound.to.use = list(Power = c(-Inf, Inf), Specificity = c(-Inf, Inf)),
-  func.to.use = list(Power = function(x) {     x }, Specificity = function(x) {     x
-    }),
+  func.to.use = list(Power = function(x) {     x }, Specificity = function(x) {    
+    1/(1 + x) }),
   plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),
   axis.order.xy.decreasing = c(TRUE, TRUE),
@@ -35,7 +35,8 @@ either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]}
 \item{plot.X.to.Y}{The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
 If set FALSE, switch the clusters drawn in x-axis and y-axis.}
 
-\item{axis.order.xy}{It determines how the gene names will be ordered in the axis when plotting.}
+\item{axis.order.xy}{It determines how the gene names will be ordered in the axis when plotting. 
+Default is \code{AlphaBet}, options are \code{Power} and \code{Specificity}.}
 
 \item{axis.order.xy.decreasing}{It determines whether the orders are of decreasing pattern or increasing pattern.}
 
