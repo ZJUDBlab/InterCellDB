@@ -7,9 +7,9 @@
 GetResultTgCrosstalk(
   object,
   direction.X.to.Y = NULL,
-  bound.to.use = list(Power = c(-Inf, Inf), Specificity = c(-Inf, Inf)),
-  func.to.use = list(Power = function(x) {     x }, Specificity = function(x) {    
-    1/(1 + x) }),
+  bound.to.use = list(Power = c(-Inf, Inf), Confidence = c(-Inf, Inf)),
+  func.to.use = list(Power = function(x) {     x }, Confidence = function(x) {     1/(1
+    + x) }),
   plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),
   axis.order.xy.decreasing = c(TRUE, TRUE),
@@ -30,13 +30,13 @@ See details for help.}
 \item{bound.to.use}{It specifies the user specified bound for evaluation params. The values out of bound will be coerced to 
 either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]}
 
-\item{func.to.use}{The function used to further tranform the values, e.g. \code{log1p}.}
+\item{func.to.use}{The function used to further transform the values, e.g. \code{log1p}.}
 
 \item{plot.X.to.Y}{The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
 If set FALSE, switch the clusters drawn in x-axis and y-axis.}
 
 \item{axis.order.xy}{It determines how the gene names will be ordered in the axis when plotting. 
-Default is \code{AlphaBet}, options are \code{Power} and \code{Specificity}.}
+Default is \code{AlphaBet}, options are \code{Power} and \code{Confidence}.}
 
 \item{axis.order.xy.decreasing}{It determines whether the orders are of decreasing pattern or increasing pattern.}
 

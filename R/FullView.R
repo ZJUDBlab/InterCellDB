@@ -386,14 +386,14 @@ AnalyzeInterInFullView <- function(
 			if (run.permutation == TRUE) {
 				tmp.formula.exprs <- object@formulae[[("TG.EXPRS")]]
 				gpairs.result[, "inter.Power"] <- tmp.formula.exprs(gpairs.result[, "inter.Exprs.A"], gpairs.result[, "inter.Exprs.B"])
-				gpairs.result[, "inter.Specificity"] <- rep(1, times = nrow(gpairs.result))  # wait for all done and merge add p value
+				gpairs.result[, "inter.Confidence"] <- rep(1, times = nrow(gpairs.result))  # wait for all done and merge add p value
 				gpairs.result[, "inter.ToCheck.A"] <- rep(ix, times = nrow(gpairs.result))
 				gpairs.result[, "inter.ToCheck.B"] <- rep(jy, times = nrow(gpairs.result))
 			} else {
 				tmp.formula.to.use <- object@formulae[c("TG.LOGFC", "TG.PVAL")]
 				names(tmp.formula.to.use) <- c("LogFC", "PVal")
 				gpairs.result[, "inter.Power"] <- tmp.formula.to.use[["LogFC"]](gpairs.result[, "inter.LogFC.A"], gpairs.result[, "inter.LogFC.B"])
-				gpairs.result[, "inter.Specificity"] <- tmp.formula.to.use[["PVal"]](gpairs.result[, "inter.PVal.A"], gpairs.result[, "inter.PVal.B"])
+				gpairs.result[, "inter.Confidence"] <- tmp.formula.to.use[["PVal"]](gpairs.result[, "inter.PVal.A"], gpairs.result[, "inter.PVal.B"])
 				# save result when not use permutation
 				interact.pairs.all$cnt.allpairs <- c(interact.pairs.all$cnt.allpairs, nrow(gpairs.result))
 				interact.pairs.all$strength.allpairs <- c(interact.pairs.all$strength.allpairs, sum(gpairs.result[, "inter.Power"]))
@@ -451,13 +451,13 @@ AnalyzeInterInFullView <- function(
 			tmp.pval
 		}
 		if (nbrOfWorkers() == 1) {
-			tmp.all.result[, "inter.Specificity"] <- as.numeric(pbapply(tmp.all.result, MARGIN = 1,
+			tmp.all.result[, "inter.Confidence"] <- as.numeric(pbapply(tmp.all.result, MARGIN = 1,
 				perm.expression = perm.expression, actual.exprs = actual.exprs,
 				inv.gdf = tmp.involved.gdf, perm.pval.sides = perm.pval.sides,
 				FUN = tmp.get.perm.res.func
 			))
 		} else {
-			tmp.all.result[, "inter.Specificity"] <- as.numeric(future_apply(tmp.all.result, MARGIN = 1,
+			tmp.all.result[, "inter.Confidence"] <- as.numeric(future_apply(tmp.all.result, MARGIN = 1,
 				perm.expression = perm.expression, actual.exprs = actual.exprs,
 				inv.gdf = tmp.involved.gdf, perm.pval.sides = perm.pval.sides,
 				FUN = tmp.get.perm.res.func
@@ -465,7 +465,7 @@ AnalyzeInterInFullView <- function(
 		}
 
 		# truncate data by pval
-		tmp.all.result <- subset(tmp.all.result, inter.Specificity < perm.pval.cutoff)
+		tmp.all.result <- subset(tmp.all.result, inter.Confidence < perm.pval.cutoff)
 		# redist and fetch result
 		tmp.all.result[, "inter.Distr.interact"] <- paste(tmp.all.result[, "inter.ToCheck.A"], tmp.all.result[, "inter.ToCheck.B"], sep = object@tool.vars$cluster.split)
 		tmp.allinters.names <- paste(rep(sel.clusters.X, each = length(sel.clusters.Y)),
@@ -516,23 +516,9 @@ AnalyzeInterInFullView <- function(
 #' @param nodes.colour.value.seq Numeric. If set NULL, colours given in \code{nodes.colour.seq} will be evenly placed.
 #' Otherwise, numeric values with the same length of \code{nodes.colour.seq} should be given to specify the positions corresponding to each colour.
 #' See parameter \code{values} in \code{ggplot2::scale_colour_gradientn} for details.
-#' @param label.power.options List of 'power' label appearance control parameters, including hjust, vjust, nudge.x, nudge.y, size. See details for help.
-#' @param label.cnt.options List of label appearance control parameters like those in \code{label.power.options}.
 #' @param plot.axis.x.name X-axis name when plotting.
 #' @param plot.axis.y.name Y-axis name when plotting.
 #' 
-#' @details
-#' \code{label.power.options} and \code{label.cnt.options}: 
-#' The meanings for each item are recommended to refer to \code{ggplot2::geom_text} for details.
-#' \itemize{
-#'   \item hjust:   horizontal justification. Use either a string in ("left", "center", "right"), or a number between 0 and 1. See
-#'                  \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
-#'   \item vjust:   vertical justification. Use either a string in ("top", "middle", "bottom"), or a number between 0 and 1. See
-#'                  \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
-#'   \item nudge.x: horizontal adjustment to nudge labels by.
-#'   \item nudge.y: vertical adjustment to nudge labels by.
-#'   \item size:    label size.
-#' }
 #'
 #' @return List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables()} to save the result \bold{table} in .csv files.
 #' \itemize{
@@ -556,8 +542,6 @@ GetResultFullView <- function(
 	nodes.size.range = c(1, 6),
 	nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
 	nodes.colour.value.seq = c(0.0, 0.5, 1.0),
-	label.power.options = list(hjust = "middle", vjust = "top", nudge.x = 0, nudge.y = -0.3, size = 2),
-	label.cnt.options = list(hjust = "left", vjust = "center", nudge.x = 0.3, nudge.y = 0, size = 2),
 	plot.axis.x.name = "clusters-x",
 	plot.axis.y.name = "clusters-y"
 ) {
@@ -570,22 +554,6 @@ GetResultFullView <- function(
 	}
 	if (!is.null(cnt.apply.func) && !is.function(cnt.apply.func)) {
 		stop("Count function is not given properly. Please give it one function.")	
-	}
-
-	# user settings for plotting
-	default.label.power.options <- list(hjust = "middle", vjust = "top", nudge.x = 0, nudge.y = -0.3, size = 2)
-	default.label.cnt.options <- list(hjust = "left", vjust = "center", nudge.x = 0.3, nudge.y = 0, size = 2)
-	user.label.power.options <- as.list(label.power.options)
-	user.label.cnt.options <- as.list(label.cnt.options)
-	# missing items in user settings
-	missed.names.power.options <- setdiff(names(default.label.power.options), names(user.label.power.options))
-	missed.names.cnt.options <- setdiff(names(default.label.cnt.options), names(user.label.cnt.options))
-	# add missing items in user settings
-	for (miss.p in missed.names.power.options) {
-		user.label.power.options[[miss.p]] <- default.label.power.options[[miss.p]]
-	}
-	for (miss.cn in missed.names.cnt.options) {
-		user.label.cnt.options[[miss.cn]] <- default.label.cnt.options[[miss.cn]]
 	}
 
 	# process

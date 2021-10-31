@@ -16,10 +16,6 @@ GetResultFullView(
   nodes.size.range = c(1, 6),
   nodes.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   nodes.colour.value.seq = c(0, 0.5, 1),
-  label.power.options = list(hjust = "middle", vjust = "top", nudge.x = 0, nudge.y =
-    -0.3, size = 2),
-  label.cnt.options = list(hjust = "left", vjust = "center", nudge.x = 0.3, nudge.y =
-    0, size = 2),
   plot.axis.x.name = "clusters-x",
   plot.axis.y.name = "clusters-y"
 )
@@ -51,10 +47,6 @@ GetResultFullView(
 Otherwise, numeric values with the same length of \code{nodes.colour.seq} should be given to specify the positions corresponding to each colour.
 See parameter \code{values} in \code{ggplot2::scale_colour_gradientn} for details.}
 
-\item{label.power.options}{List of 'power' label appearance control parameters, including hjust, vjust, nudge.x, nudge.y, size. See details for help.}
-
-\item{label.cnt.options}{List of label appearance control parameters like those in \code{label.power.options}.}
-
 \item{plot.axis.x.name}{X-axis name when plotting.}
 
 \item{plot.axis.y.name}{Y-axis name when plotting.}
@@ -69,17 +61,4 @@ List. Use \code{Tool.ShowPlot()} to see the \bold{plot}, \code{Tool.WriteTables(
 \description{
 This function summarizes the result of network analysis in graph and table, and gives clues to 
 most active intercellular communications.
-}
-\details{
-\code{label.power.options} and \code{label.cnt.options}: 
-The meanings for each item are recommended to refer to \code{ggplot2::geom_text} for details.
-\itemize{
-  \item hjust:   horizontal justification. Use either a string in ("left", "center", "right"), or a number between 0 and 1. See
-                 \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
-  \item vjust:   vertical justification. Use either a string in ("top", "middle", "bottom"), or a number between 0 and 1. See
-                 \code{vignette("ggplot2-specs", package = "ggplot2")} for details.
-  \item nudge.x: horizontal adjustment to nudge labels by.
-  \item nudge.y: vertical adjustment to nudge labels by.
-  \item size:    label size.
-}
 }

@@ -12,11 +12,11 @@
 #'  See details for help.
 #' @param bound.to.use It specifies the user specified bound for evaluation params. The values out of bound will be coerced to 
 #'  either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]
-#' @param func.to.use The function used to further tranform the values, e.g. \code{log1p}. 
+#' @param func.to.use The function used to further transform the values, e.g. \code{log1p}. 
 #' @param plot.X.to.Y The clusters drawn in x-axis and y-axis are in default aligned with the network analysis.
 #'  If set FALSE, switch the clusters drawn in x-axis and y-axis.
 #' @param axis.order.xy It determines how the gene names will be ordered in the axis when plotting. 
-#'  Default is \code{AlphaBet}, options are \code{Power} and \code{Specificity}.
+#'  Default is \code{AlphaBet}, options are \code{Power} and \code{Confidence}.
 #' @param axis.order.xy.decreasing It determines whether the orders are of decreasing pattern or increasing pattern.
 #' @param plot.font.size.base It gives the font size of texts such as labels and titles. 
 #' @param nodes.colour.seq It specifies the colour sequence of the nodes.
@@ -58,8 +58,8 @@
 GetResultTgCrosstalk <- function(
   object,
   direction.X.to.Y = NULL,
-  bound.to.use = list("Power" = c(-Inf, Inf), "Specificity" = c(-Inf, Inf)),
-  func.to.use = list("Power" = function(x) {x}, "Specificity" = function(x) {1/(1+x)}),
+  bound.to.use = list("Power" = c(-Inf, Inf), "Confidence" = c(-Inf, Inf)),
+  func.to.use = list("Power" = function(x) {x}, "Confidence" = function(x) {1/(1+x)}),
   plot.X.to.Y = TRUE,
   axis.order.xy = c("AlphaBet", "AlphaBet"),  # how to order axis in final plot. Can also be one of colnames.to.cmp
   axis.order.xy.decreasing = c(TRUE, TRUE),  # order direction
@@ -73,12 +73,12 @@ GetResultTgCrosstalk <- function(
   VEinfos <- getTgVEInfo(object)
   this.musthave.colnames <- object@misc$musthave.colnames
   fgenes.remapped.all <- object@fgenes
-  columns.to.use <- c("Power", "Specificity")
+  columns.to.use <- c("Power", "Confidence")
 
   # pre-check
   tmp.valid.boundnames <- CheckParamStd(names(bound.to.use), columns.to.use, "Bound names", stop.on.zero = FALSE)
   bound.to.use <- bound.to.use[tmp.valid.boundnames]
-  tmp.valid.funcnames <- CheckParamStd(names(func.to.use), columns.to.use, "Tranform functions", stop.on.zero = FALSE)
+  tmp.valid.funcnames <- CheckParamStd(names(func.to.use), columns.to.use, "Transform functions", stop.on.zero = FALSE)
   func.to.use <- func.to.use[tmp.valid.funcnames]
 
   # add default bounds
@@ -88,6 +88,7 @@ GetResultTgCrosstalk <- function(
       bound.to.use <- c(bound.to.use, list(c(-Inf, Inf)))
       names(bound.to.use)[length(bound.to.use)] <- tmp.i
     }
+    warning("Auto add bounds on: ", paste0(tmp.not.in.bound, collapse = ", "), ".")
   }
   # add default functions
   tmp.not.in.func <- setdiff(columns.to.use, tmp.valid.funcnames)
@@ -96,6 +97,7 @@ GetResultTgCrosstalk <- function(
       func.to.use <- c(func.to.use, list(function(x) {x}))
       names(func.to.use)[length(func.to.use)] <- tmp.j
     }
+    warning("Auto add transform function on: ", paste0(tmp.not.in.func, collapse = ", "), ".")
   }
 
   # settle with columns names
@@ -109,7 +111,7 @@ GetResultTgCrosstalk <- function(
   }
 
   # check order settings
-  allowed.order.xy <- c("AlphaBet", "Power", "Specificity")
+  allowed.order.xy <- c("AlphaBet", "Power", "Confidence")
   axis.order.xy[1] <- CheckParamStd(axis.order.xy[1], allowed.order.xy, "Order on X axis", stop.on.zero = TRUE)
   axis.order.xy[2] <- CheckParamStd(axis.order.xy[2], allowed.order.xy, "Order on Y axis", stop.on.zero = TRUE)
 
@@ -163,7 +165,7 @@ GetResultTgCrosstalk <- function(
   itused.infos$inter.Cluster.A <- tmp.cluster.A
   itused.infos$inter.Cluster.B <- tmp.cluster.B
   # pack infos
-  tmp.used.m.cols <- c(paste("inter", c("GeneName", "Cluster"), rep(c("A", "B"), each = 2), sep = "."), "inter.Power", "inter.Specificity")
+  tmp.used.m.cols <- c(paste("inter", c("GeneName", "Cluster"), rep(c("A", "B"), each = 2), sep = "."), "inter.Power", "inter.Confidence")
   pack1.infos <- left_join(subset(edges.fullinfos, from.cluster == tmp.cluster.A & to.cluster == tmp.cluster.B), 
     itused.infos[, tmp.used.m.cols],
     by = c("from.cluster" = "inter.Cluster.A", "to.cluster" = "inter.Cluster.B",
@@ -207,7 +209,7 @@ GetResultTgCrosstalk <- function(
   x.axis.names <- switch(axis.order.xy[1],
     "AlphaBet"    = x.axis.data[order(x.axis.data[, "from.gene"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
     "Power"       = x.axis.data[order(x.axis.data[, "inter.Power"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
-    "Specificity" = x.axis.data[order(x.axis.data[, "inter.Specificity"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
+    "Confidence" = x.axis.data[order(x.axis.data[, "inter.Confidence"], decreasing = axis.order.xy.decreasing[1]), "from.gene"],
     stop("Invalid order name is given upon x-axis!")
     )
   x.axis.names <- unique(x.axis.names)
@@ -215,7 +217,7 @@ GetResultTgCrosstalk <- function(
   y.axis.names <- switch(axis.order.xy[2],
     "AlphaBet"    = y.axis.data[order(y.axis.data[, "to.gene"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
     "Power"       = y.axis.data[order(y.axis.data[, "inter.Power"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
-    "Specificity" = y.axis.data[order(y.axis.data[, "inter.Specificity"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
+    "Confidence" = y.axis.data[order(y.axis.data[, "inter.Confidence"], decreasing = axis.order.xy.decreasing[2]), "to.gene"],
     stop("Invalid order name is given upon x-axis!")
     )
   y.axis.names <- unique(y.axis.names)
@@ -223,14 +225,14 @@ GetResultTgCrosstalk <- function(
 
   ##
   gp.res <- ggplot(packed.infos, aes(x = from.gene, y = to.gene))
-  tmp.sym.size <- sym("inter.Power")
-  tmp.sym.colour <- sym("inter.Specificity")
+  tmp.sym.size <- sym("inter.Confidence")
+  tmp.sym.colour <- sym("inter.Power")
   gp.res <- gp.res + 
       geom_point(aes(size = !!tmp.sym.size, colour = !!tmp.sym.colour)) + 
       scale_x_discrete(limits = x.axis.names, breaks = x.axis.names) + 
       scale_y_discrete(limits = y.axis.names, breaks = y.axis.names) + 
-      scale_size(name = "Power", range = nodes.size.range) + 
-      scale_colour_gradientn(name = "Specificity",
+      scale_size(name = "Confidence", range = nodes.size.range) + 
+      scale_colour_gradientn(name = "Power",
         colours = nodes.colour.seq, values = nodes.colour.value.seq)
   gp.res <- gp.res + 
       labs(x = packed.infos[1, "from.cluster"], y = packed.infos[1, "to.cluster"]) + 

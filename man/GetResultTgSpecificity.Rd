@@ -14,6 +14,9 @@ GetResultTgSpecificity(
   prioritize.cluster.groups = character(),
   plot.name.X.to.Y = TRUE,
   plot.uq.cnt.merged = TRUE,
+  bound.to.use = list(Power = c(-Inf, +Inf), Confidence = c(-Inf, +Inf)),
+  func.to.use = list(Power = function(x) {     x }, Confidence = function(x) {     1/(1
+    + x) }),
   grid.plot.ncol = 1,
   barplot.or.dotplot = FALSE,
   plot.font.size.base = 12,
@@ -24,7 +27,6 @@ GetResultTgSpecificity(
   bar.facet.background = element_rect(fill = "lightgrey", colour = "white"),
   bar.colour = character(),
   bar.width = 0.8,
-  dot.range.to.use = list(Power = c(-Inf, +Inf), Specificity = c(-Inf, +Inf)),
   dot.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
   dot.colour.value.seq = c(0, 0.5, 1),
   dot.size.range = c(2, 8),
@@ -59,6 +61,11 @@ finally plotted from the most left-side to right.}
 \item{plot.uq.cnt.merged}{If set TRUE, then gene pairs of different count of co-occurence will be merged to show in the result, or gene pairs 
 will be grouped by their count of co-occurence and be plotted accordingly.}
 
+\item{bound.to.use}{It specifies the user specified bound for evaluation params. The values out of bound will be coerced to 
+either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]}
+
+\item{func.to.use}{The function used to further transform the values, e.g. \code{log1p}.}
+
 \item{grid.plot.ncol}{It gives the number of columns for plotting grid when \code{plot.uq.cnt.merged = FALSE}.}
 
 \item{barplot.or.dotplot}{If TRUE, use 'barplot', or, use 'dotplot'.}
@@ -79,8 +86,6 @@ will be grouped by their count of co-occurence and be plotted accordingly.}
 built-in 20 kinds of colours will be used.}
 
 \item{bar.width}{It defines the bar width.}
-
-\item{dot.range.to.use}{It specifies the user specified ranges for evaluation params.}
 
 \item{dot.colour.seq}{It specifies the colour sequence for dots.}
 

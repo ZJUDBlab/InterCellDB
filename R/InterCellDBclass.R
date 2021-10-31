@@ -31,7 +31,7 @@ kpred.action.mode <- c("activation", "inhibition", "binding", "catalysis", "reac
 #' @export
 #'
 kpred.color.mode <- c("#D70051", "#00913A", "#1296D4", "#956134", "#F46D42", "#0A0AFF", "#762A83", "#B5B5B6")
-#c("#FB8072", "#B3DE69", "#80B1D3", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
+#c("#FB8072", "#80B1D3", "#B3DE69", "#8DD3C7", "#FFFFB3", "#BEBADA", "#FDB462", "#FCCDE5")
 
 #' Predefined Action Effect & Color Usage for It
 #'
@@ -1749,8 +1749,9 @@ DataPrep.AddExprs <- function(
 	exprs.data,
 	force.overwrite = FALSE
 ) {
-	if ("Exprs" %in% colnames(fgenes) && !force.overwrite) {
-		stop("Column 'Exprs' exists. Use 'force.overwrite = TRUE' to force overwrite existed one.")
+	if (("Exprs" %in% colnames(fgenes)) && !force.overwrite) {
+		warning("Column 'Exprs' exists. If want to modify, use 'force.overwrite = TRUE' to overwrite existed one.")
+		return(fgenes)
 	}
 
 	# handle with format of exprs.data
@@ -1761,7 +1762,7 @@ DataPrep.AddExprs <- function(
 	} else {  # transform to matrix
 		if (is.null(ncol(exprs.data)) || ncol(exprs.data) == 0 ||
 			is.null(nrow(exprs.data)) || nrow(exprs.data) == 0) {
-			stop("Please provided valid matrix or data.frame to use.")
+			stop("Try add 'Exprs' but lack data. Please provided valid expression data.")
 		}
 		exprs.data <- as.matrix(exprs.data)
 	}
@@ -2174,7 +2175,7 @@ FetchGeneOI.default <- function(
 			sel.location <- NULL
 		}
 	}
-	if ((length(sel.location.score) > 1 && !is.integer(sel.location.score)) || 
+	if ((length(sel.location.score) > 1 && !is.numeric(sel.location.score)) || 
 		(length(sel.location.score) == 1 && !is.numeric(sel.location.score))) {
 		stop("Location score ranges from 1 to 5, and only those 5 integers are supported!")
 	}

@@ -59,8 +59,8 @@ AnalyzeInterSpecificity <- function(
 		stop("Given name of cluster pairs NOT exist!")
 	}
 	target.gene.pairs.df <- DataPrep.GenStdGenePairs.from.VEinfos(VEinfos, musthave.colnames)
-	# add power and specificity here
-	tmp.ref.colnames <- c(paste("inter", rep(c("GeneName"), each = 2), c("A", "B"), sep = "."), "inter.Power", "inter.Specificity")
+	# add power and confidence here
+	tmp.ref.colnames <- c(paste("inter", rep(c("GeneName"), each = 2), c("A", "B"), sep = "."), "inter.Power", "inter.Confidence")
 	target.gene.pairs.df <- left_join(target.gene.pairs.df, Itinfos$bt.pairs[, tmp.ref.colnames], 
 		by = c("inter.GeneName.A", "inter.GeneName.B"))
 	
@@ -69,7 +69,7 @@ AnalyzeInterSpecificity <- function(
 	this.gene.pairs <- data.frame(gp.name = this.pair.interacts, 
 		gp.belongs = rep(this.pair.name, times = length(this.pair.interacts)), 
 		gp.power = target.gene.pairs.df[, "inter.Power"], 
-		gp.specificity = target.gene.pairs.df[, "inter.Specificity"],
+		gp.confidence = target.gene.pairs.df[, "inter.Confidence"],
 		stringsAsFactors = FALSE)
 	# further check if comparison of itself exist, which may cause error in downstream analysis
 	if (this.pair.name %in% to.cmp.cluster.groups == TRUE) {
@@ -111,7 +111,7 @@ AnalyzeInterSpecificity <- function(
 			res.df <- data.frame(gp.name = tmp.pairs.interacts[tmp.inds.tg], 
 				gp.belongs = rep(x, times = length(tmp.inds.tg)), 
 				gp.power = tmp.pairs.df[tmp.inds.tg, "inter.Power"], 
-				gp.specificity = tmp.pairs.df[tmp.inds.tg, "inter.Specificity"],
+				gp.confidence = tmp.pairs.df[tmp.inds.tg, "inter.Confidence"],
 				stringsAsFactors = FALSE)
 			res.df
 		})
@@ -140,7 +140,7 @@ AnalyzeInterSpecificity <- function(
 			tmp.cnt <- diff.cnts[tmp.i]
 			names(tmp.cnt) <- NULL  # remove the name
 			tmp.indices <- diff.indices[[tmp.i]]
-			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.power", "gp.specificity")]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.power", "gp.confidence")]
 			tmp.properties <- tmp.properties[order(tmp.properties$gp.power, decreasing = TRUE), ]
 			prog.bar.use.plot.collect$tick()  # tick
 			# return
@@ -158,14 +158,14 @@ AnalyzeInterSpecificity <- function(
 			tmp.indices <- diff.indices[[tmp.i]]
 			tmp.genepair <- names(diff.indices[tmp.i])  # get the gene pair name
 			tmp.gene.part <- strsplit(tmp.genepair, split = kGenesSplit, fixed = TRUE)[[1]]
-			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.power", "gp.specificity")]
+			tmp.properties <- all.gp[tmp.indices, c("gp.belongs", "gp.power", "gp.confidence")]
 			tmp.clusters.prop.df <- Tool.SplitToGenDataFrame(tmp.properties[, "gp.belongs"], to.split.by = kClustersSplit, 
 				res.colnames = c("Cluster.X", "Cluster.Y"))
 			tmp.res.df <- cbind(data.frame(gp.name = rep(tmp.genepair, times = nrow(tmp.properties)), 
 					inter.GeneName.A = rep(tmp.gene.part[1], times = nrow(tmp.properties)),
 					inter.GeneName.B = rep(tmp.gene.part[2], times = nrow(tmp.properties)),
 					stringsAsFactors = FALSE), 
-				tmp.properties[, "gp.belongs", drop = FALSE], tmp.clusters.prop.df, tmp.properties[, c("gp.power", "gp.specificity")], stringsAsFactors = FALSE)
+				tmp.properties[, "gp.belongs", drop = FALSE], tmp.clusters.prop.df, tmp.properties[, c("gp.power", "gp.confidence")], stringsAsFactors = FALSE)
 			prog.bar.for.res.collect$tick()
 			# result
 			tmp.res.df
@@ -242,6 +242,9 @@ Inside.sel.gene.pairs.method.power.IT <- Inside.sel.gene.pairs.method.power.defa
 #' @param plot.name.X.to.Y If set FALSE, switch the position of 2 involving clusters in the original names of interaction. If set TRUE, keep still.
 #' @param plot.uq.cnt.merged If set TRUE, then gene pairs of different count of co-occurence will be merged to show in the result, or gene pairs 
 #'  will be grouped by their count of co-occurence and be plotted accordingly.
+#' @param bound.to.use It specifies the user specified bound for evaluation params. The values out of bound will be coerced to 
+#'  either lower bound or upper bound. Default no bound is set, i.e. [-Inf, +Inf]
+#' @param func.to.use The function used to further transform the values, e.g. \code{log1p}. 
 #' @param grid.plot.ncol It gives the number of columns for plotting grid when \code{plot.uq.cnt.merged = FALSE}.
 #' @param barplot.or.dotplot If TRUE, use 'barplot', or, use 'dotplot'.
 #' @param plot.font.size.base It defines the base font size for all texts. 
@@ -253,7 +256,6 @@ Inside.sel.gene.pairs.method.power.IT <- Inside.sel.gene.pairs.method.power.defa
 #' @param bar.colour It gives colors that plotting bars get to use. If no specific colour is given, then the 
 #'  built-in 20 kinds of colours will be used.
 #' @param bar.width It defines the bar width.
-#' @param dot.range.to.use It specifies the user specified ranges for evaluation params.
 #' @param dot.colour.seq It specifies the colour sequence for dots.
 #' @param dot.colour.value.seq It is along with the param \code{dot.colour.seq}, and changes the colour expansion.
 #' @param dot.size.range It specifies the size range of the dots
@@ -284,6 +286,8 @@ GetResultTgSpecificity <- function(
 	prioritize.cluster.groups = character(),
 	plot.name.X.to.Y = TRUE,
 	plot.uq.cnt.merged = TRUE,
+	bound.to.use = list("Power" = c(-Inf, +Inf), "Confidence" = c(-Inf, +Inf)), 
+	func.to.use = list("Power" = function(x) {x}, "Confidence" = function(x) {1/(1+x)}),
 	grid.plot.ncol = 1, 
 	barplot.or.dotplot = FALSE,
 	plot.font.size.base = 12, 
@@ -294,7 +298,6 @@ GetResultTgSpecificity <- function(
 	bar.facet.background = element_rect(fill = "lightgrey", colour = "white"), 
 	bar.colour = character(),
 	bar.width = 0.8, 
-	dot.range.to.use = list("Power" = c(-Inf, +Inf), "Specificity" = c(-Inf, +Inf)), 
 	dot.colour.seq = c("#00809D", "#EEEEEE", "#C30000"),
 	dot.colour.value.seq = c(0.0, 0.5, 1.0),
 	dot.size.range = c(2, 8), 
@@ -333,25 +336,38 @@ GetResultTgSpecificity <- function(
 	tmp.inds.valid.cluster.group <- which(prioritize.cluster.groups %in% this.property.valid.cluster.group)
 	if (length(tmp.inds.valid.cluster.group) != length(prioritize.cluster.groups)) {
 		warning("Given cluster group order has some items not existed: ",
-			paste0(prioritize.cluster.groups[setdiff(seq_along(prioritize.cluster.groups), tmp.inds.valid.cluster.group)]),
+			paste0(prioritize.cluster.groups[setdiff(seq_along(prioritize.cluster.groups), tmp.inds.valid.cluster.group)], collapse = " "),
 			", which will be automatically removed!")
 	}
 	prioritize.cluster.groups <- prioritize.cluster.groups[tmp.inds.valid.cluster.group]
 
 
 	# check dot plot parameters
-	given.range.to.use <- CheckParamStd(names(dot.range.to.use), c("Power", "Specificity"), "range", stop.on.zero = FALSE)
-	tmp.not.in.range <- setdiff(c("Power", "Specificity"), given.range.to.use)
-	if (length(tmp.not.in.range) != 0) {
-		for (tmp.i in tmp.not.in.range) {
-			dot.range.to.use <- c(dot.range.to.use, list(c(-Inf, Inf)))
-			names(dot.range.to.use)[length(dot.range.to.use)] <- tmp.i
+	allowed.data.modf.items <- c("Power", "Confidence")
+	given.bound.to.use <- CheckParamStd(names(bound.to.use), allowed.data.modf.items, "bound", stop.on.zero = FALSE)
+	tmp.not.in.bound <- setdiff(c("Power", "Confidence"), given.bound.to.use)
+	if (length(tmp.not.in.bound) != 0) {
+		for (tmp.i in tmp.not.in.bound) {
+			bound.to.use <- c(bound.to.use, list(c(-Inf, Inf)))
+			names(bound.to.use)[length(bound.to.use)] <- tmp.i
 		}
-		warning("Auto add ranges on: ", paste0(tmp.not.in.range, collapse = ", "))
+		warning("Auto add bounds on: ", paste0(tmp.not.in.bound, collapse = ", "), ".")
 	}
 	#
 	if (length(dot.colour.seq) != length(dot.colour.value.seq)) {
-	stop("Colors and their gradient values should be of same length! Check parameter `dot.colour.seq` and `dot.colour.value.seq`.")
+		stop("Colors and their gradient values should be of same length! Check parameter `dot.colour.seq` and `dot.colour.value.seq`.")
+	}
+
+	# check func to modify data
+	tmp.valid.funcnames <- CheckParamStd(names(func.to.use), allowed.data.modf.items, "Transform functions", stop.on.zero = FALSE)
+  func.to.use <- func.to.use[tmp.valid.funcnames]
+  tmp.not.in.func <- setdiff(allowed.data.modf.items, tmp.valid.funcnames)
+  if (length(tmp.not.in.func) != 0) {
+    for (tmp.j in tmp.not.in.func) {
+      func.to.use <- c(func.to.use, list(function(x) {x}))
+      names(func.to.use)[length(func.to.use)] <- tmp.j
+    }
+    warning("Auto add transform function on: ", paste0(tmp.not.in.func, collapse = ", "), ".")
   }
 
 	# fetch selected gene pairs
@@ -419,7 +435,7 @@ GetResultTgSpecificity <- function(
 		tmp.spgenes <- all.spgenes[tmp.inds]
 		tmp.spgenes <- lapply(tmp.spgenes, topn = topn.it, function(x, topn) {
 			tmp.selrows <- ifelse(nrow(x$uq.details) > topn, topn, nrow(x$uq.details))
-			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.power", "gp.specificity")])
+			list(uq.cnt = x$uq.cnt, uq.details = x$uq.details[seq_len(tmp.selrows), c("gp.belongs", "gp.power", "gp.confidence")])
 			})
 		# remove those with NO valid uq.cnt 
 		tmp.check.0row <- unlist(lapply(tmp.spgenes, function(x) { nrow(x$uq.details) }))
@@ -460,7 +476,7 @@ GetResultTgSpecificity <- function(
 					uq.cnt = rep(tmp.n.items, times = tmp.ref.rows), 
 					uq.x.axis = tmp.coords.seq[seq_len(tmp.ref.rows)], 
 					uq.y.axis = std.spgenes[[x]]$uq.details$gp.power[c(tmp.inds.prior, tmp.inds.inferior)],
-					uq.z.axis = std.spgenes[[x]]$uq.details$gp.specificity[c(tmp.inds.prior, tmp.inds.inferior)],
+					uq.z.axis = std.spgenes[[x]]$uq.details$gp.confidence[c(tmp.inds.prior, tmp.inds.inferior)],
 					stringsAsFactors = FALSE)
 				})
 		tmp.df.res <- bind_rows(tmp.df.list)
@@ -576,7 +592,8 @@ GetResultTgSpecificity <- function(
 		plot.data,
 		prioritize.cluster.groups,
 		plot.name.X.to.Y,
-		dot.range.to.use,
+		bound.to.use,
+		func.to.use,
 		dot.colour.seq,
 		dot.colour.value.seq,
 		dot.size.range
@@ -599,23 +616,24 @@ GetResultTgSpecificity <- function(
 
 		# move the data range
 		#plot.data$uq.y.axis  # Power
-		#plot.data$uq.z.axis  # specificity
+		#plot.data$uq.z.axis  # confidence
 		# get and recalc Power range
-		tmp.power.range <- dot.range.to.use[["Power"]]
+		tmp.power.range <- bound.to.use[["Power"]]
 		tmp.power <- plot.data$uq.y.axis
+		# modify
+		tmp.power <- func.to.use[["Power"]](tmp.power)
 		tmp.power[which(tmp.power > tmp.power.range[2])] <- tmp.power.range[2]
 		tmp.power[which(tmp.power < tmp.power.range[1])] <- tmp.power.range[1]
-		# resize upon Power result
-		#tmp.size.skew <- (max(tmp.power) - min(tmp.power)) / (dot.size.range[2] - dot.size.range[1])
-		#plot.data$plot.dot.size <- (tmp.power - min(tmp.power)) / tmp.size.skew + dot.size.range[1]
-		plot.data$plot.dot.size <- tmp.power
+		plot.data$plot.dot.colour <- tmp.power
 
-		# get and Specificity range
-		tmp.specificity.range <- dot.range.to.use[["Specificity"]]
-		tmp.specificity <- plot.data$uq.z.axis
-		tmp.specificity[which(tmp.specificity > tmp.specificity.range[2])] <- tmp.specificity.range[2]
-		tmp.specificity[which(tmp.specificity < tmp.specificity.range[1])] <- tmp.specificity.range[1]
-		plot.data$plot.dot.colour <- tmp.specificity
+		# get and Confidence range
+		tmp.confidence.range <- bound.to.use[["Confidence"]]
+		tmp.confidence <- plot.data$uq.z.axis
+		# modify
+		tmp.confidence <- func.to.use[["Confidence"]](tmp.confidence)
+		tmp.confidence[which(tmp.confidence > tmp.confidence.range[2])] <- tmp.confidence.range[2]
+		tmp.confidence[which(tmp.confidence < tmp.confidence.range[1])] <- tmp.confidence.range[1]
+		plot.data$plot.dot.size <- tmp.confidence
 
 		# before plot, get gene pairs ordered correctly
 		if (dot.y.order.in.alphabet == TRUE) {
@@ -634,8 +652,8 @@ GetResultTgSpecificity <- function(
 		this.plot <- ggplot(plot.data, aes(x = uq.label, y = uq.name))
 		this.plot <- this.plot + 
 			geom_point(aes(colour = plot.dot.colour, size = plot.dot.size)) + 
-			scale_colour_gradientn(name = "Specificity", colours = dot.colour.seq, values = dot.colour.value.seq) + 
-			scale_size(name = "Power", range = dot.size.range) + 
+			scale_colour_gradientn(name = "Power", colours = dot.colour.seq, values = dot.colour.value.seq) + 
+			scale_size(name = "Confidence", range = dot.size.range) + 
 			labs(x = "Cluster Groups", y = "Gene Pairs")
 		this.plot <- this.plot + 
 			theme_half_open(font_size = plot.font.size.base) + 
@@ -649,7 +667,7 @@ GetResultTgSpecificity <- function(
 		ret.data
 	) {
 		ret.res <- ret.data[, c("uq.name", "uq.label", "uq.cnt", "uq.y.axis", "uq.z.axis")]
-		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.power", "gp.specificity")
+		colnames(ret.res) <- c("gene.pairs", "cluster.groups", "uq.cnt", "gp.power", "gp.confidence")
 		ret1.genepairs.df <- Tool.SplitToGenDataFrame(ret.res[, "gene.pairs"], 
 			to.split.by = kGenesSplit, 
 			res.colnames = c("inter.GeneName.A", "inter.GeneName.B"))
@@ -658,7 +676,7 @@ GetResultTgSpecificity <- function(
 			res.colnames = c("Cluster.X", "Cluster.Y"))
 		ret.res <- cbind(ret.res[, "gene.pairs", drop = FALSE], 
 			ret1.genepairs.df, ret.res[, "cluster.groups", drop = FALSE], 
-			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.power", "gp.specificity")],
+			ret2.clustergroup.df, ret.res[, c("uq.cnt", "gp.power", "gp.confidence")],
 			stringsAsFactors = FALSE)
 		return(ret.res)
 	}
@@ -681,13 +699,13 @@ GetResultTgSpecificity <- function(
 		}
 	} else {
 		if (plot.uq.cnt.merged == TRUE) {
-			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, plot.name.X.to.Y, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)
+			this.plot.mg <- inside.uq.dot.plot(plot.data.uq.df, prioritize.cluster.groups, plot.name.X.to.Y, bound.to.use, func.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)
 			return(list(plot = this.plot.mg, table = inside.gen.ret.table(plot.data.uq.df)))
 		} else {
 			this.notm.plot.list <- list()
 			this.notm.ret.table.list <- list()
 			for (i.item in names(plot.data.uq.notm.list)) {
-				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, plot.name.X.to.Y, dot.range.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)))
+				this.notm.plot.list <- c(this.notm.plot.list, list(inside.uq.dot.plot(plot.data.uq.notm.list[[i.item]], prioritize.cluster.groups, plot.name.X.to.Y, bound.to.use, func.to.use, dot.colour.seq, dot.colour.value.seq, dot.size.range)))
 				this.notm.ret.table.list <- c(this.notm.ret.table.list, list(inside.gen.ret.table(plot.data.uq.notm.list[[i.item]])))
 			}
 			this.notm.plot <- plot_grid(plotlist = this.notm.plot.list, ncol = grid.plot.ncol)
