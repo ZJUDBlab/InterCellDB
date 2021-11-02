@@ -4,16 +4,14 @@
 \alias{FormatCustomGenePairs}
 \title{Format User Given Gene Pairs}
 \usage{
-FormatCustomGenePairs(gene.pairs.table, species, extend.reverse = FALSE)
+FormatCustomGenePairs(object, gene.pairs.table, extend.reverse = FALSE)
 }
 \arguments{
+\item{object}{A \code{InterCell} object, which is created by \code{\link{CreateInterCellObject}}.}
+
 \item{gene.pairs.table}{2-column table, and each column records one list of genes.}
 
-\item{species}{\pkg{InterCellDB} supports species in either 'human' or 'mouse'.
-Other species are not supported to be used for analysis.}
-
-\item{extend.reverse}{Decide whether to extend pairs with the reverse pairs. It is useful
-when analytic process requires cell-cluster-aligned gene pairs, e.g. \code{\link{AnalyzeInterInFullView}}.}
+\item{extend.reverse}{Decide whether to extend pairs with the reverse pairs. Default is \code{FALSE}.}
 }
 \value{
 A list with \code{$result} storing the formatted gene pairs.
@@ -21,8 +19,6 @@ A list with \code{$result} storing the formatted gene pairs.
 \description{
 This function makes 2-column table (each row represents one gene pair) to be 
 formatted to be used in this package.
-The gene names will be remapped to the authorized gene names recorded in gene 
-reference database embedded in this package.
 }
 \details{
 The formatting process will remap the genes in 1st column from input to 'inter.*.A' columns in result.

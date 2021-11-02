@@ -2387,13 +2387,10 @@ MergeGeneOI <- function(
 #' 
 #' This function makes 2-column table (each row represents one gene pair) to be 
 #' formatted to be used in this package.
-#' The gene names will be remapped to the authorized gene names recorded in gene 
-#' reference database embedded in this package.
 #'
+#' @inheritParams InsideObjectInterCell
 #' @param gene.pairs.table 2-column table, and each column records one list of genes.
-#' @inheritParams InsideParam.species
-#' @param extend.reverse Decide whether to extend pairs with the reverse pairs. It is useful
-#'  when analytic process requires cell-cluster-aligned gene pairs, e.g. \code{\link{AnalyzeInterInFullView}}.
+#' @param extend.reverse Decide whether to extend pairs with the reverse pairs. Default is \code{FALSE}.
 #'
 #' @details
 #' The formatting process will remap the genes in 1st column from input to 'inter.*.A' columns in result.
@@ -2408,10 +2405,13 @@ MergeGeneOI <- function(
 #' @export
 #'
 FormatCustomGenePairs <- function(
+	object,
 	gene.pairs.table,
-	species,
 	extend.reverse = FALSE
 ) {
+	species <- object@database@species
+	if.remap.genes <- object@misc$if.remap.genes
+
 	# check input
 	if (class(gene.pairs.table) != "data.frame") {
 		stop("Given gene pairs must be stored in table (R `data.frame` structure).")
@@ -2419,9 +2419,6 @@ FormatCustomGenePairs <- function(
 	if (ncol(gene.pairs.table) != 2) {
 		warning("Given table has more than 2 columns, only the first 2 columns will be used.")
 	}
-
-	# check species
-	species <- CheckSpeciesValidity(species)
 
 	# process
 	result.list <- list()
@@ -2433,11 +2430,17 @@ FormatCustomGenePairs <- function(
 			cluster = seq_along(tmp.genes),  # give one gene one cluster to make duplicate ones preserved, but program may get quite slow
 			LogFC = 1, PVal = 0, 
 			num.id = seq_along(tmp.genes), stringsAsFactors = FALSE)
-		dummy.remap.res <- suppressWarnings(DataPrep.RemapClustersMarkers(dummy.fgenes, species, if.used.inside = TRUE))
-		dummy.fgenes <- dummy.remap.res$result
+		if (if.remap.genes == TRUE) {
+			dummy.remap.res <- suppressWarnings(DataPrep.RemapClustersMarkers(dummy.fgenes, species, if.used.inside = TRUE))
+			dummy.fgenes <- dummy.remap.res$result
+		}
 		dummy.fgenes <- dummy.fgenes[order(dummy.fgenes$num.id, decreasing = FALSE), ]
 		result.list <- c(result.list, list(dummy.fgenes$gene))
-		apx.list <- c(apx.list, dummy.remap.res[setdiff(names(dummy.remap.res), "result")])
+		if (if.remap.genes == TRUE) {
+			apx.list <- c(apx.list, dummy.remap.res[setdiff(names(dummy.remap.res), "result")])
+		} else {
+			apx.list <- c(apx.list, list(NULL))
+		}
 	}
 
 	# get genename corresponding IDs
