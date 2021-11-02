@@ -79,6 +79,8 @@ The 3 evidence channels (\code{use.exp}, \code{use.know}, \code{use.pred}) are i
 For one gene pair, it could have scores from 3 evidence channels at the same time. In default setting, the 
 result of this function will be \bold{union} of results from 3 channels. If union is not satisfied, the function 
 \code{\link{MergeDBSubset}} will help.
-The score is within 1~1000. Score (>700) would be consider as high confidence. Score (>400) would be consider over medium confidence.
-Score (<=400) would be consider low confidence, while Score (<=150) would be the lowest.
+
+The score is within 1~1000. Score (>=700) would be consider as high confidence, and (>=900) is even higher confident.
+Score (>=400) would be consider over medium confidence.
+Score (<400) would be consider low confidence, while Score (<150) would be the lowest.
 }

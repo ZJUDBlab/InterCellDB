@@ -53,7 +53,7 @@ in \code{\link{ListAllGeneMergeType}}. See details for help.}
 'ancestor', 'parents', 'offspring', 'children'. See details for help.}
 }
 \value{
-Character. The selected genes.
+Character, the selected genes. Or, a list, with gene property attached.
 }
 \description{
 This function is to fetch genes of interest by selecting on subcellular locations, 
