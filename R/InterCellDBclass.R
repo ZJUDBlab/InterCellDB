@@ -1805,6 +1805,7 @@ DataPrep.AddExprs <- function(
 #' and gets these pairs easier to be compared with others.
 #'
 #' @param VEinfos standard storage for one interaction.
+#' @param musthave.colnames column names that must be included.
 #'
 #' @details
 #' The standard format in this package is that gene pairs are maintained in data.frame, and the 2 genes 

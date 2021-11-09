@@ -90,6 +90,7 @@
 #' @importFrom dplyr bind_rows left_join
 #' @import progress
 #' @importFrom pbapply pbapply
+#' @importFrom future nbrOfWorkers
 #' @importFrom future.apply future_apply
 #'
 #' @export

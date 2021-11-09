@@ -8,6 +8,8 @@ DataPrep.GenStdGenePairs.from.VEinfos(VEinfos, musthave.colnames)
 }
 \arguments{
 \item{VEinfos}{standard storage for one interaction.}
+
+\item{musthave.colnames}{column names that must be included.}
 }
 \description{
 This function generates gene pairs in standard format(in data frame), 
