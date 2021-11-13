@@ -46,6 +46,6 @@ devtools::install_github("ZJUDBlab/InterCellDB")
 
 
 
-# How to cite
+## How to cite
 
 The manuscript is pending.
