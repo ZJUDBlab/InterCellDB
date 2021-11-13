@@ -10,28 +10,41 @@
 
 **Main Functions:**
 
-- Network analysis, which prioritizes significant interactions between some 2-cell groups
-- Intercellular analysis on action relations, which shows the composition of action relations between given 2 cell clusters
-- Intercellular analysis on filtering gene pairs, which extracts more significant gene pairs for downstream analysis
+- Full network analysis, which summarises the interactions between every 2 cell clusters
+- Intercellular analysis on action relations, which shows the composition of action mode and effect between given 2 cell clusters
+- Intercellular analysis on filtering gene pairs, which extracts top ranked significant gene pairs for downstream analysis
 - Intercellular analysis on specificity, which evaluates co-occurences of gene pair across interactions
 - Intercellular analysis on spatial pattern, which shows the summary of target gene pairs with their attributes
 
 ## Installation
 
-The installation steps are given as follows: 
+1. remove the 'GO.db' package 
 
-``` R
+```R
+remove.packages("GO.db")
+```
+
+2. install the required packages and re-intall 'GO.db' package from Bioconductor
+
+```R
 install.packages("devtools")
 install.packages("BiocManager")
-BiocManager::install(pkgs="GO.db", version="3.9")
+BiocManager::install(pkgs = "GO.db")
+```
+
+3. install the InterCellDB package from GitHub
+
+```R
 devtools::install_github("ZJUDBlab/InterCellDB")
 ```
 
-This code is tested to function well in R version 3.6.3. The dependent package `GO.db` is recommended to be downloaded from Bioconductor to accomplish full compatibility.
 
-## Usage of InterCellDB
 
-There are 2 code examples given along with the package. They are located in `code-examples` directory of the package. The example in mouse data shows the routine workflow of InterCellDB, and the example in human data shows the capability of InterCellDB by comparing to other method and the workflow for evaluating off-target effects.
+## Tutorials
+
+- [Running InterCellDB step-by-step](./tutorials/Basic-steps.md)
+
+
 
 # How to cite
 
