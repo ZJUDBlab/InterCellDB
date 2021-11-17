@@ -49,10 +49,10 @@ InterCellDB requires 2 data as input:
 - normalized count matrix
 - differentially expressed genes (DEGs) with their belonging clusters
 
-We provide one pre-processed Seurat object in RDS file to illustrate the data format of the normalized count matrix, and it can be downloaded in [TODO links]. 
+We provide one pre-processed Seurat object in RDS file to illustrate the data format of the normalized count matrix, and it can be downloaded publicly. 
 
 ```R
-seurat.obj <- readRDS(#[TODO])
+seurat.obj <- readRDS(url("https://figshare.com/ndownloader/files/31497371"))
 tmp.counts <- seurat.obj[["RNA"]]@data
 colnames(tmp.counts) <- as.character(Idents(seurat.obj))
 # show data structure, row names are genes, column names are clusters
@@ -70,10 +70,16 @@ If users are attempting to use their own dataset, make sure the data normalizati
 
 
 
-For DEGs, we also provide the example data in [TODO links].
+For DEGs, we also provide the pre-processed RDS file publicly.
 
 ```R
-readRDS([TODO links])
+markers.used <- readRDS(url("https://figshare.com/ndownloader/files/31497401"))
+#                p_val    LogFC pct.1 pct.2          PVal cluster    gene
+# Plbd1   2.436468e-234 1.751750 0.990 0.293 4.703844e-230    cDC2   Plbd1
+# Cd209a  1.126670e-219 2.934390 0.642 0.099 2.175148e-215    cDC2  Cd209a
+# Ms4a6c  2.003678e-217 1.306534 0.916 0.244 3.868301e-213    cDC2  Ms4a6c
+# Alox5ap 2.043584e-213 1.118439 0.922 0.214 3.945343e-209    cDC2 Alox5ap
+# Fgr     3.582238e-205 1.177831 0.775 0.154 6.915869e-201    cDC2     Fgr
 ```
 
 To note, InterCellDB defines several mandatory column names when read in DEGs, which are columns named 'gene', 'cluster', 'LogFC', 'PVal', and their meanings are listed below:
