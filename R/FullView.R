@@ -37,7 +37,7 @@
 #' This function performs network analysis and calculates:
 #' \itemize{
 #'   \item count: count of interaction.
-#'   \item power: strength of interaction, which is calculated by formula: SUM(abs(LogFC[gene.X] * LogFC[gene.Y])).
+#'   \item power: strength of interaction, which is calculated by formula: SUM(Power(pair[i~j])).
 #' }
 #'
 #' \bold{sel.clusters.X} and \bold{sel.clusters.Y}: 

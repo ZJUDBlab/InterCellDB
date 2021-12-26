@@ -1214,7 +1214,7 @@ setMethod(
 #'
 #' The score is within 1~1000. Score (>=700) would be consider as high confidence, and (>=900) is even higher confident.
 #' Score (>=400) would be consider over medium confidence.
-#' Score (<400) would be consider low confidence, while Score (<150) would be the lowest.
+#' Score (<400) would be consider low confidence.
 #'
 #' @return A \code{InterCellDBPack} or \code{InterCell} object, which is the same as given parameter \code{object}.
 #'
