@@ -1203,6 +1203,8 @@ setMethod(
 #' @param sel.action.effect Selection by action effect. "ALL" means not use this to select subset. Other 
 #'  options will be directly select gene pair in that action effect. Supported options are listed in \code{kpred.action.effect}.
 #' @param sel.action.merge.option Either 'intersect' or 'union'. The option for merging the result from selection on action mode and action effect.
+#' @param action.score.range It controls the score range when selecting subset from action databases. 
+#'  The score should be 2 numbers within 1~1000.
 #' @param slim.along.with.pairs This decides whether to select the corresponding subset of action pair database 
 #'  after selecting subset of gene pair database.
 #'
@@ -1235,21 +1237,35 @@ SelectDBSubset.default <- function(
 	sel.action.mode = "ALL",
 	sel.action.effect = "ALL",
 	sel.action.merge.option = "intersect",
+	action.score.range = c(1, 1000),
 	slim.along.with.pairs = TRUE
 ) {
+	# score standardize
+	inside.score.stdfunc <- function(score.range, score.name) {
+		score.range <- as.numeric(score.range)
+		if (length(score.range) != 2) {
+			stop(paste0("Given `", score.name, "` not in right format, should be like c(1, 1000)."))
+		}
+		if (score.range[1] < 1) {
+			score.range[1] <- 1
+		}
+		if (score.range[2] > 1000) {
+			score.range[2] <- 1000
+		}
+		return(score.range)
+	}
+
 	# check score range
-	if (length(combined.score.range) != 2) {
-		stop("Given `combined.score.range` not in right format, should be like c(1, 1000).")
-	}
-	if (length(exp.score.range) != 2) {
-		stop("Given `exp.score.range` not in right format, should be like c(1, 1000).")
-	}
-	if (length(know.score.range) != 2) {
-		stop("Given `know.score.range` not in right format, should be like c(1, 1000).")
-	}
-	if (length(pred.score.range) != 2) {
-		stop("Given `pred.score.range` not in right format, should be like c(1, 1000).")
-	}
+	inside.score.stdfunc(combined.score.range, "combined.score.range")
+	inside.score.stdfunc(exp.score.range, "exp.score.range")
+	inside.score.stdfunc(know.score.range, "know.score.range")
+	inside.score.stdfunc(pred.score.range, "pred.score.range")
+	inside.score.stdfunc(action.score.range, "action.score.range")
+
+	# check action options
+	allowed.action.options <- c("intersect", "union")
+	CheckParamStd(sel.action.merge.option, allowed.action.options, opt.name = "`sel.action.merge.option`", stop.on.zero = TRUE)
+
 	# check action 
 	if (sel.action.mode[1] != "ALL") {
 		not.valid.action.mode <- setdiff(sel.action.mode, kpred.action.mode)
@@ -1275,9 +1291,9 @@ SelectDBSubset.default <- function(
 	this.pairs.db <- object@pairs.db
 	this.actions.db <- object@actions.db
 	# top-range subset
-	this.pairs.db <- this.pairs.db[intersect(which(this.pairs.db$inter.Combined.Score >= combined.score.range[1]),
-		which(this.pairs.db$inter.Combined.Score <= combined.score.range[2])), ]
-	if (nrow(this.pairs.db) == 0) {
+	this.pairs.db <- subset(this.pairs.db, inter.Combined.Score >= combined.score.range[1] & inter.Combined.Score <= combined.score.range[2])
+	this.actions.db <- subset(this.actions.db, score >= action.score.range[1] & score <= action.score.range[2])
+	if (nrow(this.pairs.db) == 0 || nrow(this.actions.db) == 0) {
 		stop("Select too small range of score, and get no valid gene pairs!")
 	}
 
@@ -1366,11 +1382,36 @@ SelectDBSubset.default <- function(
 	}
 	use.action.pairs <- unique(use.action.pairs)
 
-	# collect result from actions selection
-	if (length(use.action.pairs) > 0) {
+	## check if selection is applied on actions.db, IF DO, slim the actions.db
+	use.action.to.limit.pairs <- character()
+	if (length(use.action.pairs) > 0 || all.equal(action.score.range, c(1, 1000)) == FALSE) {
+		# TO apply selected pairs from actions.db to limit pairs.db
+		if (all.equal(action.score.range, c(1, 1000)) == FALSE) {
+			tmp.actions.add.df <- FastAlignPairs(this.actions.db[, c("inter.GeneID.A", "inter.GeneID.B", "inter.GeneName.A", "inter.GeneName.B")], 4)
+			tmp.add.pairs <- paste(tmp.actions.add.df[, "inter.GeneID.A"], tmp.actions.add.df[, "inter.GeneID.B"], sep = use.cut.symbol)
+			if (length(use.action.pairs) > 0) {
+				use.action.to.limit.pairs <- intersect(tmp.add.pairs, use.action.pairs)
+			} else {
+				use.action.to.limit.pairs <- tmp.add.pairs
+			}
+		} else {
+			use.action.to.limit.pairs <- use.action.pairs
+		}
+
+		# collect actions result from actions selection
+		if (length(use.action.to.limit.pairs) > 0) {
+			this.actions.db <- FastAlignPairs(this.actions.db, 4)
+			tmp.cur.act.pairs <- paste(this.actions.db[, "inter.GeneID.A"], this.actions.db[, "inter.GeneID.B"], sep = use.cut.symbol)
+			this.actions.db <- this.actions.db[which(tmp.cur.act.pairs %in% use.action.to.limit.pairs), ]
+			object@actions.db <- this.actions.db
+		}
+	}
+
+	# collect pairs result from actions selection
+	if (length(use.action.to.limit.pairs) > 0) {
 		this.pairs.db <- FastAlignPairs(this.pairs.db, 4)
 		tmp.cur.pairs <- paste(this.pairs.db[, "inter.GeneID.A"], this.pairs.db[, "inter.GeneID.B"], sep = use.cut.symbol)
-		this.pairs.db <- this.pairs.db[which(tmp.cur.pairs %in% use.action.pairs), ]
+		this.pairs.db <- this.pairs.db[which(tmp.cur.pairs %in% use.action.to.limit.pairs), ]
 	}
 
 	## get pairs settled, and slim other accessory database
