@@ -401,6 +401,7 @@ Tool.FindGenesFromGO <- function(
 #' @param genes.name Readable gene names, which should be the same set as genes given in \code{DEG.table}.
 #'  To be noted, if genes are remapped when created \code{InterCell} object, it will be automatically applied to this.
 #' @param perm.times Permutation times. Default is set to 1000.
+#' @param p.seed Seed for generating permutations.
 #'
 #' @importFrom pbapply pblapply
 #' @importFrom future.apply future_lapply 
@@ -413,8 +414,13 @@ Tool.GenPermutation <- function(
 	count.matrix,
 	cells.meta = NULL,
 	genes.name = NULL,
-	perm.times = 1000
+	perm.times = 1000,
+	p.seed = 101
 ) {
+	if (!is.null(p.seed)) {
+		set.seed(p.seed)
+	}
+
 	if (is.null(ncol(count.matrix)) || ncol(count.matrix) == 0 ||
 		is.null(nrow(count.matrix)) || nrow(count.matrix) == 0) {
 		stop("Please provided valid matrix or data.frame to use.")

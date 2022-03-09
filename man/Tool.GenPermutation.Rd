@@ -9,7 +9,8 @@ Tool.GenPermutation(
   count.matrix,
   cells.meta = NULL,
   genes.name = NULL,
-  perm.times = 1000
+  perm.times = 1000,
+  p.seed = 101
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ Tool.GenPermutation(
 To be noted, if genes are remapped when created \code{InterCell} object, it will be automatically applied to this.}
 
 \item{perm.times}{Permutation times. Default is set to 1000.}
+
+\item{p.seed}{Seed for generating permutations.}
 }
 \description{
 This function uses cell label permutation to generate one list of normalized count matrix.

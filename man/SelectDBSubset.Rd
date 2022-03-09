@@ -26,6 +26,7 @@ SelectDBSubset.default(
   sel.action.mode = "ALL",
   sel.action.effect = "ALL",
   sel.action.merge.option = "intersect",
+  action.score.range = c(1, 1000),
   slim.along.with.pairs = TRUE
 )
 }
@@ -63,6 +64,9 @@ options will be directly select gene pair in that action effect. Supported optio
 
 \item{sel.action.merge.option}{Either 'intersect' or 'union'. The option for merging the result from selection on action mode and action effect.}
 
+\item{action.score.range}{It controls the score range when selecting subset from action databases. 
+The score should be 2 numbers within 1~1000.}
+
 \item{slim.along.with.pairs}{This decides whether to select the corresponding subset of action pair database 
 after selecting subset of gene pair database.}
 }
@@ -82,5 +86,5 @@ result of this function will be \bold{union} of results from 3 channels. If unio
 
 The score is within 1~1000. Score (>=700) would be consider as high confidence, and (>=900) is even higher confident.
 Score (>=400) would be consider over medium confidence.
-Score (<400) would be consider low confidence, while Score (<150) would be the lowest.
+Score (<400) would be consider low confidence.
 }
