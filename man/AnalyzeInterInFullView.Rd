@@ -115,8 +115,8 @@ H0 is made as E(G1, A) * E(G2, B) - allavg(A) * allavg(B) = Perm(i, G1, A) * Per
 By getting the times when abs(Equation-left) <= abs(Equation-right), we get the P value. 
 By comparing the P value with \code{perm.pval.cutoff}, we judge whether the gene pair A~B between G1 and G2 is significant.
 
-For 'one-side-large', the H0 is E(G1, A) * E(G2, B) - allavg(A) * allavg(B) > Perm(i, G1, A) * Perm(i, G2, B).
+For 'one-side-large', the H0 is E(G1, A) * E(G2, B) - allavg(A) * allavg(B) > Perm(i, G1, A) * Perm(i, G2, B) - allavg(A) * allavg(B) .
 P value is calculated as (Equation-left) <= (Equation-right).
-For 'one-side-small', the H0 is E(G1, A) * E(G2, B) - allavg(A) * allavg(B) < Perm(i, G1, A) * Perm(i, G2, B).
+For 'one-side-small', the H0 is E(G1, A) * E(G2, B) - allavg(A) * allavg(B) < Perm(i, G1, A) * Perm(i, G2, B) - allavg(A) * allavg(B) .
 P value is calculated as (Equation-left) >= (Equation-right).
 }

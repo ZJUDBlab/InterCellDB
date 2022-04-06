@@ -121,7 +121,7 @@ inter.obj <- SelectDBSubset(inter.obj,
 Details about 4 options on customizing interaction database are given in the supplementary information of the article. Here, we list some of the most commonly used options.
 
 - evidence sources: experimentally validated (`use.exp`), pathway curated (`use.know`), predicted (`use.pred`).
-- credibility score: ranging from 1 to 1000. Highest confidence should >= 900, and high confidence should > 700, and medium > 400, while low <= 400.
+- credibility score: ranging from 1 to 1000. Highest confidence should >= 900, and high confidence should >= 700, and medium >= 400, while low < 400.
 - action mode: giving the relation of interacting proteins. Commonly used one is 'binding', which selects physically associated protein interactions.
 - action effect: giving the effect of protein interaction. Commonly used ones are 'positive' and 'negative'. 'positive' means one protein promotes the expression of the other, while 'negative' means the inhibition of the other.
 
@@ -210,7 +210,7 @@ Tool.WriteTables(fullview.result, dir.path = "./")  # write result into csv file
 
 ## Step 4: Perform intercellular analysis
 
-Intercellular analysis focuses on one interaction, and explores the results in 4 aspects:
+Intercellular analysis focuses on one cell-cell interaction, and explores the results in 4 aspects:
 
 1. summarize action mode and action effect
 2. subset and rank gene pairs
@@ -246,7 +246,7 @@ action.mode.result <- GetResultPieActionMode(inter.obj,
 		color.action.mode = used.color.mode)
 Tool.ShowGraph(action.mode.result)
 ```
-<img src="/Users/jinziyang/Sc-RNAsequence/interaction-database/prepFinal-2/code-assembly-draft/tutorials/files-Basic-steps/act-mode.png" alt="act-mode" style="zoom:20%; align-items:center;" />
+<img src="./files-Basic-steps/act-mode.png" alt="act-mode" style="zoom:20%; align-items:center;" />
 
 We can also show the composition of action effect.
 
@@ -254,7 +254,7 @@ We can also show the composition of action effect.
 action.effect.result <- GetResultPieActionEffect(inter.obj, limits.exprs.change = c("Xup.Yup"))
 Tool.ShowGraph(action.effect.result)
 ```
-<img src="/Users/jinziyang/Sc-RNAsequence/interaction-database/prepFinal-2/code-assembly-draft/tutorials/files-Basic-steps/act-effect.png" alt="act-effect" style="zoom:20%; align-items:center;" />
+<img src="./files-Basic-steps/act-effect.png" alt="act-effect" style="zoom:20%; align-items:center;" />
 
 
 
@@ -286,7 +286,7 @@ result.inter.pairs <- GetResultTgCrosstalk(inter.obj,
 Tool.ShowGraph(result.inter.pairs)
 ```
 
-<img src="/Users/jinziyang/Sc-RNAsequence/interaction-database/prepFinal-2/code-assembly-draft/tutorials/files-Basic-steps/inter-rank-gene-pair.png" alt="inter-rank-gene-pair" style="zoom:20%; align-items:center;" />
+<img src="./files-Basic-steps/inter-rank-gene-pair.png" alt="inter-rank-gene-pair" style="zoom:20%; align-items:center;" />
 
 We rank gene pairs by their power, and select those top ranked genes.
 
@@ -333,7 +333,7 @@ result.specificity <- GetResultTgSpecificity(inter.obj,
 Tool.ShowGraph(result.specificity)
 ```
 
-<img src="/Users/jinziyang/Sc-RNAsequence/interaction-database/prepFinal-2/code-assembly-draft/tutorials/files-Basic-steps/eval-specificity.png" alt="eval-specificity" style="zoom:20%; align-items:center;" />
+<img src="./files-Basic-steps/eval-specificity.png" alt="eval-specificity" style="zoom:20%; align-items:center;" />
 
 
 
@@ -345,6 +345,7 @@ Here, we choose only the plasma membrane protein and extracellular region protei
 
 ```R
 tmp.hide.locations <- setdiff(ListAllGeneLocation(inter.obj), c("Plasma Membrane", "Extracellular Region"))  # select the subcellular locations allowed to show
+set.seed(101L)  # set seed to make reproducible result, or gene will be re-arranged every time re-running GetResultTgCellPlot
 result.sptialpattern <- GetResultTgCellPlot(inter.obj, 
 		area.extend.times = 20,  # control the size of plotting. Increase the value by 10 when warnings ask to
 		hide.other.area = TRUE,
@@ -358,4 +359,4 @@ result.sptialpattern <- GetResultTgCellPlot(inter.obj,
 Tool.ShowGraph(result.sptialpattern)
 ```
 
-<img src="/Users/jinziyang/PackRepos/InterCellDB/tutorials/files-Basic-steps/spatial-pattern-plot.png" alt="spatial-pattern-plot" style="zoom:25%; align-items:center;" />
+<img src="./files-Basic-steps/spatial-pattern.png" alt="spatial-pattern-plot" style="zoom:20%; align-items:center;" />
