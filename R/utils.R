@@ -490,7 +490,7 @@ Tool.GenPermutation <- function(
 		)
 	} else {
 		tmp.perm.retlist <- future_lapply(seq_len(perm.times), counts = count.matrix, cellgroup = cellgroup,
-			FUN = run.func, future.seed = TRUE
+			FUN = run.func, future.seed = p.seed
 		)
 	}
 
