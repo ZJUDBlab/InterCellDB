@@ -417,8 +417,10 @@ Tool.GenPermutation <- function(
 	perm.times = 1000,
 	p.seed = 101
 ) {
+	t.old.seed <- .Random.seed
 	if (!is.null(p.seed)) {
 		set.seed(p.seed)
+		on.exit( { .Random.seed <<- t.old.seed } )
 	}
 
 	if (is.null(ncol(count.matrix)) || ncol(count.matrix) == 0 ||

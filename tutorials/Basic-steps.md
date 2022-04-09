@@ -66,7 +66,7 @@ tmp.counts[1:5, 1:5]
 # Narf  .         .         .         0.02189368 .
 ```
 
-If users are attempting to use their own dataset, make sure the data normalization and cell clustering are done. Take Seurat for example, the `NormalizeData` or `SCTransform` should be processed for getting normalized data, and `FindClusters` should be processed for getting cell clustering result. User-defined clustering is also allowed, and users should carefully follow the data format given above to set the clusters in right place.
+If users are attempting to use their own dataset, make sure the data normalization and cell clustering are done. Many tools can handle with this. Take Seurat for example, the `NormalizeData` or `SCTransform` should be processed for getting normalized data, and `FindClusters` should be processed for getting cell clustering result. 
 
 
 
@@ -118,7 +118,7 @@ inter.obj <- SelectDBSubset(inter.obj,
 ```
 
 
-Details about 4 options on customizing interaction database are given in the supplementary information of the article. Here, we list some of the most commonly used options.
+Details about 4 options on customizing interaction database are given in the supporting information of the article. Here, we list some of the most commonly used options.
 
 - evidence sources: experimentally validated (`use.exp`), pathway curated (`use.know`), predicted (`use.pred`).
 - credibility score: ranging from 1 to 1000. Highest confidence should >= 900, and high confidence should >= 700, and medium >= 400, while low < 400.
@@ -130,7 +130,7 @@ Details about 4 options on customizing interaction database are given in the sup
 For customizing included proteins, InterCellDB also provides 4 options: protein expression change, protein subcellular location, function and relevant biological process. Here, we select 2 subsets of proteins using InterCellDB on the latter 3 options and fetch their corresponding gene symbols. One subset is the genes for signal receiving cells (denoted as `genes.receiver` below) and the other for signal sending cells (denoted as `genes.sender` below).
 
 ```R
-# fetch genes of interest
+# fetch genes of interest. GO.db version is v3.8.2 here, different version may have non-identical result.
 genes.receiver <- FetchGeneOI(inter.obj, 
 		sel.location = "Plasma Membrane",  # fetch proteins located in plasma membrane
 		sel.location.score = c(4:5),       # 4 and 5 are of high confidence
@@ -156,7 +156,7 @@ To note, as the protein expression change is highly associated with the input da
 
 ## Step 3: Perform full network analysis
 
-Full network analysis summarizes the interactions between every 2 cell clusters, and infers main participants by aggregated power and total count of gene pairs. The power of every gene pair is calculated by the product of expressions of 2 participating genes. The selected gene pairs are those with p-value < 0.05 in cell label permutation test (the p-value cutoff can also be set by users).
+Full network analysis summarizes the interactions between every 2 cell clusters, and infers main participants by aggregated power and total count of gene pairs. The power of every gene pair is calculated by the product of expressions of 2 participating genes. The selected gene pairs are those with *p*-value < 0.05 in cell label permutation test (the *p*-value cutoff can also be set by users).
 
 Full network analysis goes with 2 steps:
 
@@ -171,7 +171,7 @@ tmp.permlist <- Tool.GenPermutation(inter.obj, tmp.counts, perm.times = 100)
 plan("sequential")  # close the parallel processes
 ```
 
-Then, we perform the full network analysis using the previously customized genes and interactions with 4 parallel processes. The one-tailed statistical test is performed with p-value < 0.05. 
+Then, we perform the full network analysis using the previously customized genes and interactions with 4 parallel processes. The one-tailed statistical test is performed with *p*-value < 0.05. 
 
 ```R
 plan("multiprocess", workers = 4)
@@ -360,3 +360,76 @@ Tool.ShowGraph(result.sptialpattern)
 ```
 
 <img src="./files-Basic-steps/spatial-pattern.png" alt="spatial-pattern-plot" style="zoom:20%; align-items:center;" />
+
+
+
+
+
+
+
+**Session Info**
+
+```R
+sessionInfo()
+```
+
+```R
+R version 3.6.3 (2020-02-29)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS  10.16
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+
+locale:
+[1] zh_CN.UTF-8/zh_CN.UTF-8/zh_CN.UTF-8/C/zh_CN.UTF-8/zh_CN.UTF-8
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] future_1.21.0     dplyr_1.0.5       Seurat_3.2.0      InterCellDB_0.9.2
+
+loaded via a namespace (and not attached):
+  [1] Rtsne_0.15           colorspace_2.0-0     deldir_0.2-10       
+  [4] ellipsis_0.3.1       ggridges_0.5.3       spatstat.data_2.1-0 
+  [7] farver_2.1.0         leiden_0.3.7         listenv_0.8.0       
+ [10] ggrepel_0.9.1        bit64_4.0.5          AnnotationDbi_1.46.1
+ [13] fansi_0.4.2          codetools_0.2-18     splines_3.6.3       
+ [16] cachem_1.0.4         polyclip_1.10-0      jsonlite_1.7.2      
+ [19] ica_1.0-2            cluster_2.1.1        GO.db_3.8.2         
+ [22] png_0.1-7            uwot_0.1.10          shiny_1.6.0         
+ [25] sctransform_0.3.2    compiler_3.6.3       httr_1.4.2          
+ [28] assertthat_0.2.1     Matrix_1.3-2         fastmap_1.1.0       
+ [31] lazyeval_0.2.2       later_1.1.0.1        htmltools_0.5.1.1   
+ [34] prettyunits_1.1.1    tools_3.6.3          rsvd_1.0.3          
+ [37] igraph_1.2.6         gtable_0.3.0         glue_1.4.2          
+ [40] RANN_2.6.1           reshape2_1.4.4       Rcpp_1.0.7          
+ [43] spatstat_1.64-1      Biobase_2.44.0       vctrs_0.3.7         
+ [46] ape_5.4-1            nlme_3.1-152         lmtest_0.9-38       
+ [49] stringr_1.4.0        globals_0.14.0       mime_0.10           
+ [52] miniUI_0.1.1.1       lifecycle_1.0.0      irlba_2.3.3         
+ [55] goftest_1.2-2        MASS_7.3-53.1        zoo_1.8-9           
+ [58] scales_1.1.1         hms_1.0.0            promises_1.2.0.1    
+ [61] spatstat.utils_2.1-0 parallel_3.6.3       RColorBrewer_1.1-2  
+ [64] memoise_2.0.0        reticulate_1.18      pbapply_1.4-3       
+ [67] gridExtra_2.3        ggplot2_3.3.3        rpart_4.1-15        
+ [70] stringi_1.5.3        RSQLite_2.2.5        S4Vectors_0.22.1    
+ [73] BiocGenerics_0.30.0  rlang_0.4.10         pkgconfig_2.0.3     
+ [76] matrixStats_0.58.0   lattice_0.20-41      ROCR_1.0-11         
+ [79] purrr_0.3.4          tensor_1.5           labeling_0.4.2      
+ [82] patchwork_1.1.1      htmlwidgets_1.5.3    cowplot_1.1.1       
+ [85] bit_4.0.4            tidyselect_1.1.0     parallelly_1.24.0   
+ [88] RcppAnnoy_0.0.18     plyr_1.8.6           magrittr_2.0.1      
+ [91] R6_2.5.0             IRanges_2.18.3       generics_0.1.0      
+ [94] DBI_1.1.1            mgcv_1.8-34          pillar_1.5.1        
+ [97] fitdistrplus_1.1-3   survival_3.2-10      abind_1.4-5         
+[100] tibble_3.1.0         future.apply_1.7.0   crayon_1.4.1        
+[103] KernSmooth_2.23-18   utf8_1.2.1           plotly_4.9.3        
+[106] progress_1.2.2       grid_3.6.3           data.table_1.13.6   
+[109] blob_1.2.1           digest_0.6.27        xtable_1.8-4        
+[112] tidyr_1.1.3          httpuv_1.5.5         stats4_3.6.3        
+[115] munsell_0.5.0        viridisLite_0.3.0   
+```
+
