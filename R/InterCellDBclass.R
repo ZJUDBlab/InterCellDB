@@ -1256,15 +1256,15 @@ SelectDBSubset.default <- function(
 	}
 
 	# check score range
-	inside.score.stdfunc(combined.score.range, "combined.score.range")
-	inside.score.stdfunc(exp.score.range, "exp.score.range")
-	inside.score.stdfunc(know.score.range, "know.score.range")
-	inside.score.stdfunc(pred.score.range, "pred.score.range")
-	inside.score.stdfunc(action.score.range, "action.score.range")
+	combined.score.range <- inside.score.stdfunc(combined.score.range, "combined.score.range")
+	exp.score.range <- inside.score.stdfunc(exp.score.range, "exp.score.range")
+	know.score.range <- inside.score.stdfunc(know.score.range, "know.score.range")
+	pred.score.range <- inside.score.stdfunc(pred.score.range, "pred.score.range")
+	action.score.range <- inside.score.stdfunc(action.score.range, "action.score.range")
 
 	# check action options
 	allowed.action.options <- c("intersect", "union")
-	CheckParamStd(sel.action.merge.option, allowed.action.options, opt.name = "`sel.action.merge.option`", stop.on.zero = TRUE)
+	sel.action.merge.option <- CheckParamStd(sel.action.merge.option, allowed.action.options, opt.name = "`sel.action.merge.option`", stop.on.zero = TRUE)
 
 	# check action 
 	if (sel.action.mode[1] != "ALL") {
@@ -1384,9 +1384,9 @@ SelectDBSubset.default <- function(
 
 	## check if selection is applied on actions.db, IF DO, slim the actions.db
 	use.action.to.limit.pairs <- character()
-	if (length(use.action.pairs) > 0 || all.equal(action.score.range, c(1, 1000)) == FALSE) {
+	if (length(use.action.pairs) > 0 || !isTRUE(all.equal(action.score.range, c(1, 1000)))) {
 		# TO apply selected pairs from actions.db to limit pairs.db
-		if (all.equal(action.score.range, c(1, 1000)) == FALSE) {
+		if (!isTRUE(all.equal(action.score.range, c(1, 1000)))) {
 			tmp.actions.add.df <- FastAlignPairs(this.actions.db[, c("inter.GeneID.A", "inter.GeneID.B", "inter.GeneName.A", "inter.GeneName.B")], 4)
 			tmp.add.pairs <- paste(tmp.actions.add.df[, "inter.GeneID.A"], tmp.actions.add.df[, "inter.GeneID.B"], sep = use.cut.symbol)
 			if (length(use.action.pairs) > 0) {
@@ -1400,9 +1400,13 @@ SelectDBSubset.default <- function(
 
 		# collect actions result from actions selection
 		if (length(use.action.to.limit.pairs) > 0) {
-			this.actions.db <- FastAlignPairs(this.actions.db, 4)
+			# as actions.db slightly different, get conv and rev use.action.to.limit.pairs
+			tmp.use.action.to.limit.pairs.rev <- unique(unlist(lapply(strsplit(use.action.to.limit.pairs, split = use.cut.symbol), t.cut = use.cut.symbol, function(x, t.cut) {
+				paste(rev(x), collapse = t.cut)
+			})))
+			tmp.use.action.to.limit.pairs.rev <- c(tmp.use.action.to.limit.pairs.rev, use.action.to.limit.pairs)
 			tmp.cur.act.pairs <- paste(this.actions.db[, "inter.GeneID.A"], this.actions.db[, "inter.GeneID.B"], sep = use.cut.symbol)
-			this.actions.db <- this.actions.db[which(tmp.cur.act.pairs %in% use.action.to.limit.pairs), ]
+			this.actions.db <- this.actions.db[which(tmp.cur.act.pairs %in% tmp.use.action.to.limit.pairs.rev), ]
 			object@actions.db <- this.actions.db
 		}
 	}
@@ -1421,10 +1425,10 @@ SelectDBSubset.default <- function(
 		# add direct way ones (conv)
 		tmp.sel.pairs <- paste(object@pairs.db[, "inter.GeneID.A"], object@pairs.db[, "inter.GeneID.B"], sep = use.cut.symbol.slim)
 		# add reverse direction ones (rev)
-		tmp.sel.pairs.conv <- c(tmp.sel.pairs , paste(object@pairs.db[, "inter.GeneID.B"], object@pairs.db[, "inter.GeneID.A"], sep = use.cut.symbol.slim))
+		tmp.sel.pairs.conv <- c(tmp.sel.pairs, paste(object@pairs.db[, "inter.GeneID.B"], object@pairs.db[, "inter.GeneID.A"], sep = use.cut.symbol.slim))
 		# slim actions
 		tmp.sel.actions.p <- paste(object@actions.db[, "inter.GeneID.A"], object@actions.db[, "inter.GeneID.B"], sep = use.cut.symbol.slim)
-		object@actions.db <- object@actions.db[which(tmp.sel.actions.p %in% tmp.sel.pairs), ]
+		object@actions.db <- object@actions.db[which(tmp.sel.actions.p %in% tmp.sel.pairs.conv), ]
 	}
 
 	return(object)
