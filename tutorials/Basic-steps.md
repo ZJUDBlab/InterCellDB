@@ -166,7 +166,8 @@ Full network analysis goes with 2 steps:
 Here, we do cell label permutation on normalized count matrix for 100 times with 2 parallel processes. During every time of permutation, the average gene expressions for each gene and for every cell cluster are re-calculated. 
 
 ```R
-plan("multiprocess", workers = 2)  # package future provides the parallel interface, here create 2 parallel processes
+plan("multiprocess", workers = 2)  # package future provides the parallel interface, here create 2 parallel processes  
+# using options(future.globals.maxSize=1024^2 * 1000) to get more space to run parallel process
 tmp.permlist <- Tool.GenPermutation(inter.obj, tmp.counts, perm.times = 100)
 plan("sequential")  # close the parallel processes
 ```
