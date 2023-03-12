@@ -1114,7 +1114,7 @@ GetResultTgCellPlot <- function(
   table.act.width  <- c(.6, table.fit.width.for.text / 0.9)
   table.act.height.mode <- unit(c(.6, rep(1, times = length(L.mode.to.use)) * 0.6), "cm")
   table.act.gap <- legend.manual.internal.spacing
-  if (class(legend.manual.internal.spacing) != "unit") {
+  if (!("unit" %in% class(legend.manual.internal.spacing))) {
     if (!is.numeric(legend.manual.internal.spacing)) {
       stop("Non-numeric value given to specify spacing! Please check paramemter 'legend.manual.internal.spacing'!")
     } else {
